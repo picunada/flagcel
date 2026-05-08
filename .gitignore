@@ -30,3 +30,6 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# sqlc generated code
+internal/store/postgres/sqlcgen/

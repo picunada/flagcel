@@ -1,0 +1,52 @@
+package engine
+
+import "testing"
+
+func TestEngine_bucket(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		flagKey string
+		user    UserContext
+		rollout Rollout
+		want    bool
+	}{
+		{
+			name:    "bucket returns false when rollout percentage is 0",
+			flagKey: "",
+			user:    UserContext{},
+			rollout: Rollout{
+				Percentage: 0,
+			},
+			want: false,
+		},
+		{
+			name:    "bucket returns true when rollout percentage is 100",
+			flagKey: "",
+			user:    UserContext{},
+			rollout: Rollout{
+				Percentage: 100,
+			},
+			want: true,
+		},
+		{
+			name:    "bucket returns false when rollout bucketBy is set to not-existing field in user context",
+			flagKey: "test-flag",
+			user:    UserContext{},
+			rollout: Rollout{
+				BucketBy: "non-existing-field",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// TODO: construct the receiver type.
+			var e Engine
+			got := e.bucket(tt.flagKey, tt.user, tt.rollout)
+			if got != tt.want {
+				t.Errorf("bucket() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
