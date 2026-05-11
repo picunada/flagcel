@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/google/cel-go/cel"
-	"github.com/picunada/getshipped/internal/core"
+	"github.com/picunada/flagcel/internal/core"
 )
 
 func (e *Engine) CompileFlag(key string, config core.FlagConfig) (*Flag, error) {

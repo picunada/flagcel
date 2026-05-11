@@ -8,6 +8,11 @@ require (
 )
 
 require (
+	github.com/caarlos0/env/v11 v11.4.1 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
+)
+
+require (
 	cel.dev/expr v0.25.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/google/uuid v1.6.0
