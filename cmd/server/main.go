@@ -2,38 +2,61 @@ package main
 
 import (
 	"context"
-	"log"
 	"log/slog"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	v1 "github.com/picunada/flagcel/internal/api/http/v1"
+	"github.com/picunada/flagcel/internal/config"
+	"github.com/picunada/flagcel/internal/service"
+	"github.com/picunada/flagcel/internal/store/postgres"
 )
 
 func main() {
-	mux := http.NewServeMux()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	srv := &http.Server{
-		Addr:    ":8080",
-		Handler: mux,
+	cfg, err := config.Load()
+	if err != nil {
+		slog.Error("load config", "err", err)
+		os.Exit(1)
 	}
 
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err == http.ErrServerClosed {
-			log.Fatal(err)
-		}
-	}()
+	logger := cfg.Logger()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		slog.Error("connect pgx pool", "err", err)
+		os.Exit(1)
+	}
+	if err := pool.Ping(ctx); err != nil {
+		slog.Error("ping db", "err", err)
+		os.Exit(1)
+	}
+	store := postgres.NewStore(pool)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	flagSvc := service.NewFlagService(store)
+	srv := v1.NewServer(v1.Config{
+		Port:            cfg.Port,
+		ReadTimeout:     cfg.HTTP.ReadTimeout,
+		WriteTimeout:    cfg.HTTP.WriteTimeout,
+		IdleTimeout:     cfg.HTTP.IdleTimeout,
+		ShutdownTimeout: cfg.HTTP.ShutdownTimeout,
+	}, flagSvc, logger)
+
+	if err := srv.Start(ctx); err != nil {
+		slog.Error("http server", "err", err)
+		os.Exit(1)
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.HTTP.ShutdownTimeout)
 	defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("forced shutdown", err)
+	if err := store.Close(shutdownCtx); err != nil {
+		slog.Error("store shutdown", "err", err)
 	}
 
 	slog.Info("server stopped")
