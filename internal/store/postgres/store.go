@@ -3,12 +3,13 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/picunada/getshipped/internal/core"
-	"github.com/picunada/getshipped/internal/store/postgres/sqlcgen"
+	"github.com/picunada/flagcel/internal/core"
+	"github.com/picunada/flagcel/internal/store/postgres/sqlcgen"
 )
 
 type Store struct {
@@ -18,6 +19,20 @@ type Store struct {
 
 func NewStore(pool *pgxpool.Pool) *Store {
 	return &Store{pool: pool, q: sqlcgen.New(pool)}
+}
+
+func (s *Store) Close(ctx context.Context) error {
+	done := make(chan struct{})
+	go func() {
+		s.pool.Close()
+		close(done)
+	}()
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return fmt.Errorf("pgxpool close: %w", ctx.Err())
+	}
 }
 
 func (s *Store) GetFlag(ctx context.Context, key string) (*core.FlagConfig, error) {
