@@ -33,3 +33,6 @@ go.work.sum
 
 # sqlc generated code
 internal/store/postgres/sqlcgen/
+
+# air hot reload
+tmp/
