@@ -20,8 +20,9 @@ type Config struct {
 }
 
 type Server struct {
-	cfg  Config
-	http *http.Server
+	cfg    Config
+	http   *http.Server
+	logger *slog.Logger
 }
 
 func NewServer(cfg Config, flagSvc *service.FlagService, logger *slog.Logger) *Server {
@@ -38,7 +39,8 @@ func NewServer(cfg Config, flagSvc *service.FlagService, logger *slog.Logger) *S
 	)
 
 	return &Server{
-		cfg: cfg,
+		cfg:    cfg,
+		logger: logger,
 		http: &http.Server{
 			Addr:         fmt.Sprintf(":%d", cfg.Port),
 			Handler:      chain(router),
@@ -52,6 +54,7 @@ func NewServer(cfg Config, flagSvc *service.FlagService, logger *slog.Logger) *S
 func (s *Server) Start(ctx context.Context) error {
 	errCh := make(chan error, 1)
 	go func() {
+		s.logger.Info("http server listening", "addr", s.http.Addr)
 		if err := s.http.ListenAndServe(); err != nil {
 			errCh <- fmt.Errorf("http server: %w", err)
 			return
@@ -61,6 +64,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
+		s.logger.Info("shutdown signal received, stopping http server")
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), s.cfg.ShutdownTimeout)
 		defer cancel()
 		return s.http.Shutdown(shutdownCtx)

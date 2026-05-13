@@ -19,8 +19,13 @@ type RolloutResponse struct {
 }
 
 type CreateFlagRequest struct {
-	Key          string         `json:"key"`
-	Enabled      bool           `json:"enabled"`
-	Rules        []RuleResponse `json:"rules"`
-	DefaultValue bool           `json:"default_value"`
+	Key          string              `json:"key"`
+	Enabled      bool                `json:"enabled"`
+	Rules        []CreateRuleRequest `json:"rules"`
+	DefaultValue bool                `json:"default_value"`
+}
+
+type CreateRuleRequest struct {
+	Expression string          `json:"expression"`
+	Rollout    RolloutResponse `json:"rollout"`
 }

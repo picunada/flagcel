@@ -63,7 +63,7 @@ func (h *FlagsHandler) CreateFlag(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FlagsHandler) DeleteFlag(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
+	id := r.URL.Query().Get("key")
 	if id == "" {
 		utils.Error(w, http.StatusBadRequest, fmt.Errorf("id is required"))
 		slog.Error("id is required")

@@ -15,9 +15,8 @@ func toCoreFlag(r CreateFlagRequest) core.FlagConfig {
 	}
 }
 
-func toCoreRule(r RuleResponse) core.Rule {
+func toCoreRule(r CreateRuleRequest) core.Rule {
 	return core.Rule{
-		ID:         r.ID,
 		Expression: r.Expression,
 		Rollout:    toCoreRollout(r.Rollout),
 	}
