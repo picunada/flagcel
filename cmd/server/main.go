@@ -26,7 +26,9 @@ func main() {
 	}
 
 	logger := cfg.Logger()
+	logger.Info("config loaded", "port", cfg.Port, "log_level", cfg.LogLevel)
 
+	logger.Info("connecting to database")
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		slog.Error("connect pgx pool", "err", err)
@@ -36,6 +38,7 @@ func main() {
 		slog.Error("ping db", "err", err)
 		os.Exit(1)
 	}
+	logger.Info("database connected")
 	store := postgres.NewStore(pool)
 
 	flagSvc := service.NewFlagService(store)
