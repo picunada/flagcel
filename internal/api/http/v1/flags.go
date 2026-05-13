@@ -1,8 +1,6 @@
 package v1
 
 import (
-	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/picunada/flagcel/internal/api/http/utils"
@@ -20,59 +18,69 @@ func NewFlagsHandler(service *service.FlagService) *FlagsHandler {
 }
 
 func (h *FlagsHandler) Register(mux *http.ServeMux) {
-	mux.HandleFunc("GET /", h.GetFlags)
-	mux.HandleFunc("POST /", h.CreateFlag)
-	mux.HandleFunc("DELETE /", h.DeleteFlag)
+	mux.HandleFunc("GET /flags", h.GetFlags)
+	mux.HandleFunc("POST /flags", h.CreateFlag)
+	mux.HandleFunc("GET /flags/{key}", h.GetFlag)
+	mux.HandleFunc("DELETE /flags/{key}", h.DeleteFlag)
 }
 
 func (h *FlagsHandler) GetFlags(w http.ResponseWriter, r *http.Request) {
 	flags, err := h.service.GetFlags(r.Context())
 	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, err)
-		slog.Error(fmt.Sprintf("failed to get flags: %v", err))
+		WriteError(w, err)
 		return
 	}
 
 	if err := utils.Encode(w, r, http.StatusOK, "success", toFlagResponses(flags)); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		WriteError(w, err)
+		return
+	}
+}
+
+func (h *FlagsHandler) GetFlag(w http.ResponseWriter, r *http.Request) {
+	key := r.PathValue("key")
+
+	flag, err := h.service.GetFlag(r.Context(), key)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	if err := utils.Encode(w, r, http.StatusOK, "success", toFlagResponse(*flag)); err != nil {
+		WriteError(w, err)
 		return
 	}
 }
 
 func (h *FlagsHandler) CreateFlag(w http.ResponseWriter, r *http.Request) {
 	req, err := utils.Decode[CreateFlagRequest](r)
-
 	if err != nil {
-		utils.Error(w, http.StatusUnprocessableEntity, err)
-		slog.Error(fmt.Sprintf("failed to validate create flag: %v", err))
+		WriteError(w, InvalidRequest("invalid request body"))
+		return
+	}
+	if req.Key == "" {
+		WriteError(w, InvalidRequest("key is required"))
 		return
 	}
 
 	flag := toCoreFlag(req)
 
 	if err := h.service.CreateFlag(r.Context(), &flag); err != nil {
-		utils.Error(w, http.StatusInternalServerError, err)
-		slog.Error(fmt.Sprintf("failed to create flag: %v", err))
+		WriteError(w, err)
 		return
 	}
 
 	if err := utils.Encode(w, r, http.StatusOK, "success", toFlagResponse(flag)); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		WriteError(w, err)
 		return
 	}
 }
 
 func (h *FlagsHandler) DeleteFlag(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("key")
-	if id == "" {
-		utils.Error(w, http.StatusBadRequest, fmt.Errorf("id is required"))
-		slog.Error("id is required")
-		return
-	}
+	key := r.PathValue("key")
 
-	if err := h.service.DeleteFlag(r.Context(), id); err != nil {
-		utils.Error(w, http.StatusInternalServerError, err)
-		slog.Error(fmt.Sprintf("failed to delete flag: %v", err))
+	if err := h.service.DeleteFlag(r.Context(), key); err != nil {
+		WriteError(w, err)
 		return
 	}
 

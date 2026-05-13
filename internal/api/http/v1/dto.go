@@ -29,3 +29,12 @@ type CreateRuleRequest struct {
 	Expression string          `json:"expression"`
 	Rollout    RolloutResponse `json:"rollout"`
 }
+
+type UpdateRuleRequest struct {
+	Expression string          `json:"expression"`
+	Rollout    RolloutResponse `json:"rollout"`
+}
+
+type ReorderRulesRequest struct {
+	RuleIDs []string `json:"rule_ids"`
+}
