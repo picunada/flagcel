@@ -39,3 +39,7 @@ volumes:
     db-data:
     go-mod-cache:
     go-build-cache:
+
+networks:
+    default:
+        name: flagcel-net
