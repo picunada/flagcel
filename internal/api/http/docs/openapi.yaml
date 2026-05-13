@@ -1,0 +1,403 @@
+openapi: 3.0.3
+info:
+  title: Flagcel API
+  description: Feature flag service with CEL-based targeting rules.
+  version: "1.0.0"
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local dev
+
+tags:
+  - name: Flags
+  - name: Rules
+
+paths:
+  /flags:
+    get:
+      tags: [Flags]
+      summary: List flags
+      operationId: listFlags
+      responses:
+        "200":
+          description: Flags list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlagListEnvelope"
+        "500": { $ref: "#/components/responses/InternalError" }
+    post:
+      tags: [Flags]
+      summary: Create or replace a flag
+      description: |
+        Upserts a flag and replaces all of its rules with the rules supplied
+        in the request body.
+      operationId: createFlag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFlagRequest"
+      responses:
+        "200":
+          description: Flag created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlagEnvelope"
+        "422": { $ref: "#/components/responses/InvalidRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /flags/{key}:
+    parameters:
+      - $ref: "#/components/parameters/FlagKey"
+    get:
+      tags: [Flags]
+      summary: Get a flag by key
+      operationId: getFlag
+      responses:
+        "200":
+          description: Flag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlagEnvelope"
+        "404": { $ref: "#/components/responses/FlagNotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    delete:
+      tags: [Flags]
+      summary: Delete a flag and all of its rules
+      operationId: deleteFlag
+      responses:
+        "204":
+          description: Flag deleted
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /flags/{key}/rules:
+    parameters:
+      - $ref: "#/components/parameters/FlagKey"
+    get:
+      tags: [Rules]
+      summary: List rules for a flag
+      operationId: listRules
+      responses:
+        "200":
+          description: Rules list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleListEnvelope"
+        "404": { $ref: "#/components/responses/FlagNotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    post:
+      tags: [Rules]
+      summary: Create a rule
+      description: Appends a new rule to the end of the flag's rule list. ID is server-generated.
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRuleRequest"
+      responses:
+        "200":
+          description: Rule created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleEnvelope"
+        "422": { $ref: "#/components/responses/InvalidRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /flags/{key}/rules/reorder:
+    parameters:
+      - $ref: "#/components/parameters/FlagKey"
+    post:
+      tags: [Rules]
+      summary: Reorder rules
+      description: |
+        Sets the rule positions to match the order of `rule_ids`. Every rule
+        must belong to the flag; unknown IDs return 404.
+      operationId: reorderRules
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderRulesRequest"
+      responses:
+        "204":
+          description: Rules reordered
+        "404": { $ref: "#/components/responses/RuleNotFound" }
+        "422": { $ref: "#/components/responses/InvalidRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /flags/{key}/rules/{id}:
+    parameters:
+      - $ref: "#/components/parameters/FlagKey"
+      - $ref: "#/components/parameters/RuleID"
+    get:
+      tags: [Rules]
+      summary: Get a rule
+      operationId: getRule
+      responses:
+        "200":
+          description: Rule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleEnvelope"
+        "404": { $ref: "#/components/responses/RuleNotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    put:
+      tags: [Rules]
+      summary: Update a rule
+      operationId: updateRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRuleRequest"
+      responses:
+        "200":
+          description: Rule updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleEnvelope"
+        "404": { $ref: "#/components/responses/RuleNotFound" }
+        "422": { $ref: "#/components/responses/InvalidRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    delete:
+      tags: [Rules]
+      summary: Delete a rule
+      operationId: deleteRule
+      responses:
+        "204":
+          description: Rule deleted
+        "404": { $ref: "#/components/responses/RuleNotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+components:
+  parameters:
+    FlagKey:
+      name: key
+      in: path
+      required: true
+      description: Flag key
+      schema:
+        type: string
+        example: new-checkout
+    RuleID:
+      name: id
+      in: path
+      required: true
+      description: Rule ID (UUID)
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    Rollout:
+      type: object
+      required: [percentage]
+      properties:
+        percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 25
+        bucket_by:
+          type: string
+          description: Field on the eval context used to bucket users for a stable rollout.
+          example: user.id
+
+    Rule:
+      type: object
+      required: [id, expression, rollout]
+      properties:
+        id:
+          type: string
+          format: uuid
+        expression:
+          type: string
+          description: CEL expression evaluated against the eval context.
+          example: "user.country == 'US'"
+        rollout:
+          $ref: "#/components/schemas/Rollout"
+
+    Flag:
+      type: object
+      required: [key, enabled, rules, default_value]
+      properties:
+        key:
+          type: string
+          example: new-checkout
+        enabled:
+          type: boolean
+        rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/Rule"
+        default_value:
+          type: boolean
+
+    CreateFlagRequest:
+      type: object
+      required: [key]
+      properties:
+        key:
+          type: string
+        enabled:
+          type: boolean
+          default: false
+        rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateRuleRequest"
+          default: []
+        default_value:
+          type: boolean
+          default: false
+
+    CreateRuleRequest:
+      type: object
+      required: [expression, rollout]
+      properties:
+        expression:
+          type: string
+        rollout:
+          $ref: "#/components/schemas/Rollout"
+
+    UpdateRuleRequest:
+      type: object
+      required: [expression, rollout]
+      properties:
+        expression:
+          type: string
+        rollout:
+          $ref: "#/components/schemas/Rollout"
+
+    ReorderRulesRequest:
+      type: object
+      required: [rule_ids]
+      properties:
+        rule_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    SuccessEnvelope:
+      type: object
+      required: [message, data]
+      properties:
+        message:
+          type: string
+          example: success
+        data: {}
+
+    FlagEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/Flag"
+
+    FlagListEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/Flag"
+
+    RuleEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/Rule"
+
+    RuleListEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/Rule"
+
+    APIError:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum:
+            - FLAG_NOT_FOUND
+            - RULE_NOT_FOUND
+            - INVALID_REQUEST
+            - BAD_REQUEST
+            - INTERNAL_ERROR
+        message:
+          type: string
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          $ref: "#/components/schemas/APIError"
+
+  responses:
+    FlagNotFound:
+      description: Flag not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          example:
+            error:
+              code: FLAG_NOT_FOUND
+              message: Flag not found
+
+    RuleNotFound:
+      description: Rule not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          example:
+            error:
+              code: RULE_NOT_FOUND
+              message: Rule not found
+
+    InvalidRequest:
+      description: Request body failed validation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          example:
+            error:
+              code: INVALID_REQUEST
+              message: expression is required
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: Internal server error
