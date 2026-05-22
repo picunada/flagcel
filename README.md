@@ -12,7 +12,6 @@ Most feature flag services either lock you into a SaaS or ship a DSL you have to
 
 - **Client SDKs (Go, JS/TS)** — typed clients that wrap the HTTP API and handle local evaluation caching.
 - **Helm chart** — single-command install on Kubernetes with sensible production defaults.
-- **Web UI** — admin dashboard for managing flags and rules without curl.
 
 ## Quickstart
 
@@ -83,6 +82,24 @@ GET    /flags/{key}/rules/{id}
 PUT    /flags/{key}/rules/{id}
 DELETE /flags/{key}/rules/{id}
 ```
+
+## Web UI
+
+A SvelteKit admin dashboard lives in [`web/`](web/) and is embedded into the Go binary at build time. Once built, it is served at `/` alongside the API.
+
+```sh
+# One-time
+make web-install
+
+# Dev: two processes
+make docker-up   # backend on :8080 (with Postgres)
+make web-dev     # frontend on :5173, proxies /api -> :8080
+
+# Prod: single binary with embedded UI
+make build       # pnpm build + go build -> bin/flagcel
+```
+
+When the binary is built without running `pnpm build` first, the UI route serves a placeholder page pointing at `/docs`.
 
 ## Development
 

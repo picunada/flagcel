@@ -36,3 +36,10 @@ internal/store/postgres/sqlcgen/
 
 # air hot reload
 tmp/
+
+# web (SvelteKit)
+web/node_modules/
+web/.svelte-kit/
+web/build/*
+!web/build/.gitkeep
+

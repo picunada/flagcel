@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/picunada/flagcel/internal/api/http/docs"
+	"github.com/picunada/flagcel/web"
 )
 
 type Handlers struct {
@@ -19,5 +20,6 @@ func NewRouter(h *Handlers) http.Handler {
 	root := http.NewServeMux()
 	root.Handle("/api/v1/", http.StripPrefix("/api/v1", v1))
 	docs.Register(root)
+	root.Handle("/", web.Handler())
 	return root
 }

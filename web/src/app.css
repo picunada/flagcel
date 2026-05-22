@@ -1,0 +1,89 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+	--font-sans:
+		ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
+	--font-mono:
+		ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
+	--font-display:
+		ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
+
+	--radius: 0.25rem;
+
+	--color-background: #0f0f0f;
+	--color-foreground: #ffffff;
+
+	--color-card: rgba(15, 15, 15, 0.9);
+	--color-card-foreground: #ffffff;
+
+	--color-popover: rgba(15, 15, 15, 0.95);
+	--color-popover-foreground: #ffffff;
+
+	--color-primary: #ffffff;
+	--color-primary-foreground: #0f0f0f;
+
+	--color-secondary: rgba(255, 255, 255, 0.06);
+	--color-secondary-foreground: rgba(255, 255, 255, 0.78);
+
+	--color-muted: rgba(255, 255, 255, 0.04);
+	--color-muted-foreground: #8e8e8e;
+
+	--color-accent: rgba(255, 255, 255, 0.06);
+	--color-accent-foreground: #ffffff;
+
+	--color-destructive: #ff6b6b;
+	--color-destructive-foreground: #ffffff;
+
+	--color-success: #65f589;
+	--color-success-foreground: #0f0f0f;
+
+	--color-border: rgba(255, 255, 255, 0.12);
+	--color-border-strong: rgba(255, 255, 255, 0.36);
+	--color-input: rgba(255, 255, 255, 0.12);
+	--color-ring: rgba(255, 255, 255, 0.4);
+}
+
+@layer base {
+	* {
+		border-color: var(--color-border);
+		box-sizing: border-box;
+	}
+	html,
+	body {
+		height: 100%;
+	}
+	html {
+		font-family: var(--font-mono);
+		font-weight: 400;
+		letter-spacing: 0.02em;
+	}
+	body {
+		background: var(--color-background);
+		color: var(--color-foreground);
+		font-feature-settings: 'tnum' 1, 'cv11' 1;
+	}
+	::-webkit-scrollbar {
+		display: none;
+	}
+	::selection {
+		background: rgba(101, 245, 137, 0.25);
+		color: #ffffff;
+	}
+}
+
+@utility glass-panel {
+	background: rgba(15, 15, 15, 0.9);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	backdrop-filter: blur(18px) saturate(140%);
+	-webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+@utility glass-pill {
+	background: rgba(20, 20, 24, 0.55);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	backdrop-filter: blur(20px) saturate(160%);
+	-webkit-backdrop-filter: blur(20px) saturate(160%);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
