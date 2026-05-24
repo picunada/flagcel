@@ -28,6 +28,16 @@ var (
 		Code:    "RULE_NOT_FOUND",
 		Message: "Rule not found",
 	}
+	ErrContextNotFound = &APIError{
+		Status:  http.StatusNotFound,
+		Code:    "CONTEXT_NOT_FOUND",
+		Message: "Context not found",
+	}
+	ErrContextNameTaken = &APIError{
+		Status:  http.StatusConflict,
+		Code:    "CONTEXT_NAME_TAKEN",
+		Message: "Context name already in use",
+	}
 	ErrInternal = &APIError{
 		Status:  http.StatusInternalServerError,
 		Code:    "INTERNAL_ERROR",
@@ -77,6 +87,10 @@ func toAPIError(err error) *APIError {
 		return ErrFlagNotFound
 	case errors.Is(err, core.ErrRuleNotFound):
 		return ErrRuleNotFound
+	case errors.Is(err, core.ErrContextNotFound):
+		return ErrContextNotFound
+	case errors.Is(err, core.ErrContextNameTaken):
+		return ErrContextNameTaken
 	default:
 		return ErrInternal
 	}

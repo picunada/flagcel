@@ -12,6 +12,7 @@ func toCoreFlag(r CreateFlagRequest) core.FlagConfig {
 		Enabled:      r.Enabled,
 		Rules:        rules,
 		DefaultValue: r.DefaultValue,
+		ContextID:    r.ContextID,
 	}
 }
 
@@ -39,6 +40,7 @@ func toFlagResponse(f core.FlagConfig) FlagResponse {
 		Enabled:      f.Enabled,
 		Rules:        rules,
 		DefaultValue: f.DefaultValue,
+		ContextID:    f.ContextID,
 	}
 }
 
@@ -61,6 +63,46 @@ func toFlagResponses(flags []*core.FlagConfig) []FlagResponse {
 	out := make([]FlagResponse, len(flags))
 	for i, f := range flags {
 		out[i] = toFlagResponse(*f)
+	}
+	return out
+}
+
+func toCoreContext(id string, name, description string, fields []ContextFieldDTO) core.ContextSchema {
+	coreFields := make([]core.ContextField, len(fields))
+	for i, f := range fields {
+		coreFields[i] = core.ContextField{
+			Path: f.Path,
+			Type: core.ContextType(f.Type),
+		}
+	}
+	return core.ContextSchema{
+		ID:          id,
+		Name:        name,
+		Description: description,
+		Fields:      coreFields,
+	}
+}
+
+func toContextResponse(c core.ContextSchema) ContextResponse {
+	fields := make([]ContextFieldDTO, len(c.Fields))
+	for i, f := range c.Fields {
+		fields[i] = ContextFieldDTO{
+			Path: f.Path,
+			Type: string(f.Type),
+		}
+	}
+	return ContextResponse{
+		ID:          c.ID,
+		Name:        c.Name,
+		Description: c.Description,
+		Fields:      fields,
+	}
+}
+
+func toContextResponses(cs []*core.ContextSchema) []ContextResponse {
+	out := make([]ContextResponse, len(cs))
+	for i, c := range cs {
+		out[i] = toContextResponse(*c)
 	}
 	return out
 }

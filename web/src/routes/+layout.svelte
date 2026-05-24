@@ -7,6 +7,7 @@
 
     const nav = [
         { href: "/", label: "flags" },
+        { href: "/contexts", label: "contexts" },
         { href: "/docs", label: "api", external: true, icon: "↗" },
     ];
 </script>

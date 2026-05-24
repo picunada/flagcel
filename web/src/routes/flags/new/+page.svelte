@@ -5,11 +5,12 @@
 	import Card from '$lib/components/ui/card.svelte';
 	import Input from '$lib/components/ui/input.svelte';
 	import BoolToggle from '$lib/components/ui/bool-toggle.svelte';
-	import SectionHeader from '$lib/components/ui/section-header.svelte';
+	import ContextPicker from '$lib/components/context-picker.svelte';
 
 	let key = $state('');
 	let enabled = $state(true);
 	let defaultValue = $state(false);
+	let contextId = $state<string | null>(null);
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
 
@@ -22,7 +23,8 @@
 				key,
 				enabled,
 				default_value: defaultValue,
-				rules: []
+				rules: [],
+				context_id: contextId
 			});
 			await goto(`/flags/${encodeURIComponent(flag.key)}`);
 		} catch (e) {
@@ -72,6 +74,19 @@
 				<p class="font-mono text-[0.65rem] text-muted-foreground">
 					lowercase alphanumerics, dashes, underscores
 				</p>
+			</div>
+
+			<div class="space-y-2">
+				<label
+					for="context"
+					class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
+				>
+					context · optional
+				</label>
+				<ContextPicker
+					value={contextId}
+					onchange={(v) => (contextId = v)}
+				/>
 			</div>
 
 			<div class="space-y-5 border-t border-border/60 pt-6">

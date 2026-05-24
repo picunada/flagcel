@@ -1,7 +1,17 @@
+CREATE TABLE IF NOT EXISTS contexts (
+    id          UUID        PRIMARY KEY,
+    name        TEXT        NOT NULL UNIQUE,
+    description TEXT        NOT NULL DEFAULT '',
+    fields      JSONB       NOT NULL DEFAULT '[]'::jsonb,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS flags (
     key           TEXT        PRIMARY KEY,
     enabled       BOOLEAN     NOT NULL DEFAULT FALSE,
     default_value BOOLEAN     NOT NULL DEFAULT FALSE,
+    context_id    UUID        REFERENCES contexts(id) ON DELETE SET NULL,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

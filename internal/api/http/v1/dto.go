@@ -5,6 +5,7 @@ type FlagResponse struct {
 	Enabled      bool           `json:"enabled"`
 	Rules        []RuleResponse `json:"rules"`
 	DefaultValue bool           `json:"default_value"`
+	ContextID    *string        `json:"context_id,omitempty"`
 }
 
 type RuleResponse struct {
@@ -23,6 +24,7 @@ type CreateFlagRequest struct {
 	Enabled      bool                `json:"enabled"`
 	Rules        []CreateRuleRequest `json:"rules"`
 	DefaultValue bool                `json:"default_value"`
+	ContextID    *string             `json:"context_id,omitempty"`
 }
 
 type CreateRuleRequest struct {
@@ -37,4 +39,28 @@ type UpdateRuleRequest struct {
 
 type ReorderRulesRequest struct {
 	RuleIDs []string `json:"rule_ids"`
+}
+
+type ContextFieldDTO struct {
+	Path string `json:"path"`
+	Type string `json:"type"`
+}
+
+type ContextResponse struct {
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description,omitempty"`
+	Fields      []ContextFieldDTO `json:"fields"`
+}
+
+type CreateContextRequest struct {
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Fields      []ContextFieldDTO `json:"fields"`
+}
+
+type UpdateContextRequest struct {
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Fields      []ContextFieldDTO `json:"fields"`
 }

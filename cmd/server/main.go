@@ -43,13 +43,14 @@ func main() {
 
 	flagSvc := service.NewFlagService(store)
 	ruleSvc := service.NewRuleService(store)
+	ctxSvc := service.NewContextService(store)
 	srv := v1.NewServer(v1.Config{
 		Port:            cfg.Port,
 		ReadTimeout:     cfg.HTTP.ReadTimeout,
 		WriteTimeout:    cfg.HTTP.WriteTimeout,
 		IdleTimeout:     cfg.HTTP.IdleTimeout,
 		ShutdownTimeout: cfg.HTTP.ShutdownTimeout,
-	}, flagSvc, ruleSvc, logger)
+	}, flagSvc, ruleSvc, ctxSvc, logger)
 
 	if err := srv.Start(ctx); err != nil {
 		slog.Error("http server", "err", err)

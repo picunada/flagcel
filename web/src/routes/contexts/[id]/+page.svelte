@@ -1,0 +1,103 @@
+<script lang="ts">
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { api, APIError, type ContextSchema, type CreateContextRequest } from '$lib/api';
+	import Button from '$lib/components/ui/button.svelte';
+	import Card from '$lib/components/ui/card.svelte';
+	import ContextEditor from '$lib/components/context-editor.svelte';
+	import { Trash2 } from 'lucide-svelte';
+
+	const id = $derived(page.params.id ?? '');
+
+	let schema = $state<ContextSchema | null>(null);
+	let loading = $state(true);
+	let loadError = $state<string | null>(null);
+	let saveError = $state<string | null>(null);
+	let submitting = $state(false);
+
+	$effect(() => {
+		id;
+		load();
+	});
+
+	async function load() {
+		loading = true;
+		loadError = null;
+		try {
+			schema = await api.getContext(id);
+		} catch (e) {
+			loadError = e instanceof APIError ? e.message : 'Failed to load context';
+		} finally {
+			loading = false;
+		}
+	}
+
+	async function save(data: CreateContextRequest) {
+		if (!schema) return;
+		submitting = true;
+		saveError = null;
+		try {
+			schema = await api.updateContext(schema.id, data);
+		} catch (e) {
+			saveError = e instanceof APIError ? e.message : 'Failed to save context';
+		} finally {
+			submitting = false;
+		}
+	}
+
+	async function remove() {
+		if (!schema) return;
+		if (!confirm(`Delete context "${schema.name}"? Flags referencing it will be unlinked.`))
+			return;
+		try {
+			await api.deleteContext(schema.id);
+			await goto('/contexts');
+		} catch (e) {
+			saveError = e instanceof APIError ? e.message : 'Failed to delete context';
+		}
+	}
+</script>
+
+<div class="space-y-10">
+	<a
+		href="/contexts"
+		class="inline-flex items-center gap-1.5 font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+	>
+		← all contexts
+	</a>
+
+	{#if loading}
+		<Card class="h-40 animate-pulse" />
+	{:else if loadError && !schema}
+		<Card class="p-8 text-center">
+			<p class="text-sm text-destructive">{loadError}</p>
+			<Button class="mt-4" onclick={load}>retry</Button>
+		</Card>
+	{:else if schema}
+		<header class="flex flex-wrap items-start justify-between gap-4">
+			<div class="space-y-3">
+				<p
+					class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground"
+				>
+					[ context ]
+				</p>
+				<h1 class="font-mono text-3xl font-normal tracking-tight sm:text-4xl">
+					{schema.name}
+				</h1>
+			</div>
+			<Button variant="destructive" onclick={remove}>
+				<Trash2 class="h-3.5 w-3.5" /> delete
+			</Button>
+		</header>
+
+		<Card class="p-8">
+			<ContextEditor
+				{schema}
+				{submitting}
+				error={saveError}
+				submitLabel="save changes"
+				onsave={save}
+			/>
+		</Card>
+	{/if}
+</div>

@@ -14,6 +14,7 @@ export type Flag = {
 	enabled: boolean;
 	rules: Rule[];
 	default_value: boolean;
+	context_id?: string | null;
 };
 
 export type CreateFlagRequest = {
@@ -21,6 +22,7 @@ export type CreateFlagRequest = {
 	enabled?: boolean;
 	rules?: CreateRuleRequest[];
 	default_value?: boolean;
+	context_id?: string | null;
 };
 
 export type CreateRuleRequest = {
@@ -30,9 +32,40 @@ export type CreateRuleRequest = {
 
 export type UpdateRuleRequest = CreateRuleRequest;
 
+export type ContextType =
+	| 'string'
+	| 'int'
+	| 'double'
+	| 'bool'
+	| 'timestamp'
+	| 'list'
+	| 'map';
+
+export type ContextField = {
+	path: string;
+	type: ContextType;
+};
+
+export type ContextSchema = {
+	id: string;
+	name: string;
+	description?: string;
+	fields: ContextField[];
+};
+
+export type CreateContextRequest = {
+	name: string;
+	description?: string;
+	fields: ContextField[];
+};
+
+export type UpdateContextRequest = CreateContextRequest;
+
 export type APIErrorCode =
 	| 'FLAG_NOT_FOUND'
 	| 'RULE_NOT_FOUND'
+	| 'CONTEXT_NOT_FOUND'
+	| 'CONTEXT_NAME_TAKEN'
 	| 'INVALID_REQUEST'
 	| 'BAD_REQUEST'
 	| 'INTERNAL_ERROR';
@@ -101,5 +134,17 @@ export const api = {
 		request<void>(`/flags/${encodeURIComponent(key)}/rules/reorder`, {
 			method: 'POST',
 			body: JSON.stringify({ rule_ids: ruleIds })
-		})
+		}),
+
+	listContexts: () => request<ContextSchema[]>('/contexts'),
+	getContext: (id: string) => request<ContextSchema>(`/contexts/${encodeURIComponent(id)}`),
+	createContext: (body: CreateContextRequest) =>
+		request<ContextSchema>('/contexts', { method: 'POST', body: JSON.stringify(body) }),
+	updateContext: (id: string, body: UpdateContextRequest) =>
+		request<ContextSchema>(`/contexts/${encodeURIComponent(id)}`, {
+			method: 'PUT',
+			body: JSON.stringify(body)
+		}),
+	deleteContext: (id: string) =>
+		request<void>(`/contexts/${encodeURIComponent(id)}`, { method: 'DELETE' })
 };
