@@ -1,4 +1,4 @@
-.PHONY: help web web-dev web-install build run docker-up clean
+.PHONY: help web web-dev web-install build run docker-up db-reset clean
 
 help:
 	@echo "Targets:"
@@ -8,6 +8,7 @@ help:
 	@echo "  build        web + go build (produces a single binary with embedded UI)"
 	@echo "  run          go run the server against the local Postgres in docker-compose"
 	@echo "  docker-up    docker compose up (hot-reload Go, with Postgres)"
+	@echo "  db-reset     wipe the local Postgres volume and re-apply schema.sql"
 	@echo "  clean        remove build artifacts"
 
 web-install:
@@ -27,6 +28,11 @@ run:
 
 docker-up:
 	docker compose up
+
+db-reset:
+	docker compose rm -sfv db
+	docker volume rm flagcel_db-data 2>/dev/null || true
+	docker compose up -d db
 
 clean:
 	rm -rf bin web/build web/.svelte-kit
