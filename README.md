@@ -1,4 +1,4 @@
-# Flagcel(l)
+# Flagcel
 
 Self-hosted feature flag service with [CEL](https://github.com/google/cel-spec)-based targeting rules.
 
