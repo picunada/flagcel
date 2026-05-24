@@ -8,14 +8,24 @@ import (
 	"syscall"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 
 	v1 "github.com/picunada/flagcel/internal/api/http/v1"
 	"github.com/picunada/flagcel/internal/config"
 	"github.com/picunada/flagcel/internal/service"
 	"github.com/picunada/flagcel/internal/store/postgres"
+	"github.com/picunada/flagcel/internal/store/postgres/migrations"
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "migrate" {
+		runMigrate(os.Args[2:])
+		return
+	}
+	runServer()
+}
+
+func runServer() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -39,6 +49,18 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("database connected")
+
+	if cfg.MigrateOnStartup {
+		logger.Info("applying migrations")
+		db := stdlib.OpenDBFromPool(pool)
+		if err := migrations.Up(ctx, db); err != nil {
+			logger.Error("migrate up", "err", err)
+			os.Exit(1)
+		}
+		_ = db.Close()
+		logger.Info("migrations applied")
+	}
+
 	store := postgres.NewStore(pool)
 
 	flagSvc := service.NewFlagService(store)

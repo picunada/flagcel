@@ -7,10 +7,11 @@ import (
 )
 
 type Config struct {
-	Port        uint16 `env:"PORT" envDefault:"8080"`
-	DatabaseURL string `env:"DATABASE_URL,required"`
-	LogLevel    string `env:"LOG_LEVEL" envDefault:"info"`
-	LogFormat   string `env:"LOG_FORMAT" envDefault:"json"`
+	Port             uint16 `env:"PORT" envDefault:"8080"`
+	DatabaseURL      string `env:"DATABASE_URL,required"`
+	LogLevel         string `env:"LOG_LEVEL" envDefault:"info"`
+	LogFormat        string `env:"LOG_FORMAT" envDefault:"json"`
+	MigrateOnStartup bool   `env:"MIGRATE_ON_STARTUP" envDefault:"true"`
 
 	HTTP struct {
 		ReadTimeout     time.Duration `env:"READ_TIMEOUT" envDefault:"5s"`

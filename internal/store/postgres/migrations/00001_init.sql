@@ -1,3 +1,4 @@
+-- +goose Up
 CREATE TABLE IF NOT EXISTS contexts (
     id          UUID        PRIMARY KEY,
     name        TEXT        NOT NULL UNIQUE,
@@ -28,3 +29,9 @@ CREATE TABLE IF NOT EXISTS rules (
 
 CREATE INDEX IF NOT EXISTS idx_rules_flag_key_position
     ON rules(flag_key, position);
+
+-- +goose Down
+DROP INDEX IF EXISTS idx_rules_flag_key_position;
+DROP TABLE IF EXISTS rules;
+DROP TABLE IF EXISTS flags;
+DROP TABLE IF EXISTS contexts;
