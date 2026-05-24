@@ -4,9 +4,10 @@ import (
 	"crypto/sha1"
 	"encoding/binary"
 	"fmt"
+	"log/slog"
 )
 
-func (e *Engine) bucket(flagKey string, user UserContext, rollout Rollout) bool {
+func (e *Engine) bucket(flagKey string, user DataContext, rollout Rollout) bool {
 	// Trivial cases
 	if rollout.Percentage >= 100 {
 		return true
@@ -26,6 +27,7 @@ func (e *Engine) bucket(flagKey string, user UserContext, rollout Rollout) bool 
 		// Return false (treat as "not in rollout") rather than picking
 		// a default, because picking arbitrarily would violate the
 		// determinism guarantee.
+		slog.Info("bucket: missing bucket by key/value in context")
 		return false
 	}
 

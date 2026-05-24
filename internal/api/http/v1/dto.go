@@ -64,3 +64,16 @@ type UpdateContextRequest struct {
 	Description string            `json:"description"`
 	Fields      []ContextFieldDTO `json:"fields"`
 }
+
+type EvalRequest struct {
+	Context map[string]any `json:"context"`
+}
+
+type EvalResponse struct {
+	Key   string `json:"key"`
+	Value bool   `json:"value"`
+}
+
+type EvalAllResponse struct {
+	Flags map[string]bool `json:"flags"`
+}

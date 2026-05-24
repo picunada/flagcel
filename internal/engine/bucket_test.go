@@ -7,14 +7,14 @@ func TestEngine_bucket(t *testing.T) {
 		name string // description of this test case
 		// Named input parameters for target function.
 		flagKey string
-		user    UserContext
+		user    DataContext
 		rollout Rollout
 		want    bool
 	}{
 		{
 			name:    "bucket returns false when rollout percentage is 0",
 			flagKey: "",
-			user:    UserContext{},
+			user:    DataContext{},
 			rollout: Rollout{
 				Percentage: 0,
 			},
@@ -23,7 +23,7 @@ func TestEngine_bucket(t *testing.T) {
 		{
 			name:    "bucket returns true when rollout percentage is 100",
 			flagKey: "",
-			user:    UserContext{},
+			user:    DataContext{},
 			rollout: Rollout{
 				Percentage: 100,
 			},
@@ -32,7 +32,7 @@ func TestEngine_bucket(t *testing.T) {
 		{
 			name:    "bucket returns false when rollout bucketBy is set to not-existing field in user context",
 			flagKey: "test-flag",
-			user:    UserContext{},
+			user:    DataContext{},
 			rollout: Rollout{
 				BucketBy: "non-existing-field",
 			},

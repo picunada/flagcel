@@ -12,6 +12,7 @@ import (
 
 	v1 "github.com/picunada/flagcel/internal/api/http/v1"
 	"github.com/picunada/flagcel/internal/config"
+	"github.com/picunada/flagcel/internal/engine"
 	"github.com/picunada/flagcel/internal/service"
 	"github.com/picunada/flagcel/internal/store/postgres"
 	"github.com/picunada/flagcel/internal/store/postgres/migrations"
@@ -63,16 +64,24 @@ func runServer() {
 
 	store := postgres.NewStore(pool)
 
+	celEnv, err := engine.NewCELEnv()
+	if err != nil {
+		logger.Error("init cel env", "err", err)
+		os.Exit(1)
+	}
+	eng := engine.NewEngine(celEnv)
+
 	flagSvc := service.NewFlagService(store)
 	ruleSvc := service.NewRuleService(store)
 	ctxSvc := service.NewContextService(store)
+	evalSvc := service.NewEvalService(store, eng)
 	srv := v1.NewServer(v1.Config{
 		Port:            cfg.Port,
 		ReadTimeout:     cfg.HTTP.ReadTimeout,
 		WriteTimeout:    cfg.HTTP.WriteTimeout,
 		IdleTimeout:     cfg.HTTP.IdleTimeout,
 		ShutdownTimeout: cfg.HTTP.ShutdownTimeout,
-	}, flagSvc, ruleSvc, ctxSvc, logger)
+	}, flagSvc, ruleSvc, ctxSvc, evalSvc, logger)
 
 	if err := srv.Start(ctx); err != nil {
 		slog.Error("http server", "err", err)

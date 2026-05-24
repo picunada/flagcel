@@ -11,6 +11,7 @@ type Handlers struct {
 	Flags    *FlagsHandler
 	Rules    *RulesHandler
 	Contexts *ContextsHandler
+	Eval     *EvalHandler
 }
 
 func NewRouter(h *Handlers) http.Handler {
@@ -18,6 +19,7 @@ func NewRouter(h *Handlers) http.Handler {
 	h.Flags.Register(v1)
 	h.Rules.Register(v1)
 	h.Contexts.Register(v1)
+	h.Eval.Register(v1)
 
 	root := http.NewServeMux()
 	root.Handle("/api/v1/", http.StripPrefix("/api/v1", v1))
