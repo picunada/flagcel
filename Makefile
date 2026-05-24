@@ -1,5 +1,6 @@
 .PHONY: help web web-dev web-install build run docker-up db-reset clean \
-        migrate-up migrate-down migrate-status migrate-version
+        migrate-up migrate-down migrate-status migrate-version \
+        bench bench-cpu bench-mem loadtest pprof-cpu pprof-cpu-loaded pprof-heap
 
 help:
 	@echo "Targets:"
@@ -15,6 +16,15 @@ help:
 	@echo "  migrate-status  print migration status"
 	@echo "  migrate-version print the current schema version"
 	@echo "  clean           remove build artifacts"
+	@echo ""
+	@echo "Performance:"
+	@echo "  bench           run engine benchmarks (-benchmem)"
+	@echo "  bench-cpu       run engine benchmarks with a CPU profile -> cpu.prof"
+	@echo "  bench-mem       run engine benchmarks with a heap profile -> mem.prof"
+	@echo "  loadtest        run k6 load test against http://localhost:8080"
+	@echo "  pprof-cpu       capture CPU profile (run loadtest in parallel for non-empty output)"
+	@echo "  pprof-cpu-loaded  same, but starts k6 in the background for you"
+	@echo "  pprof-heap      capture heap snapshot (no load required)"
 
 web-install:
 	pnpm --dir web install
@@ -53,3 +63,53 @@ migrate-version:
 
 clean:
 	rm -rf bin web/build web/.svelte-kit
+
+# --- Performance ---------------------------------------------------------
+
+BENCH ?= .
+BENCHTIME ?= 1s
+PPROF_ADDR ?= http://localhost:16000
+LOAD_BASE_URL ?= http://localhost:8080
+LOAD_FLAG_KEY ?= new-sidebar
+LOAD_SCENARIO ?= steady
+
+bench:
+	go test -run='^$$' -bench='$(BENCH)' -benchtime=$(BENCHTIME) -benchmem ./internal/engine/...
+
+bench-cpu:
+	go test -run='^$$' -bench='$(BENCH)' -benchtime=$(BENCHTIME) -benchmem \
+		-cpuprofile=cpu.prof -o engine.test ./internal/engine
+	@echo "profile: cpu.prof  (open with: go tool pprof -http=:0 engine.test cpu.prof)"
+
+bench-mem:
+	go test -run='^$$' -bench='$(BENCH)' -benchtime=$(BENCHTIME) -benchmem \
+		-memprofile=mem.prof -o engine.test ./internal/engine
+	@echo "profile: mem.prof  (open with: go tool pprof -http=:0 engine.test mem.prof)"
+
+loadtest:
+	k6 run \
+		-e BASE_URL=$(LOAD_BASE_URL) \
+		-e FLAG_KEY=$(LOAD_FLAG_KEY) \
+		-e SCENARIO=$(LOAD_SCENARIO) \
+		scripts/load/eval.js
+
+PPROF_SECONDS ?= 30
+
+pprof-cpu:
+	@echo "Sampling CPU for $(PPROF_SECONDS)s from $(PPROF_ADDR)."
+	@echo "Make sure load is hitting the API (run 'make loadtest' in another shell)."
+	go tool pprof -http=:2317 "$(PPROF_ADDR)/debug/pprof/profile?seconds=$(PPROF_SECONDS)"
+
+pprof-heap:
+	go tool pprof -http=:2317 "$(PPROF_ADDR)/debug/pprof/heap"
+
+# Convenience: run load in the background while pprof samples the CPU.
+# Auto-stops k6 when sampling ends.
+pprof-cpu-loaded:
+	@echo "Starting k6 in background, then sampling CPU for $(PPROF_SECONDS)s."
+	@k6 run -e BASE_URL=$(LOAD_BASE_URL) -e FLAG_KEY=$(LOAD_FLAG_KEY) \
+		-e SCENARIO=steady -e DURATION=$$(($(PPROF_SECONDS)+5))s \
+		scripts/load/eval.js >/tmp/k6-pprof.log 2>&1 & \
+		K6_PID=$$!; \
+		go tool pprof -http=:2317 "$(PPROF_ADDR)/debug/pprof/profile?seconds=$(PPROF_SECONDS)"; \
+		kill $$K6_PID 2>/dev/null || true

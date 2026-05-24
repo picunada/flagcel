@@ -1,3 +1,4 @@
 [tools]
 go = "latest"
+k6 = "latest"
 sqlc = "latest"

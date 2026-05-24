@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 
+	"github.com/picunada/flagcel/internal/api/http/debug"
 	v1 "github.com/picunada/flagcel/internal/api/http/v1"
 	"github.com/picunada/flagcel/internal/config"
 	"github.com/picunada/flagcel/internal/engine"
@@ -82,6 +83,15 @@ func runServer() {
 		IdleTimeout:     cfg.HTTP.IdleTimeout,
 		ShutdownTimeout: cfg.HTTP.ShutdownTimeout,
 	}, flagSvc, ruleSvc, ctxSvc, evalSvc, logger)
+
+	if cfg.DebugAddr != "" {
+		dbg := debug.NewServer(cfg.DebugAddr, logger)
+		go func() {
+			if err := dbg.Start(ctx, cfg.HTTP.ShutdownTimeout); err != nil {
+				logger.Error("debug server", "err", err)
+			}
+		}()
+	}
 
 	if err := srv.Start(ctx); err != nil {
 		slog.Error("http server", "err", err)

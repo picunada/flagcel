@@ -34,7 +34,7 @@ func (e *Engine) Evaluate(flag *Flag, data DataContext) bool {
 			continue
 		}
 		if !matches {
-			slog.Info("evaluate: rule did not match", "rule", rule)
+			slog.Debug("evaluate: rule did not match", "rule", rule)
 			continue
 		}
 

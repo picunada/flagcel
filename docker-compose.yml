@@ -1,44 +1,46 @@
 services:
-    app:
-        build:
-            context: .
-            dockerfile: Dockerfile.dev
-        ports:
-            - "8080:8080"
-        volumes:
-            - .:/app
-            - go-mod-cache:/go/pkg/mod
-            - go-build-cache:/root/.cache/go-build
-        environment:
-            DATABASE_URL: postgres://flagcel:flagcel@db:5432/flagcel?sslmode=disable
-            PORT: 8080
-            LOG_LEVEL: debug
-            LOG_FORMAT: text
-        depends_on:
-            db:
-                condition: service_healthy
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8080:8080"
+      - "16000:16000"
+    volumes:
+      - .:/app
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+    environment:
+      DATABASE_URL: postgres://flagcel:flagcel@db:5432/flagcel?sslmode=disable
+      PORT: 8080
+      LOG_LEVEL: debug
+      LOG_FORMAT: text
+      DEBUG_ADDR: ":16000"
+    depends_on:
+      db:
+        condition: service_healthy
 
-    db:
-        image: postgres:17-alpine
-        ports:
-            - "5432:5432"
-        environment:
-            POSTGRES_USER: flagcel
-            POSTGRES_PASSWORD: flagcel
-            POSTGRES_DB: flagcel
-        volumes:
-            - db-data:/var/lib/postgresql/data
-        healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U flagcel -d flagcel"]
-            interval: 2s
-            timeout: 3s
-            retries: 10
+  db:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: flagcel
+      POSTGRES_PASSWORD: flagcel
+      POSTGRES_DB: flagcel
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flagcel -d flagcel"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
 
 volumes:
-    db-data:
-    go-mod-cache:
-    go-build-cache:
+  db-data:
+  go-mod-cache:
+  go-build-cache:
 
 networks:
-    default:
-        name: flagcel-net
+  default:
+    name: flagcel-net

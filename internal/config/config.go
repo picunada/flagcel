@@ -19,6 +19,10 @@ type Config struct {
 		IdleTimeout     time.Duration `env:"IDLE_TIMEOUT" envDefault:"10s"`
 		ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"15s"`
 	} `envPrefix:"HTTP_"`
+
+	// DebugAddr enables net/http/pprof on this address (e.g. ":6060").
+	// Empty disables the debug server. Bind to loopback in any shared env.
+	DebugAddr string `env:"DEBUG_ADDR" envDefault:""`
 }
 
 func Load() (*Config, error) {
