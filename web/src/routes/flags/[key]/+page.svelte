@@ -200,7 +200,7 @@
 	{#if loading}
 		<Card class="h-40 animate-pulse" />
 	{:else if error && !flag}
-		<Card class="p-8 text-center">
+		<Card class="motion-panel p-8 text-center">
 			<p class="text-sm text-destructive">{error}</p>
 			<Button class="mt-4" onclick={load}>retry</Button>
 		</Card>
@@ -221,7 +221,7 @@
 			</Button>
 		</header>
 
-		<Card class="divide-y divide-border/60">
+		<Card class="motion-panel divide-y divide-border/60">
 			<div class="flex items-center justify-between gap-4 p-5">
 				<div class="space-y-1">
 					<p class="font-mono text-sm">enabled</p>
@@ -278,7 +278,7 @@
 			</div>
 
 			{#if flag.rules.length === 0 && !creating}
-				<Card class="p-8 text-center">
+				<Card class="motion-panel p-8 text-center">
 					<p
 						class="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground"
 					>
@@ -289,11 +289,11 @@
 					</p>
 				</Card>
 			{:else}
-				<div class="space-y-2">
+				<div class="motion-list space-y-2">
 					{#each flag.rules as rule, i (rule.id)}
 						<Card class="p-5">
 							{#if editingRuleId === rule.id}
-								<div class="space-y-4">
+								<div class="motion-panel space-y-4">
 									<p
 										class="font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
 									>
@@ -383,7 +383,7 @@
 			{/if}
 
 			{#if creating}
-				<Card class="space-y-4 p-5">
+				<Card class="motion-panel space-y-4 p-5">
 					<p
 						class="font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
 					>

@@ -69,7 +69,7 @@
 	{#if loading}
 		<Card class="h-40 animate-pulse" />
 	{:else if loadError && !schema}
-		<Card class="p-8 text-center">
+		<Card class="motion-panel p-8 text-center">
 			<p class="text-sm text-destructive">{loadError}</p>
 			<Button class="mt-4" onclick={load}>retry</Button>
 		</Card>
@@ -90,7 +90,7 @@
 			</Button>
 		</header>
 
-		<Card class="p-8">
+		<Card class="motion-panel p-8">
 			<ContextEditor
 				{schema}
 				{submitting}

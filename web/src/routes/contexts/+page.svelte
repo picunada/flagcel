@@ -53,12 +53,12 @@
 			{/each}
 		</div>
 	{:else if error}
-		<Card class="p-8 text-center">
+		<Card class="motion-panel p-8 text-center">
 			<p class="text-sm text-destructive">{error}</p>
 			<Button class="mt-4" onclick={load}>retry</Button>
 		</Card>
 	{:else if contexts.length === 0}
-		<Card class="flex flex-col items-center gap-4 p-12 text-center">
+		<Card class="motion-panel flex flex-col items-center gap-4 p-12 text-center">
 			<p class="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
 				[ no contexts yet ]
 			</p>
@@ -70,7 +70,7 @@
 			</Button>
 		</Card>
 	{:else}
-		<div class="grid gap-3 sm:grid-cols-2">
+		<div class="motion-list grid gap-3 sm:grid-cols-2">
 			{#each contexts as ctx (ctx.id)}
 				<a href="/contexts/{encodeURIComponent(ctx.id)}" class="group block">
 					<Card hoverable class="flex h-full flex-col gap-3 p-5">

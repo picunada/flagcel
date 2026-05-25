@@ -30,8 +30,8 @@
 	<button
 		type="button"
 		onclick={() => set(false)}
-		class="transition-colors {!value
-			? 'text-foreground'
+		class="motion-press transition-all duration-200 ease-out {!value
+			? 'scale-105 text-foreground'
 			: 'text-muted-foreground hover:text-foreground/80'}"
 	>
 		false
@@ -40,8 +40,8 @@
 	<button
 		type="button"
 		onclick={() => set(true)}
-		class="transition-colors {value
-			? 'text-success [text-shadow:0_0_12px_color-mix(in_oklab,var(--color-success)_60%,transparent)]'
+		class="motion-press transition-all duration-200 ease-out {value
+			? 'scale-105 text-success [text-shadow:0_0_12px_color-mix(in_oklab,var(--color-success)_60%,transparent)]'
 			: 'text-muted-foreground hover:text-foreground/80'}"
 	>
 		true

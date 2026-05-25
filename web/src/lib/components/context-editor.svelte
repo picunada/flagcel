@@ -117,7 +117,7 @@
 			</Button>
 		</div>
 
-		<div class="space-y-2">
+		<div class="motion-list space-y-2">
 			{#each fields as field, i (i)}
 				<div class="flex items-center gap-2">
 					<Input
@@ -127,7 +127,7 @@
 					/>
 					<select
 						bind:value={fields[i].type}
-						class="h-9 rounded-sm border border-input bg-transparent px-2 font-mono text-xs uppercase tracking-[0.1em] transition-colors focus-visible:outline-none focus-visible:border-[rgba(255,255,255,0.36)]"
+						class="h-9 rounded-sm border border-input bg-transparent px-2 font-mono text-xs uppercase tracking-[0.1em] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:border-[rgba(255,255,255,0.36)] focus-visible:bg-[rgba(255,255,255,0.025)]"
 					>
 						{#each types as t (t)}
 							<option value={t}>{t}</option>

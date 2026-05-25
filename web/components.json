@@ -1,0 +1,23 @@
+{
+	"$schema": "https://ui.shadcn.com/schema.json",
+	"style": "default",
+	"rsc": false,
+	"tsx": false,
+	"tailwind": {
+		"config": "tailwind.config.js",
+		"css": "src/app.css",
+		"baseColor": "neutral",
+		"cssVariables": true,
+		"prefix": ""
+	},
+	"aliases": {
+		"components": "$lib/components",
+		"utils": "$lib/utils",
+		"ui": "$lib/components/ui",
+		"lib": "$lib",
+		"hooks": "$lib/hooks"
+	},
+	"registries": {
+		"@sveltebits": "https://sveltebits.xyz/r/{name}.json"
+	}
+}

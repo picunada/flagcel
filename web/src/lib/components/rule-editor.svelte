@@ -174,7 +174,7 @@
 			{#if acOpen && suggestions.length > 0}
 				<div
 					role="listbox"
-					class="glass-panel absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-sm py-1 shadow-lg"
+					class="glass-panel motion-pop absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-sm py-1 shadow-lg"
 				>
 					{#each suggestions as s, i (s.path)}
 						<button

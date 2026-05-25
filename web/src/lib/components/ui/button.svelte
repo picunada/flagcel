@@ -2,11 +2,11 @@
 	import { tv, type VariantProps } from 'tailwind-variants';
 
 	export const buttonVariants = tv({
-		base: 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm font-mono text-xs uppercase tracking-[0.1em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40',
+		base: 'motion-press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm font-mono text-xs uppercase tracking-[0.1em] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40',
 		variants: {
 			variant: {
 				default:
-					'border border-[rgba(255,255,255,0.16)] bg-transparent text-foreground hover:border-[rgba(255,255,255,0.36)] hover:-translate-y-px hover:bg-[rgba(255,255,255,0.04)]',
+					'border border-[rgba(255,255,255,0.16)] bg-transparent text-foreground hover:border-[rgba(255,255,255,0.36)] hover:bg-[rgba(255,255,255,0.04)]',
 				solid:
 					'bg-foreground text-primary-foreground hover:bg-foreground/90',
 				ghost:
