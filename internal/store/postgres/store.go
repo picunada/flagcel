@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -324,6 +325,152 @@ func (s *Store) DeleteContext(ctx context.Context, id string) error {
 	return nil
 }
 
+func (s *Store) UpsertUserByOIDC(ctx context.Context, user *core.User) (*core.User, error) {
+	uid, err := stringToUUID(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user id: %w", err)
+	}
+	row, err := s.q.UpsertUserByOIDC(ctx, sqlcgen.UpsertUserByOIDCParams{
+		ID:          uid,
+		OidcSubject: user.OIDCSubject,
+		Email:       user.Email,
+		Name:        user.Name,
+		Admin:       user.Admin,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return userRowToCore(row.ID, row.OidcSubject, row.Email, row.Name, row.Admin), nil
+}
+
+func (s *Store) UpsertLocalAdmin(ctx context.Context, user *core.User, passwordHash string) (*core.User, error) {
+	uid, err := stringToUUID(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user id: %w", err)
+	}
+	row, err := s.q.UpsertLocalAdmin(ctx, sqlcgen.UpsertLocalAdminParams{
+		ID:           uid,
+		OidcSubject:  user.OIDCSubject,
+		Email:        user.Email,
+		Name:         user.Name,
+		PasswordHash: passwordHash,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return userRowToCore(row.ID, row.OidcSubject, row.Email, row.Name, row.Admin), nil
+}
+
+func (s *Store) GetUserByEmail(ctx context.Context, email string) (*core.User, string, error) {
+	row, err := s.q.GetUserByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, "", core.ErrInvalidCredentials
+		}
+		return nil, "", err
+	}
+	return userRowToCore(row.ID, row.OidcSubject, row.Email, row.Name, row.Admin), row.PasswordHash, nil
+}
+
+func (s *Store) CreateSession(ctx context.Context, id, userID, tokenHash string, expiresAt time.Time) error {
+	sessionID, err := stringToUUID(id)
+	if err != nil {
+		return fmt.Errorf("invalid session id: %w", err)
+	}
+	uid, err := stringToUUID(userID)
+	if err != nil {
+		return fmt.Errorf("invalid user id: %w", err)
+	}
+	return s.q.CreateSession(ctx, sqlcgen.CreateSessionParams{
+		ID:        sessionID,
+		UserID:    uid,
+		TokenHash: tokenHash,
+		ExpiresAt: timeToTimestamptz(expiresAt),
+	})
+}
+
+func (s *Store) GetUserBySessionHash(ctx context.Context, tokenHash string) (*core.User, error) {
+	row, err := s.q.GetUserBySessionHash(ctx, tokenHash)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, core.ErrSessionNotFound
+		}
+		return nil, err
+	}
+	return userRowToCore(row.ID, row.OidcSubject, row.Email, row.Name, row.Admin), nil
+}
+
+func (s *Store) DeleteSessionByHash(ctx context.Context, tokenHash string) error {
+	return s.q.DeleteSessionByHash(ctx, tokenHash)
+}
+
+func (s *Store) DeleteExpiredSessions(ctx context.Context) error {
+	return s.q.DeleteExpiredSessions(ctx)
+}
+
+func (s *Store) CreateAPIKey(ctx context.Context, id, name, prefix, secretHash string) (*core.APIKey, error) {
+	keyID, err := stringToUUID(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid api key id: %w", err)
+	}
+	row, err := s.q.CreateAPIKey(ctx, sqlcgen.CreateAPIKeyParams{
+		ID:         keyID,
+		Name:       name,
+		Prefix:     prefix,
+		SecretHash: secretHash,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return apiKeyRowToCore(row.ID, row.Name, row.Prefix, row.CreatedAt, row.LastUsedAt, row.RevokedAt), nil
+}
+
+func (s *Store) ListAPIKeys(ctx context.Context) ([]*core.APIKey, error) {
+	rows, err := s.q.ListAPIKeys(ctx)
+	if err != nil {
+		return nil, err
+	}
+	keys := make([]*core.APIKey, 0, len(rows))
+	for _, row := range rows {
+		keys = append(keys, apiKeyRowToCore(row.ID, row.Name, row.Prefix, row.CreatedAt, row.LastUsedAt, row.RevokedAt))
+	}
+	return keys, nil
+}
+
+func (s *Store) GetAPIKeyByHash(ctx context.Context, secretHash string) (*core.APIKey, error) {
+	row, err := s.q.GetActiveAPIKeyByHash(ctx, secretHash)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, core.ErrAPIKeyNotFound
+		}
+		return nil, err
+	}
+	return apiKeyRowToCore(row.ID, row.Name, row.Prefix, row.CreatedAt, row.LastUsedAt, row.RevokedAt), nil
+}
+
+func (s *Store) RevokeAPIKey(ctx context.Context, id string) error {
+	keyID, err := stringToUUID(id)
+	if err != nil {
+		return core.ErrAPIKeyNotFound
+	}
+	n, err := s.q.RevokeAPIKey(ctx, keyID)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return core.ErrAPIKeyNotFound
+	}
+	return nil
+}
+
+func (s *Store) TouchAPIKey(ctx context.Context, id string) error {
+	keyID, err := stringToUUID(id)
+	if err != nil {
+		return core.ErrAPIKeyNotFound
+	}
+	return s.q.TouchAPIKey(ctx, keyID)
+}
+
 func ruleRowToCore(r sqlcgen.Rule) core.Rule {
 	return core.Rule{
 		ID:         r.ID,
@@ -351,6 +498,27 @@ func contextRowToCore(id pgtype.UUID, name, description string, raw []byte) (*co
 		Description: description,
 		Fields:      fields,
 	}, nil
+}
+
+func userRowToCore(id pgtype.UUID, oidcSubject, email, name string, admin bool) *core.User {
+	return &core.User{
+		ID:          uuidToString(id),
+		OIDCSubject: oidcSubject,
+		Email:       email,
+		Name:        name,
+		Admin:       admin,
+	}
+}
+
+func apiKeyRowToCore(id pgtype.UUID, name, prefix string, createdAt, lastUsedAt, revokedAt pgtype.Timestamptz) *core.APIKey {
+	return &core.APIKey{
+		ID:         uuidToString(id),
+		Name:       name,
+		Prefix:     prefix,
+		CreatedAt:  timestamptzToTime(createdAt),
+		LastUsedAt: timestamptzToTimePtr(lastUsedAt),
+		RevokedAt:  timestamptzToTimePtr(revokedAt),
+	}
 }
 
 func marshalFields(fields []core.ContextField) ([]byte, error) {
@@ -389,6 +557,24 @@ func stringPtrToUUID(s *string) (pgtype.UUID, error) {
 		return pgtype.UUID{}, nil
 	}
 	return stringToUUID(*s)
+}
+
+func timeToTimestamptz(t time.Time) pgtype.Timestamptz {
+	return pgtype.Timestamptz{Time: t, Valid: true}
+}
+
+func timestamptzToTime(t pgtype.Timestamptz) time.Time {
+	if !t.Valid {
+		return time.Time{}
+	}
+	return t.Time
+}
+
+func timestamptzToTimePtr(t pgtype.Timestamptz) *time.Time {
+	if !t.Valid {
+		return nil
+	}
+	return &t.Time
 }
 
 func isUniqueViolation(err error) bool {

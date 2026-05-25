@@ -3,15 +3,18 @@ module github.com/picunada/flagcel
 go 1.26.2
 
 require (
+	github.com/caarlos0/env/v11 v11.4.1
+	github.com/coreos/go-oidc/v3 v3.18.0
 	github.com/google/cel-go v0.28.0
 	github.com/jackc/pgx/v5 v5.9.2
+	github.com/pressly/goose/v3 v3.27.1
+	golang.org/x/crypto v0.50.0
+	golang.org/x/oauth2 v0.36.0
 )
 
 require (
-	github.com/caarlos0/env/v11 v11.4.1 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
-	github.com/pressly/goose/v3 v3.27.1 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 )

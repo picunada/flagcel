@@ -20,6 +20,20 @@ type Config struct {
 		ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"15s"`
 	} `envPrefix:"HTTP_"`
 
+	Auth struct {
+		OIDCIssuerURL     string        `env:"OIDC_ISSUER_URL" envDefault:""`
+		OIDCClientID      string        `env:"OIDC_CLIENT_ID" envDefault:""`
+		OIDCClientSecret  string        `env:"OIDC_CLIENT_SECRET" envDefault:""`
+		OIDCRedirectURL   string        `env:"OIDC_REDIRECT_URL" envDefault:""`
+		AdminEmails       string        `env:"ADMIN_EMAILS" envDefault:""`
+		BootstrapEmail    string        `env:"BOOTSTRAP_ADMIN_EMAIL" envDefault:""`
+		BootstrapPassword string        `env:"BOOTSTRAP_ADMIN_PASSWORD" envDefault:""`
+		BootstrapName     string        `env:"BOOTSTRAP_ADMIN_NAME" envDefault:"Admin"`
+		SessionSecret     string        `env:"SESSION_SECRET" envDefault:""`
+		CookieSecure      bool          `env:"COOKIE_SECURE" envDefault:"false"`
+		SessionTTL        time.Duration `env:"SESSION_TTL" envDefault:"24h"`
+	} `envPrefix:"AUTH_"`
+
 	// DebugAddr enables net/http/pprof on this address (e.g. ":6060").
 	// Empty disables the debug server. Bind to loopback in any shared env.
 	DebugAddr string `env:"DEBUG_ADDR" envDefault:""`

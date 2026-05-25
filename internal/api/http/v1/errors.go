@@ -38,6 +38,31 @@ var (
 		Code:    "CONTEXT_NAME_TAKEN",
 		Message: "Context name already in use",
 	}
+	ErrUnauthorized = &APIError{
+		Status:  http.StatusUnauthorized,
+		Code:    "UNAUTHORIZED",
+		Message: "Authentication required",
+	}
+	ErrInvalidCredentials = &APIError{
+		Status:  http.StatusUnauthorized,
+		Code:    "INVALID_CREDENTIALS",
+		Message: "Invalid email or password",
+	}
+	ErrForbidden = &APIError{
+		Status:  http.StatusForbidden,
+		Code:    "FORBIDDEN",
+		Message: "Access denied",
+	}
+	ErrAPIKeyNotFound = &APIError{
+		Status:  http.StatusNotFound,
+		Code:    "API_KEY_NOT_FOUND",
+		Message: "API key not found",
+	}
+	ErrAuthNotConfigured = &APIError{
+		Status:  http.StatusServiceUnavailable,
+		Code:    "AUTH_NOT_CONFIGURED",
+		Message: "Auth is not configured",
+	}
 	ErrInternal = &APIError{
 		Status:  http.StatusInternalServerError,
 		Code:    "INTERNAL_ERROR",
@@ -91,6 +116,16 @@ func toAPIError(err error) *APIError {
 		return ErrContextNotFound
 	case errors.Is(err, core.ErrContextNameTaken):
 		return ErrContextNameTaken
+	case errors.Is(err, core.ErrUserNotAllowed):
+		return ErrForbidden
+	case errors.Is(err, core.ErrInvalidCredentials):
+		return ErrInvalidCredentials
+	case errors.Is(err, core.ErrSessionNotFound):
+		return ErrUnauthorized
+	case errors.Is(err, core.ErrAPIKeyNotFound):
+		return ErrAPIKeyNotFound
+	case errors.Is(err, core.ErrAuthNotConfigured):
+		return ErrAuthNotConfigured
 	default:
 		return ErrInternal
 	}

@@ -8,15 +8,35 @@ servers:
     description: Local dev
 
 tags:
+  - name: Auth
   - name: Flags
   - name: Rules
+  - name: Contexts
+  - name: Evaluation
+  - name: API Keys
 
 paths:
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get the current admin session
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Current auth state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMeEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /flags:
     get:
       tags: [Flags]
       summary: List flags
-      operationId: listFlags
+      security:
+        - sessionCookie: []
       responses:
         "200":
           description: Flags list
@@ -24,14 +44,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FlagListEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "500": { $ref: "#/components/responses/InternalError" }
     post:
       tags: [Flags]
       summary: Create or replace a flag
-      description: |
-        Upserts a flag and replaces all of its rules with the rules supplied
-        in the request body.
-      operationId: createFlag
+      security:
+        - sessionCookie: []
       requestBody:
         required: true
         content:
@@ -45,6 +64,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FlagEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "422": { $ref: "#/components/responses/InvalidRequest" }
         "500": { $ref: "#/components/responses/InternalError" }
 
@@ -54,7 +74,8 @@ paths:
     get:
       tags: [Flags]
       summary: Get a flag by key
-      operationId: getFlag
+      security:
+        - sessionCookie: []
       responses:
         "200":
           description: Flag
@@ -62,15 +83,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FlagEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/FlagNotFound" }
         "500": { $ref: "#/components/responses/InternalError" }
     delete:
       tags: [Flags]
       summary: Delete a flag and all of its rules
-      operationId: deleteFlag
+      security:
+        - sessionCookie: []
       responses:
         "204":
           description: Flag deleted
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "500": { $ref: "#/components/responses/InternalError" }
 
   /flags/{key}/rules:
@@ -79,7 +103,8 @@ paths:
     get:
       tags: [Rules]
       summary: List rules for a flag
-      operationId: listRules
+      security:
+        - sessionCookie: []
       responses:
         "200":
           description: Rules list
@@ -87,13 +112,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RuleListEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/FlagNotFound" }
         "500": { $ref: "#/components/responses/InternalError" }
     post:
       tags: [Rules]
       summary: Create a rule
-      description: Appends a new rule to the end of the flag's rule list. ID is server-generated.
-      operationId: createRule
+      security:
+        - sessionCookie: []
       requestBody:
         required: true
         content:
@@ -107,6 +133,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RuleEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "422": { $ref: "#/components/responses/InvalidRequest" }
         "500": { $ref: "#/components/responses/InternalError" }
 
@@ -116,10 +143,8 @@ paths:
     post:
       tags: [Rules]
       summary: Reorder rules
-      description: |
-        Sets the rule positions to match the order of `rule_ids`. Every rule
-        must belong to the flag; unknown IDs return 404.
-      operationId: reorderRules
+      security:
+        - sessionCookie: []
       requestBody:
         required: true
         content:
@@ -129,6 +154,7 @@ paths:
       responses:
         "204":
           description: Rules reordered
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/RuleNotFound" }
         "422": { $ref: "#/components/responses/InvalidRequest" }
         "500": { $ref: "#/components/responses/InternalError" }
@@ -140,7 +166,8 @@ paths:
     get:
       tags: [Rules]
       summary: Get a rule
-      operationId: getRule
+      security:
+        - sessionCookie: []
       responses:
         "200":
           description: Rule
@@ -148,12 +175,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RuleEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/RuleNotFound" }
         "500": { $ref: "#/components/responses/InternalError" }
     put:
       tags: [Rules]
       summary: Update a rule
-      operationId: updateRule
+      security:
+        - sessionCookie: []
       requestBody:
         required: true
         content:
@@ -167,26 +196,214 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RuleEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/RuleNotFound" }
         "422": { $ref: "#/components/responses/InvalidRequest" }
         "500": { $ref: "#/components/responses/InternalError" }
     delete:
       tags: [Rules]
       summary: Delete a rule
-      operationId: deleteRule
+      security:
+        - sessionCookie: []
       responses:
         "204":
           description: Rule deleted
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/RuleNotFound" }
         "500": { $ref: "#/components/responses/InternalError" }
 
+  /contexts:
+    get:
+      tags: [Contexts]
+      summary: List context schemas
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Context list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextListEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Contexts]
+      summary: Create a context schema
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContextRequest"
+      responses:
+        "200":
+          description: Context created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/InvalidRequest" }
+
+  /contexts/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ContextID"
+    get:
+      tags: [Contexts]
+      summary: Get a context schema
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/ContextNotFound" }
+    put:
+      tags: [Contexts]
+      summary: Update a context schema
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContextRequest"
+      responses:
+        "200":
+          description: Context updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/ContextNotFound" }
+    delete:
+      tags: [Contexts]
+      summary: Delete a context schema
+      security:
+        - sessionCookie: []
+      responses:
+        "204":
+          description: Context deleted
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/ContextNotFound" }
+
+  /eval:
+    post:
+      tags: [Evaluation]
+      summary: Evaluate all flags
+      security:
+        - bearerAPIKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvalRequest"
+      responses:
+        "200":
+          description: Evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvalAllEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /eval/{key}:
+    parameters:
+      - $ref: "#/components/parameters/FlagKey"
+    post:
+      tags: [Evaluation]
+      summary: Evaluate one flag
+      security:
+        - bearerAPIKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvalRequest"
+      responses:
+        "200":
+          description: Evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvalEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/FlagNotFound" }
+
+  /api-keys:
+    get:
+      tags: [API Keys]
+      summary: List evaluation API keys
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: API keys
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIKeyListEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [API Keys]
+      summary: Create an evaluation API key
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAPIKeyRequest"
+      responses:
+        "200":
+          description: API key created; token is returned once
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateAPIKeyEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/InvalidRequest" }
+
+  /api-keys/{id}:
+    parameters:
+      - $ref: "#/components/parameters/APIKeyID"
+    delete:
+      tags: [API Keys]
+      summary: Revoke an evaluation API key
+      security:
+        - sessionCookie: []
+      responses:
+        "204":
+          description: API key revoked
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/APIKeyNotFound" }
+
 components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: flagcel_session
+    bearerAPIKey:
+      type: http
+      scheme: bearer
+
   parameters:
     FlagKey:
       name: key
       in: path
       required: true
-      description: Flag key
       schema:
         type: string
         example: new-checkout
@@ -194,12 +411,63 @@ components:
       name: id
       in: path
       required: true
-      description: Rule ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    ContextID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    APIKeyID:
+      name: id
+      in: path
+      required: true
       schema:
         type: string
         format: uuid
 
   schemas:
+    SuccessEnvelope:
+      type: object
+      required: [message, data]
+      properties:
+        message:
+          type: string
+          example: success
+        data: {}
+
+    User:
+      type: object
+      required: [id, email, admin]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        name: { type: string }
+        admin: { type: boolean }
+
+    AuthMe:
+      type: object
+      required: [auth_enabled, authenticated]
+      properties:
+        auth_enabled: { type: boolean }
+        mode:
+          type: string
+          enum: [oidc, password]
+        authenticated: { type: boolean }
+        user:
+          $ref: "#/components/schemas/User"
+
+    AuthMeEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/AuthMe"
+
     Rollout:
       type: object
       required: [percentage]
@@ -211,19 +479,15 @@ components:
           example: 25
         bucket_by:
           type: string
-          description: Field on the eval context used to bucket users for a stable rollout.
           example: user.id
 
     Rule:
       type: object
       required: [id, expression, rollout]
       properties:
-        id:
-          type: string
-          format: uuid
+        id: { type: string, format: uuid }
         expression:
           type: string
-          description: CEL expression evaluated against the eval context.
           example: "user.country == 'US'"
         rollout:
           $ref: "#/components/schemas/Rollout"
@@ -232,53 +496,45 @@ components:
       type: object
       required: [key, enabled, rules, default_value]
       properties:
-        key:
-          type: string
-          example: new-checkout
-        enabled:
-          type: boolean
+        key: { type: string, example: new-checkout }
+        enabled: { type: boolean }
         rules:
           type: array
           items:
             $ref: "#/components/schemas/Rule"
-        default_value:
-          type: boolean
+        default_value: { type: boolean }
+        context_id:
+          type: string
+          format: uuid
+          nullable: true
 
     CreateFlagRequest:
       type: object
       required: [key]
       properties:
-        key:
-          type: string
-        enabled:
-          type: boolean
-          default: false
+        key: { type: string }
+        enabled: { type: boolean, default: false }
         rules:
           type: array
           items:
             $ref: "#/components/schemas/CreateRuleRequest"
           default: []
-        default_value:
-          type: boolean
-          default: false
+        default_value: { type: boolean, default: false }
+        context_id:
+          type: string
+          format: uuid
+          nullable: true
 
     CreateRuleRequest:
       type: object
       required: [expression, rollout]
       properties:
-        expression:
-          type: string
+        expression: { type: string }
         rollout:
           $ref: "#/components/schemas/Rollout"
 
     UpdateRuleRequest:
-      type: object
-      required: [expression, rollout]
-      properties:
-        expression:
-          type: string
-        rollout:
-          $ref: "#/components/schemas/Rollout"
+      $ref: "#/components/schemas/CreateRuleRequest"
 
     ReorderRulesRequest:
       type: object
@@ -290,14 +546,88 @@ components:
             type: string
             format: uuid
 
-    SuccessEnvelope:
+    ContextField:
       type: object
-      required: [message, data]
+      required: [path, type]
       properties:
-        message:
+        path: { type: string, example: user.country }
+        type:
           type: string
-          example: success
-        data: {}
+          enum: [string, int, double, bool, timestamp, list, map]
+
+    Context:
+      type: object
+      required: [id, name, fields]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContextField"
+
+    CreateContextRequest:
+      type: object
+      required: [name, fields]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContextField"
+
+    EvalRequest:
+      type: object
+      required: [context]
+      properties:
+        context:
+          type: object
+          additionalProperties: true
+
+    EvalResponse:
+      type: object
+      required: [key, value]
+      properties:
+        key: { type: string }
+        value: { type: boolean }
+
+    EvalAllResponse:
+      type: object
+      required: [flags]
+      properties:
+        flags:
+          type: object
+          additionalProperties:
+            type: boolean
+
+    APIKey:
+      type: object
+      required: [id, name, prefix, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        prefix: { type: string, example: fc_vT4... }
+        created_at: { type: string, format: date-time }
+        last_used_at: { type: string, format: date-time, nullable: true }
+        revoked_at: { type: string, format: date-time, nullable: true }
+
+    CreateAPIKeyRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+
+    CreatedAPIKey:
+      allOf:
+        - $ref: "#/components/schemas/APIKey"
+        - type: object
+          required: [token]
+          properties:
+            token:
+              type: string
+              description: Raw bearer token. It is returned once.
 
     FlagEnvelope:
       allOf:
@@ -306,7 +636,6 @@ components:
           properties:
             data:
               $ref: "#/components/schemas/Flag"
-
     FlagListEnvelope:
       allOf:
         - $ref: "#/components/schemas/SuccessEnvelope"
@@ -316,7 +645,6 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Flag"
-
     RuleEnvelope:
       allOf:
         - $ref: "#/components/schemas/SuccessEnvelope"
@@ -324,7 +652,6 @@ components:
           properties:
             data:
               $ref: "#/components/schemas/Rule"
-
     RuleListEnvelope:
       allOf:
         - $ref: "#/components/schemas/SuccessEnvelope"
@@ -334,6 +661,52 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Rule"
+    ContextEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/Context"
+    ContextListEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/Context"
+    EvalEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/EvalResponse"
+    EvalAllEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/EvalAllResponse"
+    APIKeyListEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/APIKey"
+    CreateAPIKeyEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/CreatedAPIKey"
 
     APIError:
       type: object
@@ -344,8 +717,15 @@ components:
           enum:
             - FLAG_NOT_FOUND
             - RULE_NOT_FOUND
+            - CONTEXT_NOT_FOUND
+            - CONTEXT_NAME_TAKEN
+            - API_KEY_NOT_FOUND
             - INVALID_REQUEST
             - BAD_REQUEST
+            - AUTH_NOT_CONFIGURED
+            - INVALID_CREDENTIALS
+            - UNAUTHORIZED
+            - FORBIDDEN
             - INTERNAL_ERROR
         message:
           type: string
@@ -358,46 +738,49 @@ components:
           $ref: "#/components/schemas/APIError"
 
   responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: Authentication required
     FlagNotFound:
       description: Flag not found
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
-          example:
-            error:
-              code: FLAG_NOT_FOUND
-              message: Flag not found
-
     RuleNotFound:
       description: Rule not found
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
-          example:
-            error:
-              code: RULE_NOT_FOUND
-              message: Rule not found
-
+    ContextNotFound:
+      description: Context not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    APIKeyNotFound:
+      description: API key not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
     InvalidRequest:
       description: Request body failed validation
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
-          example:
-            error:
-              code: INVALID_REQUEST
-              message: expression is required
-
     InternalError:
       description: Internal server error
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
-          example:
-            error:
-              code: INTERNAL_ERROR
-              message: Internal server error
