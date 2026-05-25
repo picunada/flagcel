@@ -1,15 +1,17 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { api, APIError, type Flag } from '$lib/api';
+	import { invalidateAll } from '$app/navigation';
 	import Button from '$lib/components/ui/button.svelte';
 	import Card from '$lib/components/ui/card.svelte';
 	import Badge from '$lib/components/ui/badge.svelte';
 	import Input from '$lib/components/ui/input.svelte';
 	import SectionHeader from '$lib/components/ui/section-header.svelte';
 	import { Plus, Search } from 'lucide-svelte';
+	import type { PageProps } from './$types';
 
-	let flags = $state<Flag[]>([]);
-	let loading = $state(true);
+	let { data }: PageProps = $props();
+
+	const flags = $derived<Flag[]>(data.flags);
 	let error = $state<string | null>(null);
 	let query = $state('');
 
@@ -17,17 +19,12 @@
 		flags.filter((f) => f.key.toLowerCase().includes(query.toLowerCase()))
 	);
 
-	onMount(load);
-
-	async function load() {
-		loading = true;
+	async function refresh() {
 		error = null;
 		try {
-			flags = await api.listFlags();
+			await invalidateAll();
 		} catch (e) {
 			error = e instanceof APIError ? e.message : 'Failed to load flags';
-		} finally {
-			loading = false;
 		}
 	}
 </script>
@@ -63,16 +60,10 @@
 		</div>
 	</div>
 
-	{#if loading}
-		<div class="grid gap-3 sm:grid-cols-2">
-			{#each Array(4) as _, i (i)}
-				<Card class="h-32 animate-pulse" />
-			{/each}
-		</div>
-	{:else if error}
+	{#if error}
 		<Card class="motion-panel p-8 text-center">
 			<p class="text-sm text-destructive">{error}</p>
-			<Button variant="default" class="mt-4" onclick={load}>retry</Button>
+			<Button variant="default" class="mt-4" onclick={refresh}>retry</Button>
 		</Card>
 	{:else if filtered.length === 0}
 		<Card class="motion-panel flex flex-col items-center gap-4 p-12 text-center">

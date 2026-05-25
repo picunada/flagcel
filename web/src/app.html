@@ -1,13 +1,22 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en" class="dark no-intro" style="background:#0f0f0f">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="%sveltekit.assets%/favicon.svg?v=3" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="color-scheme" content="dark" />
+		<meta name="theme-color" content="#0f0f0f" />
 		<title>Flagcel</title>
+		<style>
+			html,body{background:#0f0f0f;color:#fff;margin:0;min-height:100%;font-family:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,Monaco,Consolas,monospace;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+			html.no-intro .motion-page,
+			html.no-intro .motion-panel,
+			html.no-intro .motion-pop,
+			html.no-intro .motion-list > *{animation:none!important;opacity:1!important;transform:none!important}
+		</style>
 		%sveltekit.head%
 	</head>
-	<body data-sveltekit-preload-data="hover" class="bg-background text-foreground antialiased">
+	<body data-sveltekit-preload-data="hover" class="bg-background text-foreground antialiased" style="background:#0f0f0f">
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>
