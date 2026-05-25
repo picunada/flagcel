@@ -76,13 +76,30 @@ func runServer() {
 	ruleSvc := service.NewRuleService(store)
 	ctxSvc := service.NewContextService(store)
 	evalSvc := service.NewEvalService(store, eng)
+	authSvc, err := service.NewAuthService(ctx, service.AuthConfig{
+		OIDCIssuerURL:     cfg.Auth.OIDCIssuerURL,
+		OIDCClientID:      cfg.Auth.OIDCClientID,
+		OIDCSecret:        cfg.Auth.OIDCClientSecret,
+		OIDCRedirectURL:   cfg.Auth.OIDCRedirectURL,
+		AdminEmails:       cfg.Auth.AdminEmails,
+		BootstrapEmail:    cfg.Auth.BootstrapEmail,
+		BootstrapPassword: cfg.Auth.BootstrapPassword,
+		BootstrapName:     cfg.Auth.BootstrapName,
+		SessionSecret:     cfg.Auth.SessionSecret,
+		CookieSecure:      cfg.Auth.CookieSecure,
+		SessionTTL:        cfg.Auth.SessionTTL,
+	}, store)
+	if err != nil {
+		logger.Error("init auth", "err", err)
+		os.Exit(1)
+	}
 	srv := v1.NewServer(v1.Config{
 		Port:            cfg.Port,
 		ReadTimeout:     cfg.HTTP.ReadTimeout,
 		WriteTimeout:    cfg.HTTP.WriteTimeout,
 		IdleTimeout:     cfg.HTTP.IdleTimeout,
 		ShutdownTimeout: cfg.HTTP.ShutdownTimeout,
-	}, flagSvc, ruleSvc, ctxSvc, evalSvc, logger)
+	}, flagSvc, ruleSvc, ctxSvc, evalSvc, authSvc, logger)
 
 	if cfg.DebugAddr != "" {
 		dbg := debug.NewServer(cfg.DebugAddr, logger)

@@ -87,3 +87,73 @@ WHERE id = $1;
 
 -- name: DeleteContext :execrows
 DELETE FROM contexts WHERE id = $1;
+
+-- name: UpsertUserByOIDC :one
+INSERT INTO users (id, oidc_subject, email, name, password_hash, admin, updated_at)
+VALUES ($1, $2, $3, $4, '', $5, NOW())
+ON CONFLICT (oidc_subject) DO UPDATE SET
+    email      = EXCLUDED.email,
+    name       = EXCLUDED.name,
+    admin      = EXCLUDED.admin,
+    updated_at = NOW()
+RETURNING id, oidc_subject, email, name, admin;
+
+-- name: UpsertLocalAdmin :one
+INSERT INTO users (id, oidc_subject, email, name, password_hash, admin, updated_at)
+VALUES ($1, $2, $3, $4, $5, TRUE, NOW())
+ON CONFLICT (oidc_subject) DO UPDATE SET
+    email         = EXCLUDED.email,
+    name          = EXCLUDED.name,
+    password_hash = EXCLUDED.password_hash,
+    admin         = TRUE,
+    updated_at    = NOW()
+RETURNING id, oidc_subject, email, name, admin;
+
+-- name: GetUserByEmail :one
+SELECT id, oidc_subject, email, name, password_hash, admin
+FROM users
+WHERE lower(email) = lower($1);
+
+-- name: CreateSession :exec
+INSERT INTO sessions (id, user_id, token_hash, expires_at)
+VALUES ($1, $2, $3, $4);
+
+-- name: GetUserBySessionHash :one
+SELECT u.id, u.oidc_subject, u.email, u.name, u.admin
+FROM sessions s
+JOIN users u ON u.id = s.user_id
+WHERE s.token_hash = $1
+  AND s.expires_at > NOW();
+
+-- name: DeleteSessionByHash :exec
+DELETE FROM sessions WHERE token_hash = $1;
+
+-- name: DeleteExpiredSessions :exec
+DELETE FROM sessions WHERE expires_at <= NOW();
+
+-- name: CreateAPIKey :one
+INSERT INTO api_keys (id, name, prefix, secret_hash)
+VALUES ($1, $2, $3, $4)
+RETURNING id, name, prefix, created_at, last_used_at, revoked_at;
+
+-- name: ListAPIKeys :many
+SELECT id, name, prefix, created_at, last_used_at, revoked_at
+FROM api_keys
+ORDER BY created_at DESC;
+
+-- name: GetActiveAPIKeyByHash :one
+SELECT id, name, prefix, created_at, last_used_at, revoked_at
+FROM api_keys
+WHERE secret_hash = $1
+  AND revoked_at IS NULL;
+
+-- name: RevokeAPIKey :execrows
+UPDATE api_keys
+SET revoked_at = NOW()
+WHERE id = $1
+  AND revoked_at IS NULL;
+
+-- name: TouchAPIKey :exec
+UPDATE api_keys
+SET last_used_at = NOW()
+WHERE id = $1;

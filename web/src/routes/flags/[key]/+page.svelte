@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { page } from '$app/state';
+	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import {
 		api,
 		APIError,
 		type Flag,
-		type Rule,
 		type CreateRuleRequest,
 		type ContextSchema
 	} from '$lib/api';
@@ -16,12 +15,12 @@
 	import RuleEditor from '$lib/components/rule-editor.svelte';
 	import ContextPicker from '$lib/components/context-picker.svelte';
 	import { Trash2, Plus, Pencil, ArrowUp, ArrowDown } from 'lucide-svelte';
+	import type { PageProps } from './$types';
 
-	const key = $derived(page.params.key ?? '');
+	let { data }: PageProps = $props();
 
-	let flag = $state<Flag | null>(null);
-	let context = $state<ContextSchema | null>(null);
-	let loading = $state(true);
+	let flag = $state<Flag>(untrack(() => data.flag));
+	let context = $state<ContextSchema | null>(untrack(() => data.context));
 	let error = $state<string | null>(null);
 	let saving = $state(false);
 
@@ -33,22 +32,9 @@
 	let pendingRuleId = $state<string | null>(null);
 
 	$effect(() => {
-		key;
-		load();
+		flag = data.flag;
+		context = data.context;
 	});
-
-	async function load() {
-		loading = true;
-		error = null;
-		try {
-			flag = await api.getFlag(key);
-			await loadContext(flag.context_id ?? null);
-		} catch (e) {
-			error = e instanceof APIError ? e.message : 'Failed to load flag';
-		} finally {
-			loading = false;
-		}
-	}
 
 	async function loadContext(id: string | null) {
 		if (!id) {
@@ -65,7 +51,6 @@
 	async function patch(
 		updates: Partial<Pick<Flag, 'enabled' | 'default_value' | 'context_id'>>
 	) {
-		if (!flag) return;
 		const prev = {
 			enabled: flag.enabled,
 			default_value: flag.default_value,
@@ -94,7 +79,6 @@
 	}
 
 	async function remove() {
-		if (!flag) return;
 		if (!confirm(`Delete flag "${flag.key}"? This removes all of its rules.`)) return;
 		try {
 			await api.deleteFlag(flag.key);
@@ -104,12 +88,11 @@
 		}
 	}
 
-	async function createRule(data: CreateRuleRequest) {
-		if (!flag) return;
+	async function createRule(form: CreateRuleRequest) {
 		ruleSubmitting = true;
 		createError = null;
 		try {
-			const rule = await api.createRule(flag.key, data);
+			const rule = await api.createRule(flag.key, form);
 			flag = { ...flag, rules: [...flag.rules, rule] };
 			creating = false;
 		} catch (e) {
@@ -119,12 +102,11 @@
 		}
 	}
 
-	async function updateRule(id: string, data: CreateRuleRequest) {
-		if (!flag) return;
+	async function updateRule(id: string, form: CreateRuleRequest) {
 		ruleSubmitting = true;
 		editError = null;
 		try {
-			const updated = await api.updateRule(flag.key, id, data);
+			const updated = await api.updateRule(flag.key, id, form);
 			flag = {
 				...flag,
 				rules: flag.rules.map((r) => (r.id === id ? updated : r))
@@ -138,7 +120,6 @@
 	}
 
 	async function deleteRule(id: string) {
-		if (!flag) return;
 		const rule = flag.rules.find((r) => r.id === id);
 		if (!rule) return;
 		if (!confirm(`Delete this rule?\n\n${rule.expression}`)) return;
@@ -156,7 +137,6 @@
 	}
 
 	async function move(index: number, direction: -1 | 1) {
-		if (!flag) return;
 		const target = index + direction;
 		if (target < 0 || target >= flag.rules.length) return;
 		const prev = flag.rules;
@@ -197,15 +177,8 @@
 		← all flags
 	</a>
 
-	{#if loading}
-		<Card class="h-40 animate-pulse" />
-	{:else if error && !flag}
-		<Card class="motion-panel p-8 text-center">
-			<p class="text-sm text-destructive">{error}</p>
-			<Button class="mt-4" onclick={load}>retry</Button>
-		</Card>
-	{:else if flag}
-		<header class="flex flex-wrap items-start justify-between gap-4">
+	<header class="flex flex-wrap items-start justify-between gap-4">
+
 			<div class="space-y-3">
 				<p
 					class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground"
@@ -401,7 +374,6 @@
 						}}
 					/>
 				</Card>
-			{/if}
-		</section>
-	{/if}
+		{/if}
+	</section>
 </div>

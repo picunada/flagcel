@@ -1,26 +1,22 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { api, APIError, type ContextSchema } from '$lib/api';
+	import { APIError, type ContextSchema } from '$lib/api';
+	import { invalidateAll } from '$app/navigation';
 	import Button from '$lib/components/ui/button.svelte';
 	import Card from '$lib/components/ui/card.svelte';
 	import SectionHeader from '$lib/components/ui/section-header.svelte';
 	import { Plus } from 'lucide-svelte';
+	import type { PageProps } from './$types';
 
-	let contexts = $state<ContextSchema[]>([]);
-	let loading = $state(true);
+	let { data }: PageProps = $props();
+	const contexts = $derived<ContextSchema[]>(data.contexts);
 	let error = $state<string | null>(null);
 
-	onMount(load);
-
-	async function load() {
-		loading = true;
+	async function refresh() {
 		error = null;
 		try {
-			contexts = await api.listContexts();
+			await invalidateAll();
 		} catch (e) {
 			error = e instanceof APIError ? e.message : 'Failed to load contexts';
-		} finally {
-			loading = false;
 		}
 	}
 </script>
@@ -46,16 +42,10 @@
 		</Button>
 	</div>
 
-	{#if loading}
-		<div class="grid gap-3 sm:grid-cols-2">
-			{#each Array(2) as _, i (i)}
-				<Card class="h-32 animate-pulse" />
-			{/each}
-		</div>
-	{:else if error}
+	{#if error}
 		<Card class="motion-panel p-8 text-center">
 			<p class="text-sm text-destructive">{error}</p>
-			<Button class="mt-4" onclick={load}>retry</Button>
+			<Button class="mt-4" onclick={refresh}>retry</Button>
 		</Card>
 	{:else if contexts.length === 0}
 		<Card class="motion-panel flex flex-col items-center gap-4 p-12 text-center">

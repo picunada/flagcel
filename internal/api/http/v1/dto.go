@@ -77,3 +77,40 @@ type EvalResponse struct {
 type EvalAllResponse struct {
 	Flags map[string]bool `json:"flags"`
 }
+
+type UserResponse struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	Name  string `json:"name,omitempty"`
+	Admin bool   `json:"admin"`
+}
+
+type AuthMeResponse struct {
+	AuthEnabled   bool          `json:"auth_enabled"`
+	Mode          string        `json:"mode,omitempty"`
+	Authenticated bool          `json:"authenticated"`
+	User          *UserResponse `json:"user,omitempty"`
+}
+
+type PasswordLoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type APIKeyResponse struct {
+	ID         string  `json:"id"`
+	Name       string  `json:"name"`
+	Prefix     string  `json:"prefix"`
+	CreatedAt  string  `json:"created_at"`
+	LastUsedAt *string `json:"last_used_at,omitempty"`
+	RevokedAt  *string `json:"revoked_at,omitempty"`
+}
+
+type CreateAPIKeyRequest struct {
+	Name string `json:"name"`
+}
+
+type CreateAPIKeyResponse struct {
+	APIKeyResponse
+	Token string `json:"token"`
+}

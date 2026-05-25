@@ -25,9 +25,18 @@ Brings up Postgres + the service with hot reload on port `8080`. API docs are se
 
 ### Create and read a flag
 
+The Docker quickstart bootstraps a local admin account:
+`admin@localhost` / `flagcel-dev-password`.
+
 ```sh
+# Sign in and keep the admin session cookie
+curl -c cookies.txt -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@localhost","password":"flagcel-dev-password"}'
+
 # Create a flag with one rule (10% rollout for US users)
 curl -X POST http://localhost:8080/api/v1/flags \
+  -b cookies.txt \
   -H "Content-Type: application/json" \
   -d '{
     "key": "new-checkout",
@@ -42,7 +51,7 @@ curl -X POST http://localhost:8080/api/v1/flags \
   }'
 
 # Read it back
-curl http://localhost:8080/api/v1/flags/new-checkout
+curl -b cookies.txt http://localhost:8080/api/v1/flags/new-checkout
 ```
 
 ## Configuration
@@ -60,6 +69,41 @@ All config is via environment variables.
 | `HTTP_WRITE_TIMEOUT`     | `5s`       | Response write timeout              |
 | `HTTP_IDLE_TIMEOUT`      | `10s`      | Keep-alive idle timeout             |
 | `HTTP_SHUTDOWN_TIMEOUT`  | `15s`      | Graceful shutdown deadline          |
+| `AUTH_OIDC_ISSUER_URL`   | _empty_    | OIDC issuer URL. When empty, local password auth is used |
+| `AUTH_OIDC_CLIENT_ID`    | _empty_    | OIDC client ID                      |
+| `AUTH_OIDC_CLIENT_SECRET`| _empty_    | OIDC client secret                  |
+| `AUTH_OIDC_REDIRECT_URL` | _empty_    | OIDC callback URL, e.g. `https://flagcel.example.com/auth/callback` |
+| `AUTH_ADMIN_EMAILS`      | _empty_    | Comma-separated allowlist for admin SSO users |
+| `AUTH_BOOTSTRAP_ADMIN_EMAIL` | _empty_ | Local admin email used when OIDC is not configured |
+| `AUTH_BOOTSTRAP_ADMIN_PASSWORD` | _empty_ | Local admin password used when OIDC is not configured |
+| `AUTH_BOOTSTRAP_ADMIN_NAME` | `Admin` | Local admin display name |
+| `AUTH_SESSION_SECRET`    | _empty_    | At least 32 bytes; used to hash sessions and API keys |
+| `AUTH_COOKIE_SECURE`     | `false`    | Set secure cookies; use `true` behind HTTPS |
+| `AUTH_SESSION_TTL`       | `24h`      | Admin session lifetime              |
+
+## Auth
+
+Flagcel always protects the dashboard and management API. If
+`AUTH_OIDC_ISSUER_URL`, `AUTH_OIDC_CLIENT_ID`, `AUTH_OIDC_CLIENT_SECRET`, and
+`AUTH_OIDC_REDIRECT_URL` are set, admins sign in through generic OIDC SSO and
+their verified email must appear in `AUTH_ADMIN_EMAILS`.
+
+When OIDC is not configured, Flagcel uses local email/password auth. On startup
+it creates or updates the admin user from `AUTH_BOOTSTRAP_ADMIN_EMAIL`,
+`AUTH_BOOTSTRAP_ADMIN_PASSWORD`, and `AUTH_BOOTSTRAP_ADMIN_NAME`.
+
+Evaluation clients should use bearer API keys created from the dashboard's
+`keys` page:
+
+```sh
+curl -X POST http://localhost:8080/api/v1/eval/new-checkout \
+  -H "Authorization: Bearer fc_example_secret" \
+  -H "Content-Type: application/json" \
+  -d '{"context":{"user":{"id":"u_123","country":"US"}}}'
+```
+
+API keys and sessions are stored as HMAC-SHA-256 hashes; raw API key tokens are
+shown only once when created.
 
 ## API
 
@@ -71,6 +115,10 @@ The full OpenAPI spec lives at [`internal/api/http/docs/openapi.yaml`](internal/
 Endpoint overview (all under `/api/v1`):
 
 ```
+GET    /auth/me
+POST   /auth/login
+POST   /auth/logout
+
 GET    /flags
 POST   /flags
 GET    /flags/{key}
@@ -82,6 +130,19 @@ POST   /flags/{key}/rules/reorder
 GET    /flags/{key}/rules/{id}
 PUT    /flags/{key}/rules/{id}
 DELETE /flags/{key}/rules/{id}
+
+GET    /contexts
+POST   /contexts
+GET    /contexts/{id}
+PUT    /contexts/{id}
+DELETE /contexts/{id}
+
+POST   /eval
+POST   /eval/{key}
+
+GET    /api-keys
+POST   /api-keys
+DELETE /api-keys/{id}
 ```
 
 ## Web UI
@@ -136,7 +197,11 @@ Requires Go 1.26+ and Postgres 17 (the Docker setup handles both).
 docker compose up
 
 # Or run directly against your own Postgres
-DATABASE_URL=postgres://localhost/flagcel?sslmode=disable go run ./cmd/server
+DATABASE_URL=postgres://localhost/flagcel?sslmode=disable \
+AUTH_BOOTSTRAP_ADMIN_EMAIL=admin@localhost \
+AUTH_BOOTSTRAP_ADMIN_PASSWORD=flagcel-dev-password \
+AUTH_SESSION_SECRET=flagcel-dev-session-secret-change-me \
+go run ./cmd/server
 ```
 
 The `Dockerfile.dev` uses [air](https://github.com/air-verse/air) to rebuild on file change.

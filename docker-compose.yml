@@ -16,6 +16,9 @@ services:
       LOG_LEVEL: debug
       LOG_FORMAT: text
       DEBUG_ADDR: ":16000"
+      AUTH_BOOTSTRAP_ADMIN_EMAIL: admin@localhost
+      AUTH_BOOTSTRAP_ADMIN_PASSWORD: secret
+      AUTH_SESSION_SECRET: flagcel-dev-session-secret-change-me
     depends_on:
       db:
         condition: service_healthy
