@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -25,6 +26,7 @@ const (
 	SessionCookieName    = "flagcel_session"
 	OAuthStateCookieName = "flagcel_oauth_state"
 	OAuthNonceCookieName = "flagcel_oauth_nonce"
+	apiKeyTouchInterval  = time.Minute
 )
 
 type AuthConfig struct {
@@ -50,6 +52,13 @@ type AuthService struct {
 	adminEmails map[string]struct{}
 	secret      []byte
 	mode        string
+	apiKeyMu    sync.RWMutex
+	apiKeys     map[string]cachedAPIKey
+}
+
+type cachedAPIKey struct {
+	key         *core.APIKey
+	lastTouched time.Time
 }
 
 type OIDCUserInfo struct {
@@ -71,6 +80,7 @@ func NewAuthService(ctx context.Context, cfg AuthConfig, store *postgres.Store) 
 		store:       store,
 		adminEmails: parseAdminEmails(cfg.AdminEmails),
 		secret:      []byte(cfg.SessionSecret),
+		apiKeys:     make(map[string]cachedAPIKey),
 	}
 	if cfg.SessionTTL == 0 {
 		s.cfg.SessionTTL = 24 * time.Hour
@@ -261,6 +271,7 @@ func (s *AuthService) CreateAPIKey(ctx context.Context, name string) (*CreatedAP
 	if err != nil {
 		return nil, err
 	}
+	s.cacheAPIKey(token, key)
 	return &CreatedAPIKey{Key: key, Token: token}, nil
 }
 
@@ -275,7 +286,13 @@ func (s *AuthService) RevokeAPIKey(ctx context.Context, id string) error {
 	if !s.Enabled() {
 		return core.ErrAuthNotConfigured
 	}
-	return s.store.RevokeAPIKey(ctx, id)
+	if err := s.store.RevokeAPIKey(ctx, id); err != nil {
+		return err
+	}
+	s.apiKeyMu.Lock()
+	clear(s.apiKeys)
+	s.apiKeyMu.Unlock()
+	return nil
 }
 
 func (s *AuthService) ValidateAPIKey(ctx context.Context, token string) (*core.APIKey, error) {
@@ -286,12 +303,47 @@ func (s *AuthService) ValidateAPIKey(ctx context.Context, token string) (*core.A
 	if token == "" {
 		return nil, core.ErrAPIKeyNotFound
 	}
-	key, err := s.store.GetAPIKeyByHash(ctx, s.hash(token))
+	hash := s.hash(token)
+
+	s.apiKeyMu.RLock()
+	cached, ok := s.apiKeys[hash]
+	s.apiKeyMu.RUnlock()
+	if ok {
+		s.touchCachedAPIKey(ctx, hash, cached)
+		return cached.key, nil
+	}
+
+	key, err := s.store.GetAPIKeyByHash(ctx, hash)
 	if err != nil {
 		return nil, err
 	}
 	_ = s.store.TouchAPIKey(ctx, key.ID)
+	s.cacheAPIKeyHash(hash, key)
+
 	return key, nil
+}
+
+func (s *AuthService) cacheAPIKey(token string, key *core.APIKey) {
+	s.cacheAPIKeyHash(s.hash(token), key)
+}
+
+func (s *AuthService) cacheAPIKeyHash(hash string, key *core.APIKey) {
+	s.apiKeyMu.Lock()
+	s.apiKeys[hash] = cachedAPIKey{key: key, lastTouched: time.Now()}
+	s.apiKeyMu.Unlock()
+}
+
+func (s *AuthService) touchCachedAPIKey(ctx context.Context, hash string, cached cachedAPIKey) {
+	if time.Since(cached.lastTouched) < apiKeyTouchInterval {
+		return
+	}
+	if err := s.store.TouchAPIKey(ctx, cached.key.ID); err != nil {
+		return
+	}
+	cached.lastTouched = time.Now()
+	s.apiKeyMu.Lock()
+	s.apiKeys[hash] = cached
+	s.apiKeyMu.Unlock()
 }
 
 func (s *AuthService) validateConfig() error {

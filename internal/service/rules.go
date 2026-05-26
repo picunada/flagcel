@@ -11,11 +11,16 @@ import (
 )
 
 type RuleService struct {
-	store *postgres.Store
+	store        *postgres.Store
+	onFlagChange func(string)
 }
 
-func NewRuleService(store *postgres.Store) *RuleService {
-	return &RuleService{store: store}
+func NewRuleService(store *postgres.Store, onFlagChange ...func(string)) *RuleService {
+	s := &RuleService{store: store}
+	if len(onFlagChange) > 0 {
+		s.onFlagChange = onFlagChange[0]
+	}
+	return s
 }
 
 func (s *RuleService) ListRules(ctx context.Context, flagKey string) ([]core.Rule, error) {
@@ -41,6 +46,7 @@ func (s *RuleService) CreateRule(ctx context.Context, flagKey string, rule core.
 	if err := s.store.CreateRule(ctx, flagKey, rule); err != nil {
 		return nil, fmt.Errorf("rule service: failed to create rule %w", err)
 	}
+	s.invalidate(flagKey)
 	return &rule, nil
 }
 
@@ -48,6 +54,7 @@ func (s *RuleService) UpdateRule(ctx context.Context, flagKey string, rule core.
 	if err := s.store.UpdateRule(ctx, flagKey, rule); err != nil {
 		return fmt.Errorf("rule service: failed to update rule %w", err)
 	}
+	s.invalidate(flagKey)
 	return nil
 }
 
@@ -55,6 +62,7 @@ func (s *RuleService) DeleteRule(ctx context.Context, flagKey, ruleID string) er
 	if err := s.store.DeleteRule(ctx, flagKey, ruleID); err != nil {
 		return fmt.Errorf("rule service: failed to delete rule %w", err)
 	}
+	s.invalidate(flagKey)
 	return nil
 }
 
@@ -62,5 +70,12 @@ func (s *RuleService) ReorderRules(ctx context.Context, flagKey string, ruleIDs 
 	if err := s.store.ReorderRules(ctx, flagKey, ruleIDs); err != nil {
 		return fmt.Errorf("rule service: failed to reorder rules %w", err)
 	}
+	s.invalidate(flagKey)
 	return nil
+}
+
+func (s *RuleService) invalidate(key string) {
+	if s.onFlagChange != nil {
+		s.onFlagChange(key)
+	}
 }

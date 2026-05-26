@@ -9,11 +9,16 @@ import (
 )
 
 type FlagService struct {
-	store *postgres.Store
+	store        *postgres.Store
+	onFlagChange func(string)
 }
 
-func NewFlagService(store *postgres.Store) *FlagService {
-	return &FlagService{store: store}
+func NewFlagService(store *postgres.Store, onFlagChange ...func(string)) *FlagService {
+	s := &FlagService{store: store}
+	if len(onFlagChange) > 0 {
+		s.onFlagChange = onFlagChange[0]
+	}
+	return s
 }
 
 func (s *FlagService) GetFlags(ctx context.Context) ([]*core.FlagConfig, error) {
@@ -46,6 +51,7 @@ func (s *FlagService) CreateFlag(ctx context.Context, flag *core.FlagConfig) err
 			err,
 		)
 	}
+	s.invalidate(flag.Key)
 	return nil
 }
 
@@ -56,5 +62,12 @@ func (s *FlagService) DeleteFlag(context context.Context, id string) error {
 			err,
 		)
 	}
+	s.invalidate(id)
 	return nil
+}
+
+func (s *FlagService) invalidate(key string) {
+	if s.onFlagChange != nil {
+		s.onFlagChange(key)
+	}
 }

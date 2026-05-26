@@ -12,11 +12,16 @@ import (
 )
 
 type ContextService struct {
-	store *postgres.Store
+	store           *postgres.Store
+	onContextChange func(string)
 }
 
-func NewContextService(store *postgres.Store) *ContextService {
-	return &ContextService{store: store}
+func NewContextService(store *postgres.Store, onContextChange ...func(string)) *ContextService {
+	s := &ContextService{store: store}
+	if len(onContextChange) > 0 {
+		s.onContextChange = onContextChange[0]
+	}
+	return s
 }
 
 func (s *ContextService) ListContexts(ctx context.Context) ([]*core.ContextSchema, error) {
@@ -58,6 +63,7 @@ func (s *ContextService) UpdateContext(ctx context.Context, c *core.ContextSchem
 	if err := s.store.UpdateContext(ctx, c); err != nil {
 		return nil, fmt.Errorf("context service: failed to update context %w", err)
 	}
+	s.invalidate(c.ID)
 	return c, nil
 }
 
@@ -65,7 +71,14 @@ func (s *ContextService) DeleteContext(ctx context.Context, id string) error {
 	if err := s.store.DeleteContext(ctx, id); err != nil {
 		return fmt.Errorf("context service: failed to delete context %w", err)
 	}
+	s.invalidate(id)
 	return nil
+}
+
+func (s *ContextService) invalidate(id string) {
+	if s.onContextChange != nil {
+		s.onContextChange(id)
+	}
 }
 
 func normalize(c *core.ContextSchema) error {
