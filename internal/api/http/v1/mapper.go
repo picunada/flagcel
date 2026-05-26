@@ -1,6 +1,9 @@
 package v1
 
-import "github.com/picunada/flagcel/internal/core"
+import (
+	"github.com/picunada/flagcel/internal/core"
+	"github.com/picunada/flagcel/internal/engine"
+)
 
 func toCoreFlag(r CreateFlagRequest) core.FlagConfig {
 	rules := make([]core.Rule, len(r.Rules))
@@ -63,6 +66,46 @@ func toFlagResponses(flags []*core.FlagConfig) []FlagResponse {
 	out := make([]FlagResponse, len(flags))
 	for i, f := range flags {
 		out[i] = toFlagResponse(*f)
+	}
+	return out
+}
+
+func toEvalTraceResponse(t engine.EvaluationTrace) EvalTraceResponse {
+	out := EvalTraceResponse{
+		Key:          t.Key,
+		Enabled:      t.Enabled,
+		DefaultValue: t.DefaultValue,
+		Value:        t.Value,
+		Reason:       t.Reason,
+		Error:        t.Error,
+		RuleResults:  make([]EvalRuleResultResponse, len(t.RuleResults)),
+	}
+
+	if t.MatchedRule != nil {
+		out.MatchedRule = &EvalMatchedRuleResponse{
+			ID:         t.MatchedRule.ID,
+			Index:      t.MatchedRule.Index,
+			Expression: t.MatchedRule.Expression,
+		}
+	}
+	if t.Bucket != nil {
+		out.Bucket = &EvalBucketResponse{
+			BucketBy:     t.Bucket.BucketBy,
+			BucketValue:  t.Bucket.BucketValue,
+			BucketNumber: t.Bucket.BucketNumber,
+			Percentage:   t.Bucket.Percentage,
+			InRollout:    t.Bucket.InRollout,
+			Missing:      t.Bucket.Missing,
+		}
+	}
+	for i, result := range t.RuleResults {
+		out.RuleResults[i] = EvalRuleResultResponse{
+			ID:         result.ID,
+			Index:      result.Index,
+			Expression: result.Expression,
+			Matched:    result.Matched,
+			Error:      result.Error,
+		}
 	}
 	return out
 }

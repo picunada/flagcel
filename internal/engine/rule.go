@@ -12,6 +12,7 @@ type Flag struct {
 }
 
 type CompiledRule struct {
+	ID      string      // persisted rule id, used for diagnostics
 	Source  string      //  for diagnostics/logging
 	Program cel.Program // exported — accessed by Engine.Evaluate
 	Rollout Rollout

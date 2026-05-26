@@ -32,6 +32,41 @@ export type CreateRuleRequest = {
 
 export type UpdateRuleRequest = CreateRuleRequest;
 
+export type EvalTrace = {
+    key: string;
+    enabled: boolean;
+    default_value: boolean;
+    value: boolean;
+    reason: "disabled" | "matched_rule" | "default_no_match" | "cel_error" | string;
+    error?: string;
+    matched_rule?: EvalMatchedRule;
+    bucket?: EvalBucket;
+    rule_results: EvalRuleResult[];
+};
+
+export type EvalMatchedRule = {
+    id: string;
+    index: number;
+    expression: string;
+};
+
+export type EvalRuleResult = {
+    id: string;
+    index: number;
+    expression: string;
+    matched: boolean;
+    error?: string;
+};
+
+export type EvalBucket = {
+    bucket_by: string;
+    bucket_value?: string;
+    bucket_number?: number;
+    percentage: number;
+    in_rollout: boolean;
+    missing: boolean;
+};
+
 export type ContextType =
     | "string"
     | "int"
@@ -192,6 +227,11 @@ export const api = {
         request<void>(`/flags/${encodeURIComponent(key)}/rules/reorder`, {
             method: "POST",
             body: JSON.stringify({ rule_ids: ruleIds }),
+        }),
+    evaluateFlag: (key: string, context: Record<string, unknown>) =>
+        request<EvalTrace>(`/flags/${encodeURIComponent(key)}/evaluate`, {
+            method: "POST",
+            body: JSON.stringify({ context }),
         }),
 
     listContexts: () => request<ContextSchema[]>("/contexts"),

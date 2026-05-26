@@ -72,10 +72,10 @@ func runServer() {
 	}
 	eng := engine.NewEngine(celEnv)
 
-	flagSvc := service.NewFlagService(store)
-	ruleSvc := service.NewRuleService(store)
-	ctxSvc := service.NewContextService(store)
 	evalSvc := service.NewEvalService(store, eng)
+	flagSvc := service.NewFlagService(store, evalSvc.InvalidateFlag)
+	ruleSvc := service.NewRuleService(store, evalSvc.InvalidateFlag)
+	ctxSvc := service.NewContextService(store, evalSvc.InvalidateContext)
 	authSvc, err := service.NewAuthService(ctx, service.AuthConfig{
 		OIDCIssuerURL:     cfg.Auth.OIDCIssuerURL,
 		OIDCClientID:      cfg.Auth.OIDCClientID,

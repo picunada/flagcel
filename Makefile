@@ -72,6 +72,10 @@ PPROF_ADDR ?= http://localhost:16000
 LOAD_BASE_URL ?= http://localhost:8080
 LOAD_FLAG_KEY ?= new-sidebar
 LOAD_SCENARIO ?= steady
+LOAD_SETUP ?= true
+LOAD_API_TOKEN ?=
+LOAD_ADMIN_EMAIL ?= admin@localhost
+LOAD_ADMIN_PASSWORD ?= secret
 
 bench:
 	go test -run='^$$' -bench='$(BENCH)' -benchtime=$(BENCHTIME) -benchmem ./internal/engine/...
@@ -91,6 +95,10 @@ loadtest:
 		-e BASE_URL=$(LOAD_BASE_URL) \
 		-e FLAG_KEY=$(LOAD_FLAG_KEY) \
 		-e SCENARIO=$(LOAD_SCENARIO) \
+		-e SETUP=$(LOAD_SETUP) \
+		-e API_TOKEN=$(LOAD_API_TOKEN) \
+		-e ADMIN_EMAIL=$(LOAD_ADMIN_EMAIL) \
+		-e ADMIN_PASSWORD=$(LOAD_ADMIN_PASSWORD) \
 		scripts/load/eval.js
 
 PPROF_SECONDS ?= 30
@@ -108,6 +116,8 @@ pprof-heap:
 pprof-cpu-loaded:
 	@echo "Starting k6 in background, then sampling CPU for $(PPROF_SECONDS)s."
 	@k6 run -e BASE_URL=$(LOAD_BASE_URL) -e FLAG_KEY=$(LOAD_FLAG_KEY) \
+		-e SETUP=$(LOAD_SETUP) -e API_TOKEN=$(LOAD_API_TOKEN) \
+		-e ADMIN_EMAIL=$(LOAD_ADMIN_EMAIL) -e ADMIN_PASSWORD=$(LOAD_ADMIN_PASSWORD) \
 		-e SCENARIO=steady -e DURATION=$$(($(PPROF_SECONDS)+5))s \
 		scripts/load/eval.js >/tmp/k6-pprof.log 2>&1 & \
 		K6_PID=$$!; \

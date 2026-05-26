@@ -61,6 +61,27 @@ func benchContext() DataContext {
 	}
 }
 
+func benchContextSchema() *core.ContextSchema {
+	return &core.ContextSchema{
+		ID: "bench-context",
+		Fields: []core.ContextField{
+			{Path: "user.id", Type: core.ContextTypeString},
+			{Path: "user.tier", Type: core.ContextTypeString},
+			{Path: "user.region", Type: core.ContextTypeString},
+			{Path: "user.email", Type: core.ContextTypeString},
+		},
+	}
+}
+
+func compileBenchFlag(b *testing.B, e *Engine, cfg core.FlagConfig) *Flag {
+	b.Helper()
+	flag, err := e.CompileFlagForContext(cfg.Key, cfg, benchContextSchema())
+	if err != nil {
+		b.Fatal(err)
+	}
+	return flag
+}
+
 // BenchmarkEvaluate_NoRules measures the fast path: enabled flag, no rules,
 // falls through to DefaultValue. This is the floor for per-eval overhead.
 func BenchmarkEvaluate_NoRules(b *testing.B) {
@@ -81,10 +102,7 @@ func BenchmarkEvaluate_NoRules(b *testing.B) {
 // BenchmarkEvaluate_SingleRule_Match exercises one CEL program eval + bucket().
 func BenchmarkEvaluate_SingleRule_Match(b *testing.B) {
 	e := newBenchEngine(b)
-	flag, err := e.CompileFlag("k", makeFlagConfig(1, 0))
-	if err != nil {
-		b.Fatal(err)
-	}
+	flag := compileBenchFlag(b, e, makeFlagConfig(1, 0))
 	ctx := benchContext()
 
 	b.ReportAllocs()
@@ -98,10 +116,7 @@ func BenchmarkEvaluate_SingleRule_Match(b *testing.B) {
 func BenchmarkEvaluate_MultiRule_LastMatches(b *testing.B) {
 	const n = 10
 	e := newBenchEngine(b)
-	flag, err := e.CompileFlag("k", makeFlagConfig(n, n-1))
-	if err != nil {
-		b.Fatal(err)
-	}
+	flag := compileBenchFlag(b, e, makeFlagConfig(n, n-1))
 	ctx := benchContext()
 
 	b.ReportAllocs()
@@ -119,7 +134,7 @@ func BenchmarkCompileFlag(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, err := e.CompileFlag(cfg.Key, cfg); err != nil {
+		if _, err := e.CompileFlagForContext(cfg.Key, cfg, benchContextSchema()); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -137,7 +152,7 @@ func BenchmarkServicePath_CompilePerEval(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		flag, err := e.CompileFlag(cfg.Key, cfg)
+		flag, err := e.CompileFlagForContext(cfg.Key, cfg, benchContextSchema())
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -164,7 +179,7 @@ func BenchmarkEvaluateAll_CompilePerEval(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		out := make(map[string]bool, flagCount)
 		for _, c := range cfgs {
-			flag, err := e.CompileFlag(c.Key, c)
+			flag, err := e.CompileFlagForContext(c.Key, c, benchContextSchema())
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -182,7 +197,7 @@ func BenchmarkEvaluateAll_PreCompiled(b *testing.B) {
 	for i := range flags {
 		c := makeFlagConfig(2, 1)
 		c.Key = fmt.Sprintf("flag-%d", i)
-		f, err := e.CompileFlag(c.Key, c)
+		f, err := e.CompileFlagForContext(c.Key, c, benchContextSchema())
 		if err != nil {
 			b.Fatal(err)
 		}

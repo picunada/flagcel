@@ -74,6 +74,41 @@ type EvalResponse struct {
 	Value bool   `json:"value"`
 }
 
+type EvalTraceResponse struct {
+	Key          string                   `json:"key"`
+	Enabled      bool                     `json:"enabled"`
+	DefaultValue bool                     `json:"default_value"`
+	Value        bool                     `json:"value"`
+	Reason       string                   `json:"reason"`
+	Error        string                   `json:"error,omitempty"`
+	MatchedRule  *EvalMatchedRuleResponse `json:"matched_rule,omitempty"`
+	Bucket       *EvalBucketResponse      `json:"bucket,omitempty"`
+	RuleResults  []EvalRuleResultResponse `json:"rule_results"`
+}
+
+type EvalMatchedRuleResponse struct {
+	ID         string `json:"id"`
+	Index      int    `json:"index"`
+	Expression string `json:"expression"`
+}
+
+type EvalRuleResultResponse struct {
+	ID         string `json:"id"`
+	Index      int    `json:"index"`
+	Expression string `json:"expression"`
+	Matched    bool   `json:"matched"`
+	Error      string `json:"error,omitempty"`
+}
+
+type EvalBucketResponse struct {
+	BucketBy     string `json:"bucket_by"`
+	BucketValue  string `json:"bucket_value,omitempty"`
+	BucketNumber *int   `json:"bucket_number,omitempty"`
+	Percentage   int    `json:"percentage"`
+	InRollout    bool   `json:"in_rollout"`
+	Missing      bool   `json:"missing"`
+}
+
 type EvalAllResponse struct {
 	Flags map[string]bool `json:"flags"`
 }
