@@ -149,7 +149,7 @@
 	<div class="space-y-2">
 		<label
 			for="expression"
-			class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
+			class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
 		>
 			expression · cel
 			{#if context}
@@ -204,11 +204,11 @@
 			{/if}
 		</div>
 		{#if context && candidates.length === 0}
-			<p class="font-mono text-[0.65rem] text-muted-foreground">
+			<p class="text-[0.65rem] text-muted-foreground">
 				context "{context.name}" has no fields yet
 			</p>
 		{:else if context}
-			<p class="font-mono text-[0.65rem] text-muted-foreground">
+			<p class="text-[0.65rem] text-muted-foreground">
 				start typing for suggestions · ↑/↓ navigate · enter to insert
 			</p>
 		{/if}
@@ -218,7 +218,7 @@
 		<div class="space-y-2">
 			<label
 				for="percentage"
-				class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
+				class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
 			>
 				rollout %
 			</label>
@@ -236,7 +236,7 @@
 		<div class="space-y-2">
 			<label
 				for="bucket-by"
-				class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
+				class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
 			>
 				bucket by · optional
 			</label>
@@ -245,7 +245,7 @@
 	</div>
 
 	{#if error}
-		<p class="font-mono text-xs text-destructive">{error}</p>
+		<p class="text-xs text-destructive">{error}</p>
 	{/if}
 
 	<div class="flex justify-end gap-2 border-t border-border/60 pt-4">
