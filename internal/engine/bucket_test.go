@@ -38,6 +38,18 @@ func TestEngine_bucket(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name:    "bucket resolves dotted paths",
+			flagKey: "test-flag",
+			user: DataContext{
+				"user": map[string]any{"id": "user-123"},
+			},
+			rollout: Rollout{
+				Percentage: 100,
+				BucketBy:   "user.id",
+			},
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

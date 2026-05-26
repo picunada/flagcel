@@ -22,6 +22,7 @@ func NewRouter(h *Handlers) http.Handler {
 	h.Rules.Register(admin)
 	h.Contexts.Register(admin)
 	h.APIKeys.Register(admin)
+	h.Eval.RegisterAdmin(admin)
 
 	eval := http.NewServeMux()
 	h.Eval.Register(eval)

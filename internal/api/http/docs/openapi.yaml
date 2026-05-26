@@ -97,6 +97,32 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "500": { $ref: "#/components/responses/InternalError" }
 
+  /flags/{key}/evaluate:
+    parameters:
+      - $ref: "#/components/parameters/FlagKey"
+    post:
+      tags: [Flags]
+      summary: Evaluate one flag with diagnostic trace
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvalRequest"
+      responses:
+        "200":
+          description: Evaluation trace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvalTraceEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/FlagNotFound" }
+        "422": { $ref: "#/components/responses/InvalidRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
   /flags/{key}/rules:
     parameters:
       - $ref: "#/components/parameters/FlagKey"
@@ -593,6 +619,56 @@ components:
         key: { type: string }
         value: { type: boolean }
 
+    EvalMatchedRule:
+      type: object
+      required: [id, index, expression]
+      properties:
+        id: { type: string, format: uuid }
+        index: { type: integer, minimum: 0 }
+        expression: { type: string }
+
+    EvalRuleResult:
+      type: object
+      required: [id, index, expression, matched]
+      properties:
+        id: { type: string, format: uuid }
+        index: { type: integer, minimum: 0 }
+        expression: { type: string }
+        matched: { type: boolean }
+        error: { type: string }
+
+    EvalBucket:
+      type: object
+      required: [bucket_by, percentage, in_rollout, missing]
+      properties:
+        bucket_by: { type: string }
+        bucket_value: { type: string }
+        bucket_number: { type: integer, minimum: 0, maximum: 99 }
+        percentage: { type: integer, minimum: 0, maximum: 100 }
+        in_rollout: { type: boolean }
+        missing: { type: boolean }
+
+    EvalTraceResponse:
+      type: object
+      required: [key, enabled, default_value, value, reason, rule_results]
+      properties:
+        key: { type: string }
+        enabled: { type: boolean }
+        default_value: { type: boolean }
+        value: { type: boolean }
+        reason:
+          type: string
+          enum: [disabled, matched_rule, default_no_match, cel_error]
+        error: { type: string }
+        matched_rule:
+          $ref: "#/components/schemas/EvalMatchedRule"
+        bucket:
+          $ref: "#/components/schemas/EvalBucket"
+        rule_results:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvalRuleResult"
+
     EvalAllResponse:
       type: object
       required: [flags]
@@ -684,6 +760,13 @@ components:
           properties:
             data:
               $ref: "#/components/schemas/EvalResponse"
+    EvalTraceEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/EvalTraceResponse"
     EvalAllEnvelope:
       allOf:
         - $ref: "#/components/schemas/SuccessEnvelope"
