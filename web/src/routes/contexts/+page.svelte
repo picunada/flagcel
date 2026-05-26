@@ -23,10 +23,10 @@
 
 <section class="space-y-12">
 	<header class="space-y-3">
-		<p class="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
+		<p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">
 			evaluation contexts · field shapes
 		</p>
-		<h1 class="text-balance font-mono text-3xl font-normal leading-tight sm:text-4xl">
+		<h1 class="text-balance text-3xl font-normal leading-tight sm:text-4xl">
 			Describe what your<br />rules can reach.
 		</h1>
 		<p class="max-w-xl text-sm text-[rgba(255,255,255,0.78)] sm:text-base">
@@ -49,7 +49,7 @@
 		</Card>
 	{:else if contexts.length === 0}
 		<Card class="motion-panel flex flex-col items-center gap-4 p-12 text-center">
-			<p class="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+			<p class="text-xs uppercase tracking-[0.14em] text-muted-foreground">
 				[ no contexts yet ]
 			</p>
 			<p class="max-w-sm text-sm text-[rgba(255,255,255,0.7)]">
@@ -64,14 +64,14 @@
 			{#each contexts as ctx (ctx.id)}
 				<a href="/contexts/{encodeURIComponent(ctx.id)}" class="group block">
 					<Card hoverable class="flex h-full flex-col gap-3 p-5">
-						<p class="truncate font-mono text-base font-medium">{ctx.name}</p>
+						<p class="truncate text-base font-medium">{ctx.name}</p>
 						{#if ctx.description}
 							<p class="line-clamp-2 text-sm text-[rgba(255,255,255,0.7)]">
 								{ctx.description}
 							</p>
 						{/if}
 						<p
-							class="mt-auto font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground"
+							class="mt-auto text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground"
 						>
 							{ctx.fields.length} field{ctx.fields.length === 1 ? '' : 's'}
 						</p>
@@ -87,7 +87,7 @@
 								{/each}
 								{#if ctx.fields.length > 3}
 									<p
-										class="pl-2.5 font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground"
+										class="pl-2.5 text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground"
 									>
 										+{ctx.fields.length - 3} more
 									</p>

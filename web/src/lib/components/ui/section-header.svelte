@@ -10,7 +10,7 @@
 
 <h2
 	class={cn(
-		'font-mono text-xs uppercase tracking-[0.12em] text-muted-foreground',
+		'text-xs uppercase tracking-[0.12em] text-muted-foreground',
 		className
 	)}
 >

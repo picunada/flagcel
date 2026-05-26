@@ -4,14 +4,14 @@
 
 @theme {
     --font-sans:
-        ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Monaco, Consolas,
-        monospace;
+        ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+        Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
     --font-mono:
         ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Monaco, Consolas,
         monospace;
     --font-display:
-        ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Monaco, Consolas,
-        monospace;
+        ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+        Arial, sans-serif;
 
     --radius: 0.25rem;
 
@@ -63,9 +63,8 @@
         height: 100%;
     }
     html {
-        font-family: var(--font-mono);
+        font-family: var(--font-sans);
         font-weight: 400;
-        letter-spacing: 0.02em;
     }
     body {
         background: var(--color-background);

@@ -84,7 +84,7 @@
 		<div class="space-y-2">
 			<label
 				for="ctx-name"
-				class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
+				class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
 			>
 				name
 			</label>
@@ -93,7 +93,7 @@
 		<div class="space-y-2">
 			<label
 				for="ctx-desc"
-				class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
+				class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
 			>
 				description · optional
 			</label>
@@ -108,7 +108,7 @@
 	<div class="space-y-3">
 		<div class="flex items-center justify-between">
 			<p
-				class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
+				class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
 			>
 				fields · dotted paths
 			</p>
@@ -123,7 +123,7 @@
 					<Input
 						bind:value={fields[i].path}
 						placeholder="user.country"
-						class="flex-1"
+						class="flex-1 font-mono"
 					/>
 					<select
 						bind:value={fields[i].type}
@@ -151,7 +151,7 @@
 	</div>
 
 	{#if error}
-		<p class="font-mono text-xs text-destructive">{error}</p>
+		<p class="text-xs text-destructive">{error}</p>
 	{/if}
 
 	<div class="flex justify-end gap-2 border-t border-border/60 pt-4">

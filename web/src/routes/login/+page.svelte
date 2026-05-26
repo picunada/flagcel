@@ -50,16 +50,16 @@
 
 <section class="mx-auto max-w-md space-y-6">
     <header class="space-y-3 text-center">
-        <p class="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
+        <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">
             flagcel admin
         </p>
-        <h1 class="font-mono text-3xl font-normal leading-tight">Sign in</h1>
+        <h1 class="text-3xl font-normal leading-tight">Sign in</h1>
     </header>
 
     <Card class="motion-panel space-y-5 p-6 text-center">
         {#if loading}
             <p
-                class="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground"
+                class="text-xs uppercase tracking-[0.14em] text-muted-foreground"
             >
                 loading
             </p>

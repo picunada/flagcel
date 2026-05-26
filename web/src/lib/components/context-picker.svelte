@@ -37,7 +37,7 @@
 		{disabled}
 		value={value ?? ''}
 		onchange={handleChange}
-		class="h-9 w-full rounded-sm border border-input bg-transparent px-3 font-mono text-sm transition-all duration-200 ease-out focus-visible:outline-none focus-visible:border-[rgba(255,255,255,0.36)] focus-visible:bg-[rgba(255,255,255,0.025)] disabled:cursor-not-allowed disabled:opacity-50"
+		class="h-9 w-full rounded-sm border border-input bg-transparent px-3 text-sm transition-all duration-200 ease-out focus-visible:outline-none focus-visible:border-[rgba(255,255,255,0.36)] focus-visible:bg-[rgba(255,255,255,0.025)] disabled:cursor-not-allowed disabled:opacity-50"
 	>
 		<option value="">— no context —</option>
 		{#each contexts as ctx (ctx.id)}
@@ -45,11 +45,11 @@
 		{/each}
 	</select>
 	{#if loading}
-		<p class="font-mono text-[0.65rem] text-muted-foreground">loading contexts…</p>
+		<p class="text-[0.65rem] text-muted-foreground">loading contexts…</p>
 	{:else if error}
-		<p class="font-mono text-[0.65rem] text-destructive">{error}</p>
+		<p class="text-[0.65rem] text-destructive">{error}</p>
 	{:else if contexts.length === 0}
-		<p class="font-mono text-[0.65rem] text-muted-foreground">
+		<p class="text-[0.65rem] text-muted-foreground">
 			no contexts defined ·
 			<a href="/contexts/new" class="underline">create one</a>
 		</p>
