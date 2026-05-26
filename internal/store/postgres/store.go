@@ -40,6 +40,34 @@ func (s *Store) Close(ctx context.Context) error {
 	}
 }
 
+func (s *Store) NotifyAPIKeyCacheInvalidated(ctx context.Context, payload string) error {
+	_, err := s.pool.Exec(ctx, "SELECT pg_notify('flagcel_api_key_cache', $1)", payload)
+	return err
+}
+
+func (s *Store) ListenAPIKeyCacheInvalidations(ctx context.Context, handle func(payload string)) error {
+	conn, err := s.pool.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	if _, err := conn.Exec(ctx, "LISTEN flagcel_api_key_cache"); err != nil {
+		return err
+	}
+
+	for {
+		notification, err := conn.Conn().WaitForNotification(ctx)
+		if err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
+			return err
+		}
+		handle(notification.Payload)
+	}
+}
+
 func (s *Store) GetFlag(ctx context.Context, key string) (*core.FlagConfig, error) {
 	flagRow, err := s.q.GetFlag(ctx, key)
 	if err != nil {

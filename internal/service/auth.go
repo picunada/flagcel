@@ -26,6 +26,7 @@ const (
 	SessionCookieName    = "flagcel_session"
 	OAuthStateCookieName = "flagcel_oauth_state"
 	OAuthNonceCookieName = "flagcel_oauth_nonce"
+	apiKeyCacheTTL       = 30 * time.Second
 	apiKeyTouchInterval  = time.Minute
 )
 
@@ -58,6 +59,7 @@ type AuthService struct {
 
 type cachedAPIKey struct {
 	key         *core.APIKey
+	cachedAt    time.Time
 	lastTouched time.Time
 }
 
@@ -111,11 +113,13 @@ func NewAuthService(ctx context.Context, cfg AuthConfig, store *postgres.Store) 
 			Endpoint:     provider.Endpoint(),
 			Scopes:       []string{oidc.ScopeOpenID, "email", "profile"},
 		}
+		s.startAPIKeyCacheInvalidationListener(ctx)
 		return s, nil
 	}
 	if err := s.bootstrapLocalAdmin(ctx); err != nil {
 		return nil, err
 	}
+	s.startAPIKeyCacheInvalidationListener(ctx)
 	return s, nil
 }
 
@@ -289,9 +293,8 @@ func (s *AuthService) RevokeAPIKey(ctx context.Context, id string) error {
 	if err := s.store.RevokeAPIKey(ctx, id); err != nil {
 		return err
 	}
-	s.apiKeyMu.Lock()
-	clear(s.apiKeys)
-	s.apiKeyMu.Unlock()
+	s.clearAPIKeyCache()
+	_ = s.store.NotifyAPIKeyCacheInvalidated(ctx, id)
 	return nil
 }
 
@@ -308,7 +311,7 @@ func (s *AuthService) ValidateAPIKey(ctx context.Context, token string) (*core.A
 	s.apiKeyMu.RLock()
 	cached, ok := s.apiKeys[hash]
 	s.apiKeyMu.RUnlock()
-	if ok {
+	if ok && time.Since(cached.cachedAt) < apiKeyCacheTTL {
 		s.touchCachedAPIKey(ctx, hash, cached)
 		return cached.key, nil
 	}
@@ -328,8 +331,9 @@ func (s *AuthService) cacheAPIKey(token string, key *core.APIKey) {
 }
 
 func (s *AuthService) cacheAPIKeyHash(hash string, key *core.APIKey) {
+	now := time.Now()
 	s.apiKeyMu.Lock()
-	s.apiKeys[hash] = cachedAPIKey{key: key, lastTouched: time.Now()}
+	s.apiKeys[hash] = cachedAPIKey{key: key, cachedAt: now, lastTouched: now}
 	s.apiKeyMu.Unlock()
 }
 
@@ -344,6 +348,28 @@ func (s *AuthService) touchCachedAPIKey(ctx context.Context, hash string, cached
 	s.apiKeyMu.Lock()
 	s.apiKeys[hash] = cached
 	s.apiKeyMu.Unlock()
+}
+
+func (s *AuthService) clearAPIKeyCache() {
+	s.apiKeyMu.Lock()
+	clear(s.apiKeys)
+	s.apiKeyMu.Unlock()
+}
+
+func (s *AuthService) startAPIKeyCacheInvalidationListener(ctx context.Context) {
+	go func() {
+		for ctx.Err() == nil {
+			err := s.store.ListenAPIKeyCacheInvalidations(ctx, func(string) {
+				s.clearAPIKeyCache()
+			})
+			if ctx.Err() != nil {
+				return
+			}
+			if err != nil {
+				time.Sleep(time.Second)
+			}
+		}
+	}()
 }
 
 func (s *AuthService) validateConfig() error {
