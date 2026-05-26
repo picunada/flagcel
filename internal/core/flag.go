@@ -3,11 +3,12 @@ package core
 import "time"
 
 type FlagConfig struct {
-	Key          string  `json:"key"`
-	Enabled      bool    `json:"enabled"`
-	Rules        []Rule  `json:"rules"`
-	DefaultValue bool    `json:"default_value"`
-	ContextID    *string `json:"context_id,omitempty"`
+	Key          string    `json:"key"`
+	Enabled      bool      `json:"enabled"`
+	Rules        []Rule    `json:"rules"`
+	DefaultValue bool      `json:"default_value"`
+	ContextID    *string   `json:"context_id,omitempty"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type Rule struct {

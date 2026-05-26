@@ -93,6 +93,7 @@ func (s *Store) GetFlag(ctx context.Context, key string) (*core.FlagConfig, erro
 		DefaultValue: flagRow.DefaultValue,
 		Rules:        rules,
 		ContextID:    uuidToStringPtr(flagRow.ContextID),
+		UpdatedAt:    timestamptzToTime(flagRow.UpdatedAt),
 	}, nil
 }
 
@@ -120,6 +121,7 @@ func (s *Store) ListFlags(ctx context.Context) ([]*core.FlagConfig, error) {
 			DefaultValue: f.DefaultValue,
 			Rules:        rulesByFlag[f.Key],
 			ContextID:    uuidToStringPtr(f.ContextID),
+			UpdatedAt:    timestamptzToTime(f.UpdatedAt),
 		}
 	}
 	return flags, nil
@@ -191,13 +193,16 @@ func (s *Store) GetRule(ctx context.Context, flagKey, ruleID string) (*core.Rule
 }
 
 func (s *Store) CreateRule(ctx context.Context, flagKey string, rule core.Rule) error {
-	return s.q.InsertRuleAtEnd(ctx, sqlcgen.InsertRuleAtEndParams{
+	if err := s.q.InsertRuleAtEnd(ctx, sqlcgen.InsertRuleAtEndParams{
 		ID:                rule.ID,
 		FlagKey:           flagKey,
 		Expression:        rule.Expression,
 		RolloutPercentage: int32(rule.Rollout.Percentage),
 		RolloutBucketBy:   rule.Rollout.BucketBy,
-	})
+	}); err != nil {
+		return err
+	}
+	return s.touchFlag(ctx, flagKey)
 }
 
 func (s *Store) UpdateRule(ctx context.Context, flagKey string, rule core.Rule) error {
@@ -214,7 +219,7 @@ func (s *Store) UpdateRule(ctx context.Context, flagKey string, rule core.Rule) 
 	if n == 0 {
 		return core.ErrRuleNotFound
 	}
-	return nil
+	return s.touchFlag(ctx, flagKey)
 }
 
 func (s *Store) DeleteRule(ctx context.Context, flagKey, ruleID string) error {
@@ -228,7 +233,7 @@ func (s *Store) DeleteRule(ctx context.Context, flagKey, ruleID string) error {
 	if n == 0 {
 		return core.ErrRuleNotFound
 	}
-	return nil
+	return s.touchFlag(ctx, flagKey)
 }
 
 func (s *Store) ReorderRules(ctx context.Context, flagKey string, ruleIDs []string) error {
@@ -254,7 +259,26 @@ func (s *Store) ReorderRules(ctx context.Context, flagKey string, ruleIDs []stri
 		}
 	}
 
+	if err := s.touchFlagWithQueries(ctx, qtx, flagKey); err != nil {
+		return err
+	}
+
 	return tx.Commit(ctx)
+}
+
+func (s *Store) touchFlag(ctx context.Context, flagKey string) error {
+	return s.touchFlagWithQueries(ctx, s.q, flagKey)
+}
+
+func (s *Store) touchFlagWithQueries(ctx context.Context, q *sqlcgen.Queries, flagKey string) error {
+	n, err := q.TouchFlag(ctx, flagKey)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return core.ErrFlagNotFound
+	}
+	return nil
 }
 
 func (s *Store) ListContexts(ctx context.Context) ([]*core.ContextSchema, error) {

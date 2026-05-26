@@ -1,10 +1,10 @@
 -- name: GetFlag :one
-SELECT key, enabled, default_value, context_id
+SELECT key, enabled, default_value, context_id, updated_at
 FROM flags
 WHERE key = $1;
 
 -- name: ListFlags :many
-SELECT key, enabled, default_value, context_id
+SELECT key, enabled, default_value, context_id, updated_at
 FROM flags
 ORDER BY key;
 
@@ -35,6 +35,11 @@ VALUES ($1, $2, $3, $4, $5, $6);
 
 -- name: DeleteFlag :exec
 DELETE FROM flags WHERE key = $1;
+
+-- name: TouchFlag :execrows
+UPDATE flags
+SET updated_at = NOW()
+WHERE key = $1;
 
 -- name: GetRule :one
 SELECT * FROM rules

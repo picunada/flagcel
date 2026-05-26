@@ -3,4 +3,10 @@ import { runLoad } from "$lib/load";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = ({ url }) =>
-    runLoad(async () => ({ flags: await api.listFlags() }), url.pathname);
+    runLoad(
+        async () => ({
+            flags: await api.listFlags(),
+            contexts: await api.listContexts(),
+        }),
+        url.pathname,
+    );

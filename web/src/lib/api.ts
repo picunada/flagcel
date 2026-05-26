@@ -15,6 +15,7 @@ export type Flag = {
     rules: Rule[];
     default_value: boolean;
     context_id?: string | null;
+    updated_at: string;
 };
 
 export type CreateFlagRequest = {

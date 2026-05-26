@@ -520,7 +520,7 @@ components:
 
     Flag:
       type: object
-      required: [key, enabled, rules, default_value]
+      required: [key, enabled, rules, default_value, updated_at]
       properties:
         key: { type: string, example: new-checkout }
         enabled: { type: boolean }
@@ -533,6 +533,7 @@ components:
           type: string
           format: uuid
           nullable: true
+        updated_at: { type: string, format: date-time }
 
     CreateFlagRequest:
       type: object

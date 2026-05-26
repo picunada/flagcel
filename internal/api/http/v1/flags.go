@@ -70,7 +70,13 @@ func (h *FlagsHandler) CreateFlag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := utils.Encode(w, r, http.StatusOK, "success", toFlagResponse(flag)); err != nil {
+	saved, err := h.service.GetFlag(r.Context(), flag.Key)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	if err := utils.Encode(w, r, http.StatusOK, "success", toFlagResponse(*saved)); err != nil {
 		WriteError(w, err)
 		return
 	}

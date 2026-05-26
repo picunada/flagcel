@@ -6,6 +6,7 @@ type FlagResponse struct {
 	Rules        []RuleResponse `json:"rules"`
 	DefaultValue bool           `json:"default_value"`
 	ContextID    *string        `json:"context_id,omitempty"`
+	UpdatedAt    string         `json:"updated_at"`
 }
 
 type RuleResponse struct {

@@ -44,6 +44,7 @@ func toFlagResponse(f core.FlagConfig) FlagResponse {
 		Rules:        rules,
 		DefaultValue: f.DefaultValue,
 		ContextID:    f.ContextID,
+		UpdatedAt:    formatTime(f.UpdatedAt),
 	}
 }
 
