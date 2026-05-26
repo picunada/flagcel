@@ -24,7 +24,7 @@ func (e *Engine) Evaluate(flag *Flag, data DataContext) bool {
 	}
 
 	if !flag.Enabled {
-		return false
+		return flag.DefaultValue
 	}
 
 	for _, rule := range flag.Rules {
