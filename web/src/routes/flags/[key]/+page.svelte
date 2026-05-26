@@ -6,15 +6,17 @@
 		APIError,
 		type Flag,
 		type CreateRuleRequest,
-		type ContextSchema
+		type ContextSchema,
+		type EvalTrace
 	} from '$lib/api';
 	import Button from '$lib/components/ui/button.svelte';
 	import Card from '$lib/components/ui/card.svelte';
+	import Badge from '$lib/components/ui/badge.svelte';
 	import BoolToggle from '$lib/components/ui/bool-toggle.svelte';
 	import SectionHeader from '$lib/components/ui/section-header.svelte';
 	import RuleEditor from '$lib/components/rule-editor.svelte';
 	import ContextPicker from '$lib/components/context-picker.svelte';
-	import { Trash2, Plus, Pencil, ArrowUp, ArrowDown } from 'lucide-svelte';
+	import { Trash2, Plus, Pencil, ArrowUp, ArrowDown, Play, RotateCcw } from 'lucide-svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -30,10 +32,18 @@
 	let editError = $state<string | null>(null);
 	let ruleSubmitting = $state(false);
 	let pendingRuleId = $state<string | null>(null);
+	let playgroundContext = $state(untrack(() => sampleContext(data.context)));
+	let playgroundDirty = $state(false);
+	let playgroundResult = $state<EvalTrace | null>(null);
+	let playgroundError = $state<string | null>(null);
+	let playgroundRunning = $state(false);
 
 	$effect(() => {
 		flag = data.flag;
 		context = data.context;
+		if (!playgroundDirty) {
+			playgroundContext = sampleContext(data.context);
+		}
 	});
 
 	async function loadContext(id: string | null) {
@@ -167,6 +177,109 @@
 		editError = null;
 		editingRuleId = id;
 	}
+
+	function sampleContext(ctx: ContextSchema | null): string {
+		const sample: Record<string, unknown> = {};
+		const fields = ctx?.fields ?? [];
+		if (fields.length === 0) {
+			return JSON.stringify(
+				{
+					user: {
+						id: 'u_123',
+						country: 'US'
+					}
+				},
+				null,
+				2
+			);
+		}
+
+		for (const field of fields) {
+			setPath(sample, field.path, sampleValue(field.type));
+		}
+		return JSON.stringify(sample, null, 2);
+	}
+
+	function sampleValue(type: ContextSchema['fields'][number]['type']): unknown {
+		switch (type) {
+			case 'int':
+				return 42;
+			case 'double':
+				return 42.5;
+			case 'bool':
+				return true;
+			case 'timestamp':
+				return '2026-01-01T00:00:00Z';
+			case 'list':
+				return [];
+			case 'map':
+				return {};
+			case 'string':
+			default:
+				return 'example';
+		}
+	}
+
+	function setPath(target: Record<string, unknown>, path: string, value: unknown) {
+		const parts = path.split('.').filter(Boolean);
+		if (parts.length === 0) return;
+
+		let cursor: Record<string, unknown> = target;
+		for (const part of parts.slice(0, -1)) {
+			const next = cursor[part];
+			if (!next || typeof next !== 'object' || Array.isArray(next)) {
+				cursor[part] = {};
+			}
+			cursor = cursor[part] as Record<string, unknown>;
+		}
+		cursor[parts[parts.length - 1]] = value;
+	}
+
+	async function evaluatePlayground() {
+		playgroundError = null;
+		playgroundResult = null;
+
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(playgroundContext);
+		} catch (e) {
+			playgroundError = e instanceof Error ? e.message : 'Invalid JSON';
+			return;
+		}
+		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+			playgroundError = 'Context must be a JSON object';
+			return;
+		}
+
+		playgroundRunning = true;
+		try {
+			playgroundResult = await api.evaluateFlag(flag.key, parsed as Record<string, unknown>);
+		} catch (e) {
+			playgroundError = e instanceof APIError ? e.message : 'Failed to evaluate flag';
+		} finally {
+			playgroundRunning = false;
+		}
+	}
+
+	function resetPlayground() {
+		playgroundContext = sampleContext(context);
+		playgroundDirty = false;
+		playgroundResult = null;
+		playgroundError = null;
+	}
+
+	function reasonLabel(reason: string): string {
+		switch (reason) {
+			case 'matched_rule':
+				return 'matched rule';
+			case 'default_no_match':
+				return 'default';
+			case 'cel_error':
+				return 'cel error';
+			default:
+				return reason.replaceAll('_', ' ');
+		}
+	}
 </script>
 
 <div class="space-y-10">
@@ -249,6 +362,189 @@
 					</Button>
 				{/if}
 			</div>
+
+			<Card class="motion-panel space-y-4 p-5">
+				<div class="flex flex-wrap items-center justify-between gap-3">
+					<p
+						class="font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
+					>
+						[ evaluation playground ]
+					</p>
+					<div class="flex items-center gap-2">
+						<Button
+							size="sm"
+							variant="ghost"
+							type="button"
+							onclick={resetPlayground}
+							disabled={playgroundRunning}
+						>
+							<RotateCcw class="h-3 w-3" /> reset
+						</Button>
+						<Button
+							size="sm"
+							variant="solid"
+							type="button"
+							onclick={evaluatePlayground}
+							disabled={playgroundRunning || playgroundContext.trim().length === 0}
+						>
+							<Play class="h-3 w-3" /> {playgroundRunning ? 'evaluating...' : 'evaluate'}
+						</Button>
+					</div>
+				</div>
+
+				<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.85fr)]">
+					<div class="space-y-2">
+						<label
+							for="playground-context"
+							class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
+						>
+							context json
+						</label>
+						<textarea
+							id="playground-context"
+							bind:value={playgroundContext}
+							oninput={() => (playgroundDirty = true)}
+							rows="12"
+							spellcheck="false"
+							class="min-h-72 w-full resize-y rounded-sm border border-input bg-[rgba(255,255,255,0.02)] px-3 py-2 font-mono text-sm leading-6 text-foreground transition-colors placeholder:text-muted-foreground/60 focus-visible:border-[rgba(255,255,255,0.36)] focus-visible:outline-none"
+						></textarea>
+					</div>
+
+					<div class="space-y-3">
+						<p
+							class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
+						>
+							result
+						</p>
+
+						{#if playgroundError}
+							<div class="rounded-sm border border-destructive/30 bg-[rgba(255,107,107,0.05)] p-3">
+								<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-destructive">
+									error
+								</p>
+								<p class="mt-2 break-words font-mono text-xs text-destructive">{playgroundError}</p>
+							</div>
+						{:else if playgroundResult}
+							<div class="grid grid-cols-2 gap-2">
+								<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
+									<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
+										value
+									</p>
+									<div class="mt-2">
+										<Badge
+											dot
+											variant={playgroundResult.error
+												? 'destructive'
+												: playgroundResult.value
+													? 'success'
+													: 'muted'}
+										>
+											{String(playgroundResult.value)}
+										</Badge>
+									</div>
+								</div>
+								<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
+									<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
+										path
+									</p>
+									<p class="mt-2 font-mono text-xs text-foreground">
+										{reasonLabel(playgroundResult.reason)}
+									</p>
+								</div>
+							</div>
+
+							{#if playgroundResult.error}
+								<div class="rounded-sm border border-destructive/30 bg-[rgba(255,107,107,0.05)] p-3">
+									<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-destructive">
+										cel error
+									</p>
+									<p class="mt-2 break-words font-mono text-xs text-destructive">
+										{playgroundResult.error}
+									</p>
+								</div>
+							{/if}
+
+							<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
+								<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
+									matched rule
+								</p>
+								{#if playgroundResult.matched_rule}
+									<p class="mt-2 font-mono text-xs text-foreground">
+										#{String(playgroundResult.matched_rule.index + 1).padStart(2, '0')}
+									</p>
+									<pre
+										class="mt-2 max-h-32 overflow-auto whitespace-pre-wrap break-words border-l-2 border-success/40 pl-3 font-mono text-xs text-muted-foreground">{playgroundResult.matched_rule.expression}</pre>
+								{:else}
+									<p class="mt-2 font-mono text-xs text-muted-foreground">none</p>
+								{/if}
+							</div>
+
+							{#if playgroundResult.bucket}
+								<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
+									<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
+										bucket
+									</p>
+									<div class="mt-2 grid gap-2 font-mono text-xs sm:grid-cols-2">
+										<p class="text-muted-foreground">
+											by <span class="text-foreground">{playgroundResult.bucket.bucket_by}</span>
+										</p>
+										<p class="text-muted-foreground">
+											value
+											<span class="text-foreground">
+												{playgroundResult.bucket.missing
+													? 'missing'
+													: playgroundResult.bucket.bucket_value}
+											</span>
+										</p>
+										<p class="text-muted-foreground">
+											bucket
+											<span class="text-foreground">
+												{playgroundResult.bucket.bucket_number ?? 'n/a'}
+											</span>
+										</p>
+										<p class="text-muted-foreground">
+											rollout
+											<span class="text-foreground">{playgroundResult.bucket.percentage}%</span>
+										</p>
+									</div>
+								</div>
+							{/if}
+
+							{#if playgroundResult.rule_results.length > 0}
+								<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
+									<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
+										rule trace
+									</p>
+									<div class="mt-2 space-y-1.5">
+										{#each playgroundResult.rule_results as result (result.id || result.index)}
+											<div class="flex items-center justify-between gap-3 font-mono text-xs">
+												<span class="text-muted-foreground">
+													#{String(result.index + 1).padStart(2, '0')}
+												</span>
+												<span
+													class={result.error
+														? 'text-destructive'
+														: result.matched
+															? 'text-success'
+															: 'text-muted-foreground'}
+												>
+													{result.error ? 'error' : result.matched ? 'match' : 'no match'}
+												</span>
+											</div>
+										{/each}
+									</div>
+								</div>
+							{/if}
+						{:else}
+							<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-6 text-center">
+								<p class="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+									[ not evaluated ]
+								</p>
+							</div>
+						{/if}
+					</div>
+				</div>
+			</Card>
 
 			{#if flag.rules.length === 0 && !creating}
 				<Card class="motion-panel p-8 text-center">
