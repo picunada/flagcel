@@ -11,11 +11,14 @@
 	import Button from '$lib/components/ui/button.svelte';
 	import Card from '$lib/components/ui/card.svelte';
 	import BoolToggle from '$lib/components/ui/bool-toggle.svelte';
+	import DestructiveDialog from '$lib/components/ui/destructive-dialog.svelte';
 	import SectionHeader from '$lib/components/ui/section-header.svelte';
 	import RuleEditor from '$lib/components/rule-editor.svelte';
 	import ContextPicker from '$lib/components/context-picker.svelte';
 	import { Trash2, Plus, Pencil, ArrowUp, ArrowDown } from 'lucide-svelte';
 	import type { PageProps } from './$types';
+
+	type Rule = Flag['rules'][number];
 
 	let { data }: PageProps = $props();
 
@@ -30,6 +33,13 @@
 	let editError = $state<string | null>(null);
 	let ruleSubmitting = $state(false);
 	let pendingRuleId = $state<string | null>(null);
+	let deleteFlagOpen = $state(false);
+	let deleteFlagSubmitting = $state(false);
+	let deleteFlagError = $state<string | null>(null);
+	let deleteRuleOpen = $state(false);
+	let deleteRuleTarget = $state<Rule | null>(null);
+	let deleteRuleSubmitting = $state(false);
+	let deleteRuleError = $state<string | null>(null);
 
 	$effect(() => {
 		flag = data.flag;
@@ -79,12 +89,15 @@
 	}
 
 	async function remove() {
-		if (!confirm(`Delete flag "${flag.key}"? This removes all of its rules.`)) return;
+		deleteFlagSubmitting = true;
+		deleteFlagError = null;
 		try {
 			await api.deleteFlag(flag.key);
 			await goto('/');
 		} catch (e) {
-			error = e instanceof APIError ? e.message : 'Failed to delete flag';
+			deleteFlagError = e instanceof APIError ? e.message : 'Failed to delete flag';
+		} finally {
+			deleteFlagSubmitting = false;
 		}
 	}
 
@@ -119,20 +132,30 @@
 		}
 	}
 
-	async function deleteRule(id: string) {
-		const rule = flag.rules.find((r) => r.id === id);
+	function requestDeleteRule(rule: Rule) {
+		deleteRuleTarget = rule;
+		deleteRuleError = null;
+		deleteRuleOpen = true;
+	}
+
+	async function deleteRule() {
+		const rule = deleteRuleTarget;
 		if (!rule) return;
-		if (!confirm(`Delete this rule?\n\n${rule.expression}`)) return;
 		const prev = flag.rules;
-		pendingRuleId = id;
-		flag = { ...flag, rules: prev.filter((r) => r.id !== id) };
+		pendingRuleId = rule.id;
+		deleteRuleSubmitting = true;
+		deleteRuleError = null;
+		flag = { ...flag, rules: prev.filter((r) => r.id !== rule.id) };
 		try {
-			await api.deleteRule(flag.key, id);
+			await api.deleteRule(flag.key, rule.id);
+			deleteRuleOpen = false;
+			deleteRuleTarget = null;
 		} catch (e) {
 			flag = { ...flag, rules: prev };
-			error = e instanceof APIError ? e.message : 'Failed to delete rule';
+			deleteRuleError = e instanceof APIError ? e.message : 'Failed to delete rule';
 		} finally {
 			pendingRuleId = null;
+			deleteRuleSubmitting = false;
 		}
 	}
 
@@ -178,21 +201,26 @@
 	</a>
 
 	<header class="flex flex-wrap items-start justify-between gap-4">
-
-			<div class="space-y-3">
-				<p
-					class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground"
-				>
-					[ flag ]
-				</p>
-				<h1 class="font-mono text-3xl font-normal tracking-tight sm:text-4xl">
-					{flag.key}
-				</h1>
-			</div>
-			<Button variant="destructive" onclick={remove}>
-				<Trash2 class="h-3.5 w-3.5" /> delete
-			</Button>
-		</header>
+		<div class="space-y-3">
+			<p
+				class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground"
+			>
+				[ flag ]
+			</p>
+			<h1 class="font-mono text-3xl font-normal tracking-tight sm:text-4xl">
+				{flag.key}
+			</h1>
+		</div>
+		<Button
+			variant="destructive"
+			onclick={() => {
+				deleteFlagError = null;
+				deleteFlagOpen = true;
+			}}
+		>
+			<Trash2 class="h-3.5 w-3.5" /> delete
+		</Button>
+	</header>
 
 		<Card class="motion-panel divide-y divide-border/60">
 			<div class="flex items-center justify-between gap-4 p-5">
@@ -343,7 +371,7 @@
 											size="sm"
 											variant="destructive"
 											disabled={pendingRuleId === rule.id}
-											onclick={() => deleteRule(rule.id)}
+											onclick={() => requestDeleteRule(rule)}
 										>
 											<Trash2 class="h-3 w-3" />
 										</Button>
@@ -377,3 +405,29 @@
 		{/if}
 	</section>
 </div>
+
+<DestructiveDialog
+	bind:open={deleteFlagOpen}
+	title="Delete flag"
+	description="This permanently deletes the flag and all of its rules."
+	confirmationValue={flag.key}
+	actionLabel="delete flag"
+	submitting={deleteFlagSubmitting}
+	error={deleteFlagError}
+	onconfirm={remove}
+/>
+
+<DestructiveDialog
+	bind:open={deleteRuleOpen}
+	title="Delete rule"
+	description="This removes the rule from the flag evaluation order."
+	details={deleteRuleTarget?.expression}
+	actionLabel="delete rule"
+	submitting={deleteRuleSubmitting}
+	error={deleteRuleError}
+	onconfirm={deleteRule}
+	oncancel={() => {
+		deleteRuleTarget = null;
+		deleteRuleError = null;
+	}}
+/>

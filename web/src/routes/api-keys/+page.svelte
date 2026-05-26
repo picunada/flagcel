@@ -5,6 +5,7 @@
     import Badge from "$lib/components/ui/badge.svelte";
     import Button from "$lib/components/ui/button.svelte";
     import Card from "$lib/components/ui/card.svelte";
+    import DestructiveDialog from "$lib/components/ui/destructive-dialog.svelte";
     import Input from "$lib/components/ui/input.svelte";
     import SectionHeader from "$lib/components/ui/section-header.svelte";
     import type { PageProps } from "./$types";
@@ -17,6 +18,10 @@
     let error = $state<string | null>(null);
     let created = $state<CreateAPIKeyResponse | null>(null);
     let copied = $state(false);
+    let revokeOpen = $state(false);
+    let revokeTarget = $state<APIKey | null>(null);
+    let revoking = $state(false);
+    let revokeError = $state<string | null>(null);
 
     async function createKey() {
         if (!name.trim()) return;
@@ -34,13 +39,26 @@
         }
     }
 
-    async function revokeKey(id: string) {
-        error = null;
+    function requestRevokeKey(key: APIKey) {
+        revokeTarget = key;
+        revokeError = null;
+        revokeOpen = true;
+    }
+
+    async function revokeKey() {
+        const key = revokeTarget;
+        if (!key) return;
+        revoking = true;
+        revokeError = null;
         try {
-            await api.revokeAPIKey(id);
+            await api.revokeAPIKey(key.id);
+            revokeOpen = false;
+            revokeTarget = null;
             await invalidateAll();
         } catch (e) {
-            error = e instanceof APIError ? e.message : "Failed to revoke API key";
+            revokeError = e instanceof APIError ? e.message : "Failed to revoke API key";
+        } finally {
+            revoking = false;
         }
     }
 
@@ -131,7 +149,7 @@
                             </p>
                         </div>
                         {#if !key.revoked_at}
-                            <Button variant="destructive" size="sm" onclick={() => revokeKey(key.id)}>
+                            <Button variant="destructive" size="sm" onclick={() => requestRevokeKey(key)}>
                                 <Trash2 class="h-3.5 w-3.5" /> revoke
                             </Button>
                         {/if}
@@ -141,3 +159,18 @@
         {/if}
     </div>
 </section>
+
+<DestructiveDialog
+    bind:open={revokeOpen}
+    title="Revoke API key"
+    description="Requests using this key will stop working immediately."
+    details={revokeTarget ? `${revokeTarget.name}\n${revokeTarget.prefix}` : null}
+    actionLabel="revoke key"
+    submitting={revoking}
+    error={revokeError}
+    onconfirm={revokeKey}
+    oncancel={() => {
+        revokeTarget = null;
+        revokeError = null;
+    }}
+/>
