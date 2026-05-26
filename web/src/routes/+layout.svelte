@@ -140,7 +140,7 @@
                     aria-hidden="true"
                 ></span>
                 <nav
-                    class="flex items-center gap-4 font-mono text-xs uppercase tracking-[0.12em]"
+                    class="flex items-center gap-4 text-xs uppercase tracking-[0.12em]"
                 >
                     {#each nav as item (item.href)}
                         {@const active =
@@ -187,7 +187,7 @@
                 {@render children()}
             {:else}
                 <div
-                    class="py-24 text-center font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground"
+                    class="py-24 text-center text-xs uppercase tracking-[0.14em] text-muted-foreground"
                 >
                     authenticating
                 </div>
@@ -195,7 +195,7 @@
         </main>
 
         <footer
-            class="py-8 text-center font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
+            class="py-8 text-center text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
         >
             flagcel · self-hosted feature flags with cel
         </footer>

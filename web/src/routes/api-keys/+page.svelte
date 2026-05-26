@@ -77,10 +77,10 @@
 
 <section class="space-y-10">
     <header class="space-y-3">
-        <p class="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
+        <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">
             eval access
         </p>
-        <h1 class="font-mono text-3xl font-normal leading-tight sm:text-4xl">
+        <h1 class="text-3xl font-normal leading-tight sm:text-4xl">
             API keys
         </h1>
     </header>
@@ -98,7 +98,7 @@
                 class="space-y-3 rounded-sm border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.035)] p-4"
             >
                 <div class="flex items-center justify-between gap-3">
-                    <p class="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    <p class="text-xs uppercase tracking-[0.14em] text-muted-foreground">
                         copy this token now
                     </p>
                     <Button size="sm" variant="ghost" onclick={copyToken}>
@@ -126,7 +126,7 @@
         {#if keys.length === 0}
             <Card class="motion-panel p-10 text-center">
                 <KeyRound class="mx-auto h-5 w-5 text-muted-foreground" />
-                <p class="mt-4 font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                <p class="mt-4 text-xs uppercase tracking-[0.14em] text-muted-foreground">
                     [ no keys yet ]
                 </p>
             </Card>
@@ -136,15 +136,15 @@
                     <Card class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
                         <div class="min-w-0 space-y-2">
                             <div class="flex items-center gap-2">
-                                <p class="truncate font-mono text-base">{key.name}</p>
+                                <p class="truncate text-base">{key.name}</p>
                                 {#if key.revoked_at}
                                     <Badge variant="muted">revoked</Badge>
                                 {:else}
                                     <Badge variant="success" dot>active</Badge>
                                 {/if}
                             </div>
-                            <p class="font-mono text-xs text-muted-foreground">
-                                {key.prefix} · created {formatDate(key.created_at)} · last used
+                            <p class="text-xs text-muted-foreground">
+                                <span class="font-mono">{key.prefix}</span> · created {formatDate(key.created_at)} · last used
                                 {formatDate(key.last_used_at)}
                             </p>
                         </div>

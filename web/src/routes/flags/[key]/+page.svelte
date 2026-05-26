@@ -195,7 +195,7 @@
 <div class="space-y-10">
 	<a
 		href="/"
-		class="inline-flex items-center gap-1.5 font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+		class="inline-flex items-center gap-1.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
 	>
 		← all flags
 	</a>
@@ -203,7 +203,7 @@
 	<header class="flex flex-wrap items-start justify-between gap-4">
 		<div class="space-y-3">
 			<p
-				class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground"
+				class="text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground"
 			>
 				[ flag ]
 			</p>
@@ -225,7 +225,7 @@
 		<Card class="motion-panel divide-y divide-border/60">
 			<div class="flex items-center justify-between gap-4 p-5">
 				<div class="space-y-1">
-					<p class="font-mono text-sm">enabled</p>
+					<p class="text-sm">enabled</p>
 					<p class="text-xs text-muted-foreground">
 						when off, the default value is returned for every request
 					</p>
@@ -238,7 +238,7 @@
 			</div>
 			<div class="flex items-center justify-between gap-4 p-5">
 				<div class="space-y-1">
-					<p class="font-mono text-sm">default value</p>
+					<p class="text-sm">default value</p>
 					<p class="text-xs text-muted-foreground">returned when no rule matches</p>
 				</div>
 				<BoolToggle
@@ -249,7 +249,7 @@
 			</div>
 			<div class="flex flex-wrap items-center justify-between gap-4 p-5">
 				<div class="space-y-1">
-					<p class="font-mono text-sm">context</p>
+					<p class="text-sm">context</p>
 					<p class="text-xs text-muted-foreground">
 						selects the evaluation shape used for autocomplete in rules
 					</p>
@@ -265,7 +265,7 @@
 		</Card>
 
 		{#if error}
-			<p class="font-mono text-xs text-destructive">{error}</p>
+			<p class="text-xs text-destructive">{error}</p>
 		{/if}
 
 		<section class="space-y-4">
@@ -281,7 +281,7 @@
 			{#if flag.rules.length === 0 && !creating}
 				<Card class="motion-panel p-8 text-center">
 					<p
-						class="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground"
+						class="text-xs uppercase tracking-[0.14em] text-muted-foreground"
 					>
 						[ no rules ]
 					</p>
@@ -296,7 +296,7 @@
 							{#if editingRuleId === rule.id}
 								<div class="motion-panel space-y-4">
 									<p
-										class="font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
+										class="text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
 									>
 										[ editing rule #{String(i + 1).padStart(2, '0')} ]
 									</p>
@@ -326,7 +326,7 @@
 											<ArrowUp class="h-3.5 w-3.5" />
 										</button>
 										<div
-											class="font-mono text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground"
+											class="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground"
 										>
 											#{String(i + 1).padStart(2, '0')}
 										</div>
@@ -345,7 +345,7 @@
 										<pre
 											class="overflow-x-auto border-l-2 border-success/40 bg-[rgba(255,255,255,0.02)] py-2 pl-3 font-mono text-sm text-foreground">{rule.expression}</pre>
 										<div
-											class="flex flex-wrap items-center gap-4 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground"
+											class="flex flex-wrap items-center gap-4 text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground"
 										>
 											<span>
 												rollout
@@ -354,7 +354,7 @@
 											{#if rule.rollout.bucket_by}
 												<span>
 													bucket by
-													<span class="text-foreground">{rule.rollout.bucket_by}</span>
+													<span class="font-mono text-foreground">{rule.rollout.bucket_by}</span>
 												</span>
 											{/if}
 										</div>
@@ -386,7 +386,7 @@
 			{#if creating}
 				<Card class="motion-panel space-y-4 p-5">
 					<p
-						class="font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
+						class="text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
 					>
 						[ new rule ]
 					</p>

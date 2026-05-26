@@ -51,7 +51,7 @@
 <div class="space-y-10">
 	<a
 		href="/contexts"
-		class="inline-flex items-center gap-1.5 font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+		class="inline-flex items-center gap-1.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
 	>
 		← all contexts
 	</a>
@@ -59,11 +59,11 @@
 	<header class="flex flex-wrap items-start justify-between gap-4">
 		<div class="space-y-3">
 			<p
-				class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground"
+				class="text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground"
 			>
 				[ context ]
 			</p>
-			<h1 class="font-mono text-3xl font-normal tracking-tight sm:text-4xl">
+			<h1 class="text-3xl font-normal tracking-tight sm:text-4xl">
 				{schema.name}
 			</h1>
 		</div>

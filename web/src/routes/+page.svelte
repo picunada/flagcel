@@ -31,11 +31,11 @@
 
 <section class="space-y-12">
 	<header class="space-y-3">
-		<p class="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
+		<p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">
 			feature flags · cel-based targeting
 		</p>
 		<h1
-			class="text-balance font-mono text-3xl font-normal leading-tight sm:text-4xl"
+			class="text-balance text-3xl font-normal leading-tight sm:text-4xl"
 		>
 			Roll out features<br />on your own terms.
 		</h1>
@@ -67,7 +67,7 @@
 		</Card>
 	{:else if filtered.length === 0}
 		<Card class="motion-panel flex flex-col items-center gap-4 p-12 text-center">
-			<p class="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+			<p class="text-xs uppercase tracking-[0.14em] text-muted-foreground">
 				{flags.length === 0 ? '[ no flags yet ]' : '[ no matches ]'}
 			</p>
 			<p class="max-w-sm text-sm text-[rgba(255,255,255,0.7)]">
@@ -94,7 +94,7 @@
 									{flag.key}
 								</p>
 								<p
-									class="mt-1 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground"
+									class="mt-1 text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground"
 								>
 									{flag.rules.length} rule{flag.rules.length === 1 ? '' : 's'} · default
 									{String(flag.default_value)}
@@ -117,7 +117,7 @@
 								{/each}
 								{#if flag.rules.length > 2}
 									<p
-										class="pl-2.5 font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground"
+										class="pl-2.5 text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground"
 									>
 										+{flag.rules.length - 2} more
 									</p>
@@ -125,7 +125,7 @@
 							</div>
 						{/if}
 						<span
-							class="mt-auto font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors group-hover:text-foreground"
+							class="mt-auto text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors group-hover:text-foreground"
 						>
 							open →
 						</span>

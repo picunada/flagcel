@@ -95,7 +95,7 @@
 						<AlertTriangle class="h-4 w-4" />
 					</div>
 					<div class="min-w-0 flex-1 space-y-2">
-						<h2 id="destructive-dialog-title" class="font-mono text-lg font-normal">
+						<h2 id="destructive-dialog-title" class="text-lg font-normal">
 							{title}
 						</h2>
 						<p id="destructive-dialog-description" class="text-sm text-muted-foreground">
