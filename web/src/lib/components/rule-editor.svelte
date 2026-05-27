@@ -2,12 +2,15 @@
 	import { untrack, tick } from 'svelte';
 	import Button from '$lib/components/ui/button.svelte';
 	import Input from '$lib/components/ui/input.svelte';
+	import ValueEditor from '$lib/components/value-editor.svelte';
 	import { cn } from '$lib/utils';
-	import type { ContextField, ContextSchema, CreateRuleRequest, Rule } from '$lib/api';
+	import type { ContextField, ContextSchema, CreateRuleRequest, FlagValue, Rule, ValueType } from '$lib/api';
+	import { defaultValueForType } from '$lib/values';
 
 	type Props = {
 		rule?: Rule;
 		context?: ContextSchema | null;
+		valueType?: ValueType;
 		submitting?: boolean;
 		error?: string | null;
 		onsave: (data: CreateRuleRequest) => void | Promise<void>;
@@ -19,6 +22,7 @@
 	let {
 		rule,
 		context = null,
+		valueType = 'boolean',
 		submitting = false,
 		error = null,
 		onsave,
@@ -30,6 +34,8 @@
 	let expression = $state(untrack(() => rule?.expression ?? ''));
 	let percentage = $state(untrack(() => String(rule?.rollout.percentage ?? 100)));
 	let bucketBy = $state(untrack(() => rule?.rollout.bucket_by ?? ''));
+	let value = $state<FlagValue>(untrack(() => rule?.value ?? defaultValueForType(valueType, true)));
+	let valueValid = $state(true);
 
 	const parsedPercentage = $derived(Number(percentage));
 	const canSubmit = $derived(
@@ -37,6 +43,7 @@
 			Number.isFinite(parsedPercentage) &&
 			parsedPercentage >= 0 &&
 			parsedPercentage <= 100 &&
+			valueValid &&
 			!submitting
 	);
 
@@ -45,6 +52,9 @@
 	let cursor = $state(0);
 	let acOpen = $state(false);
 	let acIndex = $state(0);
+	let bucketInput: HTMLInputElement | null = $state(null);
+	let bucketAcOpen = $state(false);
+	let bucketAcIndex = $state(0);
 
 	const candidates = $derived<ContextField[]>(context?.fields ?? []);
 
@@ -66,12 +76,30 @@
 			.slice(0, 8);
 	});
 
+	const bucketSuggestions = $derived.by(() => {
+		if (!candidates.length) return [];
+		const t = bucketBy.trim().toLowerCase();
+		if (!t) return [];
+		return candidates
+			.filter((f) => f.path.toLowerCase().startsWith(t) && f.path !== bucketBy.trim())
+			.slice(0, 8);
+	});
+
 	$effect(() => {
 		if (suggestions.length === 0) {
 			acOpen = false;
 			acIndex = 0;
 		} else if (acIndex >= suggestions.length) {
 			acIndex = 0;
+		}
+	});
+
+	$effect(() => {
+		if (bucketSuggestions.length === 0) {
+			bucketAcOpen = false;
+			bucketAcIndex = 0;
+		} else if (bucketAcIndex >= bucketSuggestions.length) {
+			bucketAcIndex = 0;
 		}
 	});
 
@@ -83,6 +111,10 @@
 
 	function handleInput() {
 		handleCursor();
+	}
+
+	function handleBucketInput() {
+		if (bucketSuggestions.length > 0) bucketAcOpen = true;
 	}
 
 	async function insert(s: ContextField) {
@@ -99,6 +131,14 @@
 		textarea.focus();
 		textarea.setSelectionRange(newPos, newPos);
 		cursor = newPos;
+	}
+
+	async function insertBucket(s: ContextField) {
+		bucketBy = s.path;
+		bucketAcOpen = false;
+		await tick();
+		bucketInput?.focus();
+		bucketInput?.setSelectionRange(bucketBy.length, bucketBy.length);
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -132,6 +172,35 @@
 		}
 	}
 
+	function handleBucketKeydown(e: KeyboardEvent) {
+		if (bucketAcOpen && bucketSuggestions.length > 0) {
+			if (e.key === 'ArrowDown') {
+				e.preventDefault();
+				bucketAcIndex = (bucketAcIndex + 1) % bucketSuggestions.length;
+				return;
+			}
+			if (e.key === 'ArrowUp') {
+				e.preventDefault();
+				bucketAcIndex = (bucketAcIndex - 1 + bucketSuggestions.length) % bucketSuggestions.length;
+				return;
+			}
+			if (e.key === 'Enter' || e.key === 'Tab') {
+				e.preventDefault();
+				insertBucket(bucketSuggestions[bucketAcIndex]);
+				return;
+			}
+			if (e.key === 'Escape') {
+				e.preventDefault();
+				bucketAcOpen = false;
+				return;
+			}
+		}
+		if ((e.ctrlKey || e.metaKey) && e.key === ' ') {
+			e.preventDefault();
+			if (bucketSuggestions.length > 0) bucketAcOpen = true;
+		}
+	}
+
 	async function submit(e: SubmitEvent) {
 		e.preventDefault();
 		if (!canSubmit) return;
@@ -140,7 +209,8 @@
 			rollout: {
 				percentage: Math.round(parsedPercentage),
 				...(bucketBy.trim() ? { bucket_by: bucketBy.trim() } : {})
-			}
+			},
+			value
 		});
 	}
 </script>
@@ -214,6 +284,23 @@
 		{/if}
 	</div>
 
+	<div class="space-y-2">
+		<label
+			for="rule-value"
+			class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
+		>
+			value · {valueType}
+		</label>
+		<ValueEditor
+			id="rule-value"
+			type={valueType}
+			{value}
+			disabled={submitting}
+			onchange={(v) => (value = v)}
+			onvalid={(v) => (valueValid = v)}
+		/>
+	</div>
+
 	<div class="grid gap-4 sm:grid-cols-2">
 		<div class="space-y-2">
 			<label
@@ -240,7 +327,57 @@
 			>
 				bucket by · optional
 			</label>
-			<Input id="bucket-by" bind:value={bucketBy} placeholder="user.id" />
+			<div class="relative">
+				<input
+					id="bucket-by"
+					bind:this={bucketInput}
+					bind:value={bucketBy}
+					oninput={handleBucketInput}
+					onfocus={handleBucketInput}
+					onkeydown={handleBucketKeydown}
+					onblur={() => setTimeout(() => (bucketAcOpen = false), 120)}
+					placeholder="user.id"
+					autocomplete="off"
+					autocapitalize="off"
+					autocorrect="off"
+					spellcheck="false"
+					data-1p-ignore
+					data-lpignore="true"
+					data-form-type="other"
+					class="flex h-9 w-full rounded-sm border border-input bg-transparent px-3 py-1 text-sm transition-all duration-200 ease-out placeholder:text-muted-foreground placeholder:lowercase focus-visible:border-[rgba(255,255,255,0.36)] focus-visible:bg-[rgba(255,255,255,0.025)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				/>
+				{#if bucketAcOpen && bucketSuggestions.length > 0}
+					<div
+						role="listbox"
+						class="glass-panel motion-pop absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-sm py-1 shadow-lg"
+					>
+						{#each bucketSuggestions as s, i (s.path)}
+							<button
+								type="button"
+								role="option"
+								aria-selected={i === bucketAcIndex}
+								tabindex="-1"
+								onmousedown={(e) => {
+									e.preventDefault();
+									insertBucket(s);
+								}}
+								onmouseenter={() => (bucketAcIndex = i)}
+								class={cn(
+									'flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left font-mono text-xs transition-colors',
+									i === bucketAcIndex
+										? 'bg-[rgba(255,255,255,0.06)] text-foreground'
+										: 'text-muted-foreground hover:text-foreground'
+								)}
+							>
+								<span class="truncate">{s.path}</span>
+								<span class="text-muted-foreground/70 text-[0.65rem] uppercase tracking-[0.12em]">
+									{s.type}
+								</span>
+							</button>
+						{/each}
+					</div>
+				{/if}
+			</div>
 		</div>
 	</div>
 

@@ -6,6 +6,7 @@
 	import Card from '$lib/components/ui/card.svelte';
 	import Input from '$lib/components/ui/input.svelte';
 	import { cn } from '$lib/utils';
+	import { formatFlagValue, valueBadgeVariant } from '$lib/values';
 	import { LayoutGrid, ListFilter, Plus, Search, TableProperties } from 'lucide-svelte';
 	import type { PageProps } from './$types';
 
@@ -58,7 +59,7 @@
 		if (sortKey === 'recent') return timestamp(b) - timestamp(a) || a.key.localeCompare(b.key);
 		if (sortKey === 'rules') return b.rules.length - a.rules.length || a.key.localeCompare(b.key);
 		if (sortKey === 'default') {
-			return Number(b.default_value) - Number(a.default_value) || a.key.localeCompare(b.key);
+			return formatFlagValue(a.default_value).localeCompare(formatFlagValue(b.default_value)) || a.key.localeCompare(b.key);
 		}
 		if (sortKey === 'status') return Number(b.enabled) - Number(a.enabled) || a.key.localeCompare(b.key);
 		if (sortKey === 'context') {
@@ -283,8 +284,8 @@
 										{flag.key}
 									</p>
 									<p class="mt-1 text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground">
-										{flag.rules.length} rule{flag.rules.length === 1 ? '' : 's'} · default
-										{String(flag.default_value)}
+										{flag.type} · {flag.rules.length} rule{flag.rules.length === 1 ? '' : 's'} · default
+										{formatFlagValue(flag.default_value)}
 									</p>
 								</div>
 								{#if flag.enabled}
@@ -337,7 +338,7 @@
 							<th class="px-3 py-2 font-normal">status</th>
 							<th class="px-3 py-2 font-normal">context</th>
 							<th class="px-3 py-2 text-right font-normal">rules</th>
-							<th class="px-3 py-2 font-normal">default</th>
+							<th class="px-3 py-2 font-normal">type/default</th>
 							<th class="px-3 py-2 font-normal">changed</th>
 							<th class="px-3 py-2 text-right font-normal">action</th>
 						</tr>
@@ -367,8 +368,8 @@
 									{flag.rules.length}
 								</td>
 								<td class="px-3 py-2 align-middle">
-									<Badge variant={flag.default_value ? 'success' : 'muted'}>
-										{String(flag.default_value)}
+									<Badge variant={valueBadgeVariant(flag.default_value)}>
+										{flag.type}: {formatFlagValue(flag.default_value)}
 									</Badge>
 								</td>
 								<td class="px-3 py-2 align-middle text-xs text-muted-foreground">

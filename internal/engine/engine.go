@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/google/cel-go/cel"
+	"github.com/picunada/flagcel/internal/core"
 )
 
 type Engine struct {
@@ -17,14 +18,14 @@ func NewEngine(celEnv *cel.Env) *Engine {
 
 type DataContext map[string]any
 
-// Evaluate each rule in flag and return bucket for first matched or return flag default value.
-func (e *Engine) Evaluate(flag *Flag, data DataContext) bool {
+// Evaluate each rule in flag and return the matched rule value, or the flag default value.
+func (e *Engine) Evaluate(flag *Flag, data DataContext) core.FlagValue {
 	if flag == nil {
-		return false
+		return core.FlagValue{Type: core.ValueTypeBoolean, Value: false}
 	}
 
 	if !flag.Enabled {
-		return flag.DefaultValue
+		return flagValue(flag.Type, flag.DefaultValue)
 	}
 
 	for _, rule := range flag.Rules {
@@ -38,10 +39,23 @@ func (e *Engine) Evaluate(flag *Flag, data DataContext) bool {
 			continue
 		}
 
-		return e.bucket(flag.Key, data, rule.Rollout)
+		if e.bucket(flag.Key, data, rule.Rollout) {
+			return flagValue(flag.Type, rule.Value)
+		}
+		return flagValue(flag.Type, flag.DefaultValue)
 	}
 
-	return flag.DefaultValue
+	return flagValue(flag.Type, flag.DefaultValue)
+}
+
+func flagValue(valueType core.ValueType, value any) core.FlagValue {
+	if valueType == "" {
+		valueType = core.ValueTypeBoolean
+	}
+	if value == nil && valueType == core.ValueTypeBoolean {
+		value = false
+	}
+	return core.FlagValue{Type: valueType, Value: value}
 }
 
 func (e *Engine) evaluateExpression(program cel.Program, data DataContext) (bool, error) {

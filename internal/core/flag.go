@@ -4,17 +4,33 @@ import "time"
 
 type FlagConfig struct {
 	Key          string    `json:"key"`
+	Type         ValueType `json:"type"`
 	Enabled      bool      `json:"enabled"`
 	Rules        []Rule    `json:"rules"`
-	DefaultValue bool      `json:"default_value"`
+	DefaultValue any       `json:"default_value"`
 	ContextID    *string   `json:"context_id,omitempty"`
 	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type ValueType string
+
+const (
+	ValueTypeBoolean ValueType = "boolean"
+	ValueTypeString  ValueType = "string"
+	ValueTypeNumber  ValueType = "number"
+	ValueTypeJSON    ValueType = "json"
+)
+
+type FlagValue struct {
+	Type  ValueType `json:"value_type"`
+	Value any       `json:"value"`
 }
 
 type Rule struct {
 	ID         string  `json:"id"`
 	Expression string  `json:"expression"`
 	Rollout    Rollout `json:"rollout"`
+	Value      any     `json:"value"`
 }
 
 type Rollout struct {

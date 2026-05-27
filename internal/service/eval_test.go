@@ -71,6 +71,55 @@ func TestCompiledFlagCacheGetOrCompileRecompilesChangedFlag(t *testing.T) {
 	}
 }
 
+func TestCompiledFlagCacheGetOrCompileRecompilesChangedTypedValue(t *testing.T) {
+	eng := newTestEngine(t)
+	cache := &compiledFlagCache{
+		engine: eng,
+		flags:  make(map[string]cachedFlag),
+	}
+
+	cfg := core.FlagConfig{
+		Key:          "feature-a",
+		Type:         core.ValueTypeString,
+		Enabled:      true,
+		DefaultValue: "control",
+		Rules: []core.Rule{
+			{
+				ID:         "rule-a",
+				Expression: `user.tier == "pro"`,
+				Rollout:    core.Rollout{Percentage: 100, BucketBy: "id"},
+				Value:      "variant-a",
+			},
+		},
+	}
+
+	first, err := cache.GetOrCompile(cfg, userContextSchema())
+	if err != nil {
+		t.Fatalf("first compile: %v", err)
+	}
+
+	cfg.Rules[0].Value = "variant-b"
+	second, err := cache.GetOrCompile(cfg, userContextSchema())
+	if err != nil {
+		t.Fatalf("second compile: %v", err)
+	}
+	if first == second {
+		t.Fatal("expected changed rule value to replace cached compiled flag")
+	}
+
+	first = second
+	cfg.Type = core.ValueTypeJSON
+	cfg.DefaultValue = map[string]any{"name": "control"}
+	cfg.Rules[0].Value = map[string]any{"name": "variant"}
+	second, err = cache.GetOrCompile(cfg, userContextSchema())
+	if err != nil {
+		t.Fatalf("third compile: %v", err)
+	}
+	if first == second {
+		t.Fatal("expected changed flag type/default to replace cached compiled flag")
+	}
+}
+
 func TestCompiledFlagCacheGetOrCompileRecompilesChangedContext(t *testing.T) {
 	eng := newTestEngine(t)
 	cache := &compiledFlagCache{

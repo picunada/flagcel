@@ -8,6 +8,8 @@ const (
 	ValidationIssueNonBoolExpression = "non_bool_expression"
 	ValidationIssueInvalidRollout    = "invalid_rollout"
 	ValidationIssueMissingBucket     = "missing_bucket_field"
+	ValidationIssueInvalidValueType  = "invalid_value_type"
+	ValidationIssueInvalidValue      = "invalid_value"
 )
 
 type ValidationIssue struct {

@@ -1,3 +1,6 @@
+export type ValueType = "boolean" | "string" | "number" | "json";
+export type FlagValue = boolean | string | number | null | Record<string, unknown> | unknown[];
+
 export type Rollout = {
     percentage: number;
     bucket_by?: string;
@@ -7,37 +10,42 @@ export type Rule = {
     id: string;
     expression: string;
     rollout: Rollout;
+    value: FlagValue;
 };
 
 export type Flag = {
     key: string;
+    type: ValueType;
     enabled: boolean;
     rules: Rule[];
-    default_value: boolean;
+    default_value: FlagValue;
     context_id?: string | null;
     updated_at: string;
 };
 
 export type CreateFlagRequest = {
     key: string;
+    type?: ValueType;
     enabled?: boolean;
     rules?: CreateRuleRequest[];
-    default_value?: boolean;
+    default_value?: FlagValue;
     context_id?: string | null;
 };
 
 export type CreateRuleRequest = {
     expression: string;
     rollout: Rollout;
+    value?: FlagValue;
 };
 
 export type UpdateRuleRequest = CreateRuleRequest;
 
 export type EvalTrace = {
     key: string;
+    value_type: ValueType;
     enabled: boolean;
-    default_value: boolean;
-    value: boolean;
+    default_value: FlagValue;
+    value: FlagValue;
     reason: "disabled" | "matched_rule" | "default_no_match" | "cel_error" | string;
     error?: string;
     matched_rule?: EvalMatchedRule;
@@ -49,12 +57,14 @@ export type EvalMatchedRule = {
     id: string;
     index: number;
     expression: string;
+    value: FlagValue;
 };
 
 export type EvalRuleResult = {
     id: string;
     index: number;
     expression: string;
+    value: FlagValue;
     matched: boolean;
     error?: string;
 };
@@ -118,6 +128,8 @@ export type ValidationIssue = {
         | "non_bool_expression"
         | "invalid_rollout"
         | "missing_bucket_field"
+        | "invalid_value_type"
+        | "invalid_value"
         | string;
     field: string;
     path?: string;

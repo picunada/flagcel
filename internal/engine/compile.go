@@ -22,9 +22,16 @@ func (e *Engine) CompileFlagForContext(key string, config core.FlagConfig, schem
 func (e *Engine) compileFlag(key string, config core.FlagConfig, env *cel.Env) (*Flag, error) {
 	flag := &Flag{
 		Key:          key,
+		Type:         config.Type,
 		Enabled:      config.Enabled,
 		DefaultValue: config.DefaultValue,
 		Rules:        make([]CompiledRule, 0, len(config.Rules)),
+	}
+	if flag.Type == "" {
+		flag.Type = core.ValueTypeBoolean
+	}
+	if flag.DefaultValue == nil && flag.Type == core.ValueTypeBoolean {
+		flag.DefaultValue = false
 	}
 
 	for i, r := range config.Rules {
@@ -37,10 +44,18 @@ func (e *Engine) compileFlag(key string, config core.FlagConfig, env *cel.Env) (
 			Source:  r.Expression,
 			Program: program,
 			Rollout: Rollout(r.Rollout),
+			Value:   ruleValue(r, flag.Type),
 		})
 	}
 
 	return flag, nil
+}
+
+func ruleValue(rule core.Rule, valueType core.ValueType) any {
+	if rule.Value == nil && valueType == core.ValueTypeBoolean {
+		return true
+	}
+	return rule.Value
 }
 
 func (e *Engine) compileExpression(source string) (cel.Program, error) {

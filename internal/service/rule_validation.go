@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -18,6 +19,129 @@ func normalizeRule(rule core.Rule) core.Rule {
 	rule.Expression = strings.TrimSpace(rule.Expression)
 	rule.Rollout.BucketBy = strings.TrimSpace(rule.Rollout.BucketBy)
 	return rule
+}
+
+func normalizeFlag(flag core.FlagConfig) core.FlagConfig {
+	if flag.Type == "" {
+		flag.Type = core.ValueTypeBoolean
+	}
+	if flag.Type == core.ValueTypeBoolean && flag.DefaultValue == nil {
+		flag.DefaultValue = false
+	}
+	for i, rule := range flag.Rules {
+		flag.Rules[i] = normalizeRule(rule)
+	}
+	return flag
+}
+
+func validateFlag(flag core.FlagConfig, schema *core.ContextSchema) error {
+	flag = normalizeFlag(flag)
+	issues := make([]core.ValidationIssue, 0)
+
+	if !isSupportedValueType(flag.Type) {
+		issues = append(issues, core.ValidationIssue{
+			Code:    core.ValidationIssueInvalidValueType,
+			Field:   "type",
+			Message: "Flag type must be one of boolean, string, number, or json.",
+		})
+	}
+	if issue := validateValueIssue(flag.Type, flag.DefaultValue, "default_value"); issue != nil {
+		issues = append(issues, *issue)
+	}
+
+	for i, rule := range flag.Rules {
+		if issue := validateValueIssue(flag.Type, ruleValueForValidation(rule, flag.Type), fmt.Sprintf("rules[%d].value", i)); issue != nil {
+			issues = append(issues, *issue)
+		}
+		if err := validateRule(rule, schema); err != nil {
+			if validationErr, ok := err.(*core.ValidationError); ok {
+				for _, issue := range validationErr.Issues {
+					issue.Field = fmt.Sprintf("rules[%d].%s", i, issue.Field)
+					issues = append(issues, issue)
+				}
+			} else {
+				return err
+			}
+		}
+	}
+
+	if len(issues) > 0 {
+		return &core.ValidationError{
+			Message: "Flag validation failed",
+			Issues:  dedupeIssues(issues),
+		}
+	}
+	return nil
+}
+
+func validateRuleValue(rule core.Rule, valueType core.ValueType) error {
+	if valueType == "" {
+		valueType = core.ValueTypeBoolean
+	}
+	if issue := validateValueIssue(valueType, ruleValueForValidation(rule, valueType), "value"); issue != nil {
+		return &core.ValidationError{
+			Message: "Rule validation failed",
+			Issues:  []core.ValidationIssue{*issue},
+		}
+	}
+	return nil
+}
+
+func isSupportedValueType(valueType core.ValueType) bool {
+	switch valueType {
+	case core.ValueTypeBoolean, core.ValueTypeString, core.ValueTypeNumber, core.ValueTypeJSON:
+		return true
+	default:
+		return false
+	}
+}
+
+func ruleValueForValidation(rule core.Rule, valueType core.ValueType) any {
+	if rule.Value == nil && valueType == core.ValueTypeBoolean {
+		return true
+	}
+	return rule.Value
+}
+
+func validateValueIssue(valueType core.ValueType, value any, field string) *core.ValidationIssue {
+	if valueType == "" {
+		valueType = core.ValueTypeBoolean
+	}
+	if !isSupportedValueType(valueType) {
+		return nil
+	}
+
+	ok := false
+	switch valueType {
+	case core.ValueTypeBoolean:
+		_, ok = value.(bool)
+	case core.ValueTypeString:
+		_, ok = value.(string)
+	case core.ValueTypeNumber:
+		ok = isJSONNumber(value)
+	case core.ValueTypeJSON:
+		ok = true
+	}
+	if ok {
+		return nil
+	}
+	return &core.ValidationIssue{
+		Code:    core.ValidationIssueInvalidValue,
+		Field:   field,
+		Message: fmt.Sprintf("%s must match flag type %q.", field, valueType),
+	}
+}
+
+func isJSONNumber(value any) bool {
+	switch v := value.(type) {
+	case json.Number:
+		_, err := v.Float64()
+		return err == nil
+	case float64, float32, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return true
+	default:
+		return false
+	}
 }
 
 func validateRule(rule core.Rule, schema *core.ContextSchema) error {

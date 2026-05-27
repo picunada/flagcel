@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -17,6 +18,94 @@ func TestValidateRuleAcceptsValidRule(t *testing.T) {
 	}, testRuleContextSchema())
 	if err != nil {
 		t.Fatalf("validateRule() error = %v", err)
+	}
+}
+
+func TestValidateFlagValueTypes(t *testing.T) {
+	tests := []struct {
+		name string
+		flag core.FlagConfig
+	}{
+		{
+			name: "boolean",
+			flag: core.FlagConfig{
+				Type:         core.ValueTypeBoolean,
+				DefaultValue: false,
+				Rules: []core.Rule{{
+					Expression: `user.country == "US"`,
+					Rollout:    core.Rollout{Percentage: 100},
+					Value:      true,
+				}},
+			},
+		},
+		{
+			name: "string",
+			flag: core.FlagConfig{
+				Type:         core.ValueTypeString,
+				DefaultValue: "control",
+				Rules: []core.Rule{{
+					Expression: `user.country == "US"`,
+					Rollout:    core.Rollout{Percentage: 100},
+					Value:      "variant",
+				}},
+			},
+		},
+		{
+			name: "number",
+			flag: core.FlagConfig{
+				Type:         core.ValueTypeNumber,
+				DefaultValue: json.Number("1.5"),
+				Rules: []core.Rule{{
+					Expression: `user.country == "US"`,
+					Rollout:    core.Rollout{Percentage: 100},
+					Value:      json.Number("2"),
+				}},
+			},
+		},
+		{
+			name: "json",
+			flag: core.FlagConfig{
+				Type:         core.ValueTypeJSON,
+				DefaultValue: map[string]any{"name": "control"},
+				Rules: []core.Rule{{
+					Expression: `user.country == "US"`,
+					Rollout:    core.Rollout{Percentage: 100},
+					Value:      map[string]any{"name": "variant"},
+				}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := validateFlag(tt.flag, testRuleContextSchema()); err != nil {
+				t.Fatalf("validateFlag() error = %v", err)
+			}
+		})
+	}
+}
+
+func TestValidateFlagRejectsMismatchedValues(t *testing.T) {
+	flag := core.FlagConfig{
+		Type:         core.ValueTypeNumber,
+		DefaultValue: "not-a-number",
+		Rules: []core.Rule{{
+			Expression: `user.country == "US"`,
+			Rollout:    core.Rollout{Percentage: 100},
+			Value:      true,
+		}},
+	}
+
+	err := validateFlag(flag, testRuleContextSchema())
+	if err == nil {
+		t.Fatal("validateFlag() error = nil, want validation error")
+	}
+	var validationErr *core.ValidationError
+	if !errors.As(err, &validationErr) {
+		t.Fatalf("validateFlag() error = %T, want *core.ValidationError", err)
+	}
+	if !hasIssue(validationErr.Issues, core.ValidationIssueInvalidValue) {
+		t.Fatalf("issues = %#v, want invalid value", validationErr.Issues)
 	}
 }
 

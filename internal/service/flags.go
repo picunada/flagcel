@@ -45,16 +45,13 @@ func (s *FlagService) GetFlag(ctx context.Context, key string) (*core.FlagConfig
 }
 
 func (s *FlagService) CreateFlag(ctx context.Context, flag *core.FlagConfig) error {
+	*flag = normalizeFlag(*flag)
 	schema, err := s.contextForFlag(ctx, flag)
 	if err != nil {
 		return fmt.Errorf("flag service: failed to load context %w", err)
 	}
-	for i, rule := range flag.Rules {
-		rule = normalizeRule(rule)
-		if err := validateRule(rule, schema); err != nil {
-			return prefixValidationError(err, fmt.Sprintf("rules[%d].", i))
-		}
-		flag.Rules[i] = rule
+	if err := validateFlag(*flag, schema); err != nil {
+		return err
 	}
 	if err := s.store.SaveFlag(ctx, flag); err != nil {
 		return fmt.Errorf(

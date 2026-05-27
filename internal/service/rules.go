@@ -41,11 +41,14 @@ func (s *RuleService) GetRule(ctx context.Context, flagKey, ruleID string) (*cor
 
 func (s *RuleService) CreateRule(ctx context.Context, flagKey string, rule core.Rule) (*core.Rule, error) {
 	rule = normalizeRule(rule)
-	schema, err := s.contextForFlag(ctx, flagKey)
+	flag, schema, err := s.flagAndContext(ctx, flagKey)
 	if err != nil {
 		return nil, fmt.Errorf("rule service: failed to load flag context %w", err)
 	}
 	if err := validateRule(rule, schema); err != nil {
+		return nil, err
+	}
+	if err := validateRuleValue(rule, flag.Type); err != nil {
 		return nil, err
 	}
 	if rule.ID == "" {
@@ -60,11 +63,14 @@ func (s *RuleService) CreateRule(ctx context.Context, flagKey string, rule core.
 
 func (s *RuleService) UpdateRule(ctx context.Context, flagKey string, rule core.Rule) error {
 	rule = normalizeRule(rule)
-	schema, err := s.contextForFlag(ctx, flagKey)
+	flag, schema, err := s.flagAndContext(ctx, flagKey)
 	if err != nil {
 		return fmt.Errorf("rule service: failed to load flag context %w", err)
 	}
 	if err := validateRule(rule, schema); err != nil {
+		return err
+	}
+	if err := validateRuleValue(rule, flag.Type); err != nil {
 		return err
 	}
 	if err := s.store.UpdateRule(ctx, flagKey, rule); err != nil {
@@ -96,13 +102,18 @@ func (s *RuleService) invalidate(key string) {
 	}
 }
 
-func (s *RuleService) contextForFlag(ctx context.Context, flagKey string) (*core.ContextSchema, error) {
+func (s *RuleService) flagAndContext(ctx context.Context, flagKey string) (*core.FlagConfig, *core.ContextSchema, error) {
 	flag, err := s.store.GetFlag(ctx, flagKey)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	*flag = normalizeFlag(*flag)
 	if flag.ContextID == nil || *flag.ContextID == "" {
-		return nil, nil
+		return flag, nil, nil
 	}
-	return s.store.GetContext(ctx, *flag.ContextID)
+	schema, err := s.store.GetContext(ctx, *flag.ContextID)
+	if err != nil {
+		return nil, nil, err
+	}
+	return flag, schema, nil
 }

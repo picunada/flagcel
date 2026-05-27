@@ -509,7 +509,7 @@ components:
 
     Rule:
       type: object
-      required: [id, expression, rollout]
+      required: [id, expression, rollout, value]
       properties:
         id: { type: string, format: uuid }
         expression:
@@ -517,18 +517,24 @@ components:
           example: "user.country == 'US'"
         rollout:
           $ref: "#/components/schemas/Rollout"
+        value:
+          $ref: "#/components/schemas/FlagValue"
 
     Flag:
       type: object
-      required: [key, enabled, rules, default_value, updated_at]
+      required: [key, type, enabled, rules, default_value, updated_at]
       properties:
         key: { type: string, example: new-checkout }
+        type:
+          type: string
+          enum: [boolean, string, number, json]
         enabled: { type: boolean }
         rules:
           type: array
           items:
             $ref: "#/components/schemas/Rule"
-        default_value: { type: boolean }
+        default_value:
+          $ref: "#/components/schemas/FlagValue"
         context_id:
           type: string
           format: uuid
@@ -540,13 +546,20 @@ components:
       required: [key]
       properties:
         key: { type: string }
+        type:
+          type: string
+          enum: [boolean, string, number, json]
+          default: boolean
         enabled: { type: boolean, default: false }
         rules:
           type: array
           items:
             $ref: "#/components/schemas/CreateRuleRequest"
           default: []
-        default_value: { type: boolean, default: false }
+        default_value:
+          allOf:
+            - $ref: "#/components/schemas/FlagValue"
+          default: false
         context_id:
           type: string
           format: uuid
@@ -559,6 +572,10 @@ components:
         expression: { type: string }
         rollout:
           $ref: "#/components/schemas/Rollout"
+        value:
+          allOf:
+            - $ref: "#/components/schemas/FlagValue"
+          default: true
 
     UpdateRuleRequest:
       $ref: "#/components/schemas/CreateRuleRequest"
@@ -615,26 +632,34 @@ components:
 
     EvalResponse:
       type: object
-      required: [key, value]
+      required: [key, value_type, value]
       properties:
         key: { type: string }
-        value: { type: boolean }
+        value_type:
+          type: string
+          enum: [boolean, string, number, json]
+        value:
+          $ref: "#/components/schemas/FlagValue"
 
     EvalMatchedRule:
       type: object
-      required: [id, index, expression]
+      required: [id, index, expression, value]
       properties:
         id: { type: string, format: uuid }
         index: { type: integer, minimum: 0 }
         expression: { type: string }
+        value:
+          $ref: "#/components/schemas/FlagValue"
 
     EvalRuleResult:
       type: object
-      required: [id, index, expression, matched]
+      required: [id, index, expression, value, matched]
       properties:
         id: { type: string, format: uuid }
         index: { type: integer, minimum: 0 }
         expression: { type: string }
+        value:
+          $ref: "#/components/schemas/FlagValue"
         matched: { type: boolean }
         error: { type: string }
 
@@ -651,12 +676,17 @@ components:
 
     EvalTraceResponse:
       type: object
-      required: [key, enabled, default_value, value, reason, rule_results]
+      required: [key, value_type, enabled, default_value, value, reason, rule_results]
       properties:
         key: { type: string }
+        value_type:
+          type: string
+          enum: [boolean, string, number, json]
         enabled: { type: boolean }
-        default_value: { type: boolean }
-        value: { type: boolean }
+        default_value:
+          $ref: "#/components/schemas/FlagValue"
+        value:
+          $ref: "#/components/schemas/FlagValue"
         reason:
           type: string
           enum: [disabled, matched_rule, default_no_match, cel_error]
@@ -677,7 +707,28 @@ components:
         flags:
           type: object
           additionalProperties:
-            type: boolean
+            $ref: "#/components/schemas/EvalFlagValue"
+
+    EvalFlagValue:
+      type: object
+      required: [value_type, value]
+      properties:
+        value_type:
+          type: string
+          enum: [boolean, string, number, json]
+        value:
+          $ref: "#/components/schemas/FlagValue"
+
+    FlagValue:
+      nullable: true
+      oneOf:
+        - type: boolean
+        - type: string
+        - type: number
+        - type: object
+          additionalProperties: true
+        - type: array
+          items: {}
 
     APIKey:
       type: object

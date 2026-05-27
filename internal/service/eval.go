@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"sync"
@@ -26,21 +27,21 @@ func NewEvalService(store *postgres.Store, eng *engine.Engine) *EvalService {
 	}
 }
 
-func (s *EvalService) Evaluate(ctx context.Context, key string, user engine.DataContext) (bool, error) {
+func (s *EvalService) Evaluate(ctx context.Context, key string, user engine.DataContext) (core.FlagValue, error) {
 	if compiled, ok := s.cache.Get(key); ok {
 		return s.cache.Evaluate(compiled, user), nil
 	}
 
 	cfg, err := s.store.GetFlag(ctx, key)
 	if err != nil {
-		return false, fmt.Errorf("eval service: get flag %w", err)
+		return core.FlagValue{}, fmt.Errorf("eval service: get flag %w", err)
 	}
 
 	compiled, err := s.cache.GetOrCompileLazy(*cfg, func() (*core.ContextSchema, error) {
 		return s.contextForFlag(ctx, cfg)
 	})
 	if err != nil {
-		return false, fmt.Errorf("eval service: compile flag %w", err)
+		return core.FlagValue{}, fmt.Errorf("eval service: compile flag %w", err)
 	}
 
 	return s.cache.Evaluate(compiled, user), nil
@@ -67,9 +68,9 @@ func (s *EvalService) InvalidateFlag(key string) {
 	s.cache.InvalidateFlag(key)
 }
 
-func (s *EvalService) EvaluateAll(ctx context.Context, user engine.DataContext) (map[string]bool, error) {
+func (s *EvalService) EvaluateAll(ctx context.Context, user engine.DataContext) (map[string]core.FlagValue, error) {
 	if flags, ok := s.cache.All(); ok {
-		out := make(map[string]bool, len(flags))
+		out := make(map[string]core.FlagValue, len(flags))
 		for _, flag := range flags {
 			out[flag.Key] = s.cache.Evaluate(flag, user)
 		}
@@ -81,7 +82,7 @@ func (s *EvalService) EvaluateAll(ctx context.Context, user engine.DataContext) 
 		return nil, fmt.Errorf("eval service: list flags %w", err)
 	}
 
-	out := make(map[string]bool, len(cfgs))
+	out := make(map[string]core.FlagValue, len(cfgs))
 	schemas := make(map[string]*core.ContextSchema)
 	compiledFlags := make(map[string]cachedFlag, len(cfgs))
 	for _, cfg := range cfgs {
@@ -167,6 +168,7 @@ func (c *compiledFlagCache) All() ([]*engine.Flag, bool) {
 }
 
 func (c *compiledFlagCache) GetOrCompile(cfg core.FlagConfig, schema *core.ContextSchema) (*engine.Flag, error) {
+	cfg = normalizeFlag(cfg)
 	signature := flagSignature(cfg, schema)
 
 	c.mu.RLock()
@@ -190,6 +192,7 @@ func (c *compiledFlagCache) GetOrCompile(cfg core.FlagConfig, schema *core.Conte
 }
 
 func (c *compiledFlagCache) Compile(cfg core.FlagConfig, schema *core.ContextSchema) (cachedFlag, error) {
+	cfg = normalizeFlag(cfg)
 	compiled, err := c.engine.CompileFlagForContext(cfg.Key, cfg, schema)
 	if err != nil {
 		return cachedFlag{}, err
@@ -211,6 +214,7 @@ func (c *compiledFlagCache) SetAll(flags map[string]cachedFlag) {
 }
 
 func (c *compiledFlagCache) GetOrCompileLazy(cfg core.FlagConfig, loadSchema func() (*core.ContextSchema, error)) (*engine.Flag, error) {
+	cfg = normalizeFlag(cfg)
 	baseSignature := flagBaseSignature(cfg)
 
 	c.mu.RLock()
@@ -245,24 +249,36 @@ func (c *compiledFlagCache) InvalidateFlag(key string) {
 	c.mu.Unlock()
 }
 
-func (c *compiledFlagCache) Evaluate(flag *engine.Flag, user engine.DataContext) bool {
+func (c *compiledFlagCache) Evaluate(flag *engine.Flag, user engine.DataContext) core.FlagValue {
 	return c.engine.Evaluate(flag, user)
 }
 
 func flagBaseSignature(cfg core.FlagConfig) uint64 {
+	cfg = normalizeFlag(cfg)
 	h := fnv.New64a()
-	_, _ = fmt.Fprintf(h, "%s\x00%t\x00%t\x00%s", cfg.Key, cfg.Enabled, cfg.DefaultValue, flagContextID(cfg))
+	_, _ = fmt.Fprintf(h, "%s\x00%t\x00%s\x00%s", cfg.Key, cfg.Enabled, cfg.Type, flagContextID(cfg))
+	writeValueSignature(h, cfg.DefaultValue)
 	for _, rule := range cfg.Rules {
 		_, _ = fmt.Fprintf(
 			h,
-			"\x00%s\x00%s\x00%d\x00%s",
+			"\x00%s\x00%s\x00%d\x00%s\x00",
 			rule.ID,
 			rule.Expression,
 			rule.Rollout.Percentage,
 			rule.Rollout.BucketBy,
 		)
+		writeValueSignature(h, rule.Value)
 	}
 	return h.Sum64()
+}
+
+func writeValueSignature(h interface{ Write([]byte) (int, error) }, value any) {
+	b, err := json.Marshal(value)
+	if err != nil {
+		_, _ = fmt.Fprintf(h, "%#v", value)
+		return
+	}
+	_, _ = h.Write(b)
 }
 
 func flagSignature(cfg core.FlagConfig, schema *core.ContextSchema) uint64 {

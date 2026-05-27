@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/picunada/flagcel/internal/core"
@@ -41,10 +42,90 @@ func TestEvaluateDisabledFlagReturnsDefaultValue(t *testing.T) {
 				"id": "user-123",
 			})
 
-			if got != tt.want {
-				t.Fatalf("Evaluate() = %t, want %t", got, tt.want)
+			if got.Type != core.ValueTypeBoolean || got.Value != tt.want {
+				t.Fatalf("Evaluate() = %#v, want boolean %t", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestEvaluateReturnsTypedDefaultsAndRuleValues(t *testing.T) {
+	env, err := NewCELEnv()
+	if err != nil {
+		t.Fatalf("new cel env: %v", err)
+	}
+	e := NewEngine(env)
+
+	tests := []struct {
+		name         string
+		valueType    core.ValueType
+		defaultValue any
+		ruleValue    any
+		want         any
+	}{
+		{name: "boolean rule value", valueType: core.ValueTypeBoolean, defaultValue: false, ruleValue: true, want: true},
+		{name: "string rule value", valueType: core.ValueTypeString, defaultValue: "control", ruleValue: "variant-a", want: "variant-a"},
+		{name: "number rule value", valueType: core.ValueTypeNumber, defaultValue: float64(0), ruleValue: float64(42.5), want: float64(42.5)},
+		{name: "json rule value", valueType: core.ValueTypeJSON, defaultValue: map[string]any{"name": "control"}, ruleValue: map[string]any{"name": "variant"}, want: map[string]any{"name": "variant"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			compiled, err := e.CompileFlag("feature-a", core.FlagConfig{
+				Key:          "feature-a",
+				Type:         tt.valueType,
+				Enabled:      true,
+				DefaultValue: tt.defaultValue,
+				Rules: []core.Rule{
+					{
+						Expression: `true`,
+						Rollout:    core.Rollout{Percentage: 100},
+						Value:      tt.ruleValue,
+					},
+				},
+			})
+			if err != nil {
+				t.Fatalf("compile flag: %v", err)
+			}
+
+			got := e.Evaluate(compiled, DataContext{})
+			if got.Type != tt.valueType {
+				t.Fatalf("Type = %q, want %q", got.Type, tt.valueType)
+			}
+			if !valuesEqual(got.Value, tt.want) {
+				t.Fatalf("Value = %#v, want %#v", got.Value, tt.want)
+			}
+		})
+	}
+}
+
+func TestEvaluateMatchedRuleOutsideRolloutReturnsDefault(t *testing.T) {
+	env, err := NewCELEnv()
+	if err != nil {
+		t.Fatalf("new cel env: %v", err)
+	}
+	e := NewEngine(env)
+
+	compiled, err := e.CompileFlag("feature-a", core.FlagConfig{
+		Key:          "feature-a",
+		Type:         core.ValueTypeString,
+		Enabled:      true,
+		DefaultValue: "control",
+		Rules: []core.Rule{
+			{
+				Expression: `true`,
+				Rollout:    core.Rollout{Percentage: 0},
+				Value:      "variant-a",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("compile flag: %v", err)
+	}
+
+	got := e.Evaluate(compiled, DataContext{})
+	if got.Type != core.ValueTypeString || got.Value != "control" {
+		t.Fatalf("Evaluate() = %#v, want string control", got)
 	}
 }
 
@@ -144,8 +225,8 @@ func TestCompileFlagForContextDeclaresContextRoots(t *testing.T) {
 	got := e.Evaluate(compiled, DataContext{
 		"request": map[string]any{"path": "/checkout"},
 	})
-	if !got {
-		t.Fatal("Evaluate() = false, want true")
+	if got.Type != core.ValueTypeBoolean || got.Value != true {
+		t.Fatalf("Evaluate() = %#v, want boolean true", got)
 	}
 }
 
@@ -175,4 +256,10 @@ func testContextSchema() *core.ContextSchema {
 			{Path: "user.country", Type: core.ContextTypeString},
 		},
 	}
+}
+
+func valuesEqual(a, b any) bool {
+	aj, _ := json.Marshal(a)
+	bj, _ := json.Marshal(b)
+	return string(aj) == string(bj)
 }
