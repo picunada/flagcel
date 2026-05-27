@@ -19,8 +19,10 @@
 	import RuleEditor from '$lib/components/rule-editor.svelte';
 	import ContextPicker from '$lib/components/context-picker.svelte';
 	import ValueEditor from '$lib/components/value-editor.svelte';
-	import { formatFlagValue, valueBadgeVariant } from '$lib/values';
-	import { Trash2, Plus, Pencil, ArrowUp, ArrowDown, Play, RotateCcw } from 'lucide-svelte';
+	import EvalPlayground from '$lib/components/eval-playground.svelte';
+	import { formatFlagValue } from '$lib/values';
+	import { fly, slide } from 'svelte/transition';
+	import { Trash2, Plus, Pencil, ArrowUp, ArrowDown, FlaskConical, X, ChevronDown } from 'lucide-svelte';
 	import type { PageProps } from './$types';
 
 	type Rule = Flag['rules'][number];
@@ -43,6 +45,8 @@
 	let playgroundResult = $state<EvalTrace | null>(null);
 	let playgroundError = $state<string | null>(null);
 	let playgroundRunning = $state(false);
+	let drawerOpen = $state(false);
+	let mobileOpen = $state(false);
 	let deleteFlagOpen = $state(false);
 	let deleteFlagSubmitting = $state(false);
 	let deleteFlagError = $state<string | null>(null);
@@ -305,19 +309,6 @@
 		playgroundError = null;
 	}
 
-	function reasonLabel(reason: string): string {
-		switch (reason) {
-			case 'matched_rule':
-				return 'matched rule';
-			case 'default_no_match':
-				return 'default';
-			case 'cel_error':
-				return 'cel error';
-			default:
-				return reason.replaceAll('_', ' ');
-		}
-	}
-
 	async function updateDefaultValue(value: FlagValue) {
 		await patch({ default_value: value });
 	}
@@ -414,199 +405,23 @@
 		<section class="space-y-4">
 			<div class="flex flex-wrap items-center justify-between gap-3">
 				<SectionHeader>rules · evaluated top-to-bottom</SectionHeader>
-				{#if !creating}
-					<Button size="sm" onclick={startCreate}>
-						<Plus class="h-3 w-3" /> add rule
-					</Button>
-				{/if}
-			</div>
-
-			<Card class="motion-panel space-y-4 p-5">
-				<div class="flex flex-wrap items-center justify-between gap-3">
-					<p
-						class="font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
+				<div class="flex items-center gap-2">
+					<Button
+						size="sm"
+						variant="ghost"
+						class="hidden lg:inline-flex"
+						aria-expanded={drawerOpen}
+						onclick={() => (drawerOpen = !drawerOpen)}
 					>
-						[ evaluation playground ]
-					</p>
-					<div class="flex items-center gap-2">
-						<Button
-							size="sm"
-							variant="ghost"
-							type="button"
-							onclick={resetPlayground}
-							disabled={playgroundRunning}
-						>
-							<RotateCcw class="h-3 w-3" /> reset
+						<FlaskConical class="h-3 w-3" /> test
+					</Button>
+					{#if !creating}
+						<Button size="sm" onclick={startCreate}>
+							<Plus class="h-3 w-3" /> add rule
 						</Button>
-						<Button
-							size="sm"
-							variant="solid"
-							type="button"
-							onclick={evaluatePlayground}
-							disabled={playgroundRunning || playgroundContext.trim().length === 0}
-						>
-							<Play class="h-3 w-3" /> {playgroundRunning ? 'evaluating...' : 'evaluate'}
-						</Button>
-					</div>
+					{/if}
 				</div>
-
-				<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.85fr)]">
-					<div class="space-y-2">
-						<label
-							for="playground-context"
-							class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
-						>
-							context json
-						</label>
-						<textarea
-							id="playground-context"
-							bind:value={playgroundContext}
-							oninput={() => (playgroundDirty = true)}
-							rows="12"
-							spellcheck="false"
-							class="min-h-72 w-full resize-y rounded-sm border border-input bg-[rgba(255,255,255,0.02)] px-3 py-2 font-mono text-sm leading-6 text-foreground transition-colors placeholder:text-muted-foreground/60 focus-visible:border-[rgba(255,255,255,0.36)] focus-visible:outline-none"
-						></textarea>
-					</div>
-
-					<div class="space-y-3">
-						<p
-							class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
-						>
-							result
-						</p>
-
-						{#if playgroundError}
-							<div class="rounded-sm border border-destructive/30 bg-[rgba(255,107,107,0.05)] p-3">
-								<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-destructive">
-									error
-								</p>
-								<p class="mt-2 break-words font-mono text-xs text-destructive">{playgroundError}</p>
-							</div>
-						{:else if playgroundResult}
-							<div class="grid grid-cols-2 gap-2">
-								<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
-									<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
-										value
-									</p>
-									<div class="mt-2">
-										<Badge
-											dot
-											variant={playgroundResult.error
-												? 'destructive'
-												: valueBadgeVariant(playgroundResult.value)}
-										>
-											{formatFlagValue(playgroundResult.value)}
-										</Badge>
-										<p class="mt-2 font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
-											{playgroundResult.value_type}
-										</p>
-									</div>
-								</div>
-								<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
-									<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
-										path
-									</p>
-									<p class="mt-2 font-mono text-xs text-foreground">
-										{reasonLabel(playgroundResult.reason)}
-									</p>
-								</div>
-							</div>
-
-							{#if playgroundResult.error}
-								<div class="rounded-sm border border-destructive/30 bg-[rgba(255,107,107,0.05)] p-3">
-									<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-destructive">
-										cel error
-									</p>
-									<p class="mt-2 break-words font-mono text-xs text-destructive">
-										{playgroundResult.error}
-									</p>
-								</div>
-							{/if}
-
-							<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
-								<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
-									matched rule
-								</p>
-								{#if playgroundResult.matched_rule}
-									<p class="mt-2 font-mono text-xs text-foreground">
-										#{String(playgroundResult.matched_rule.index + 1).padStart(2, '0')}
-									</p>
-									<p class="mt-2 font-mono text-xs text-muted-foreground">
-										value <span class="text-foreground">{formatFlagValue(playgroundResult.matched_rule.value)}</span>
-									</p>
-									<pre
-										class="mt-2 max-h-32 overflow-auto whitespace-pre-wrap break-words border-l-2 border-success/40 pl-3 font-mono text-xs text-muted-foreground">{playgroundResult.matched_rule.expression}</pre>
-								{:else}
-									<p class="mt-2 font-mono text-xs text-muted-foreground">none</p>
-								{/if}
-							</div>
-
-							{#if playgroundResult.bucket}
-								<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
-									<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
-										bucket
-									</p>
-									<div class="mt-2 grid gap-2 font-mono text-xs sm:grid-cols-2">
-										<p class="text-muted-foreground">
-											by <span class="text-foreground">{playgroundResult.bucket.bucket_by}</span>
-										</p>
-										<p class="text-muted-foreground">
-											value
-											<span class="text-foreground">
-												{playgroundResult.bucket.missing
-													? 'missing'
-													: playgroundResult.bucket.bucket_value}
-											</span>
-										</p>
-										<p class="text-muted-foreground">
-											bucket
-											<span class="text-foreground">
-												{playgroundResult.bucket.bucket_number ?? 'n/a'}
-											</span>
-										</p>
-										<p class="text-muted-foreground">
-											rollout
-											<span class="text-foreground">{playgroundResult.bucket.percentage}%</span>
-										</p>
-									</div>
-								</div>
-							{/if}
-
-							{#if playgroundResult.rule_results.length > 0}
-								<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
-									<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
-										rule trace
-									</p>
-									<div class="mt-2 space-y-1.5">
-										{#each playgroundResult.rule_results as result (result.id || result.index)}
-											<div class="flex items-center justify-between gap-3 font-mono text-xs">
-												<span class="text-muted-foreground">
-													#{String(result.index + 1).padStart(2, '0')}
-												</span>
-												<span
-													class={result.error
-														? 'text-destructive'
-														: result.matched
-															? 'text-success'
-															: 'text-muted-foreground'}
-												>
-													{result.error ? 'error' : result.matched ? 'match' : 'no match'}
-												</span>
-											</div>
-										{/each}
-									</div>
-								</div>
-							{/if}
-						{:else}
-							<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-6 text-center">
-								<p class="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
-									[ not evaluated ]
-								</p>
-							</div>
-						{/if}
-					</div>
-				</div>
-			</Card>
+			</div>
 
 			{#if flag.rules.length === 0 && !creating}
 				<Card class="motion-panel p-8 text-center">
@@ -739,8 +554,84 @@
 					/>
 				</Card>
 		{/if}
+
+		<!-- mobile: collapsed playground below the rules -->
+		<div class="lg:hidden">
+			<Card class="motion-panel overflow-hidden">
+				<button
+					type="button"
+					onclick={() => (mobileOpen = !mobileOpen)}
+					aria-expanded={mobileOpen}
+					class="flex w-full items-center justify-between gap-3 p-5 text-left transition-colors hover:bg-[rgba(255,255,255,0.02)]"
+				>
+					<span class="font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground">
+						[ evaluation playground ]
+					</span>
+					<ChevronDown
+						class="h-4 w-4 text-muted-foreground transition-transform duration-200 {mobileOpen
+							? 'rotate-180'
+							: ''}"
+					/>
+				</button>
+				{#if mobileOpen}
+					<div transition:slide={{ duration: 200 }} class="border-t border-border/60 p-5">
+						<EvalPlayground
+							inputId="playground-context-mobile"
+							bind:contextJson={playgroundContext}
+							result={playgroundResult}
+							error={playgroundError}
+							running={playgroundRunning}
+							onevaluate={evaluatePlayground}
+							onreset={resetPlayground}
+							oninput={() => (playgroundDirty = true)}
+						/>
+					</div>
+				{/if}
+			</Card>
+		</div>
 	</section>
 </div>
+
+<!-- desktop: sticky side drawer -->
+{#if drawerOpen}
+	<aside
+		transition:fly={{ x: 24, duration: 200 }}
+		class="glass-panel fixed inset-y-0 right-0 z-40 hidden w-[26rem] max-w-[calc(100vw-1.5rem)] flex-col border-l border-[rgba(255,255,255,0.12)] shadow-[0_0_60px_rgba(0,0,0,0.45)] lg:flex"
+		aria-label="evaluation playground"
+	>
+		<div class="flex items-center justify-between gap-3 border-b border-border/60 px-5 pb-4 pt-28">
+			<p class="font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground">
+				[ evaluation playground ]
+			</p>
+			<button
+				type="button"
+				aria-label="close playground"
+				onclick={() => (drawerOpen = false)}
+				class="motion-press rounded-sm p-1 text-muted-foreground transition-colors hover:bg-[rgba(255,255,255,0.04)] hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+			>
+				<X class="h-4 w-4" />
+			</button>
+		</div>
+		<div class="flex-1 overflow-y-auto p-5">
+			<EvalPlayground
+				inputId="playground-context-desktop"
+				bind:contextJson={playgroundContext}
+				result={playgroundResult}
+				error={playgroundError}
+				running={playgroundRunning}
+				onevaluate={evaluatePlayground}
+				onreset={resetPlayground}
+				oninput={() => (playgroundDirty = true)}
+			/>
+		</div>
+	</aside>
+{/if}
+
+<svelte:window
+	onkeydown={(e) => {
+		if (e.key === 'Escape' && drawerOpen) drawerOpen = false;
+	}}
+/>
 
 <DestructiveDialog
 	bind:open={deleteFlagOpen}
