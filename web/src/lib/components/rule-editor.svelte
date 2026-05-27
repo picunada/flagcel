@@ -245,7 +245,7 @@
 	</div>
 
 	{#if error}
-		<p class="text-xs text-destructive">{error}</p>
+		<p class="whitespace-pre-line text-xs text-destructive">{error}</p>
 	{/if}
 
 	<div class="flex justify-end gap-2 border-t border-border/60 pt-4">

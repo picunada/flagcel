@@ -45,6 +45,17 @@ func (s *FlagService) GetFlag(ctx context.Context, key string) (*core.FlagConfig
 }
 
 func (s *FlagService) CreateFlag(ctx context.Context, flag *core.FlagConfig) error {
+	schema, err := s.contextForFlag(ctx, flag)
+	if err != nil {
+		return fmt.Errorf("flag service: failed to load context %w", err)
+	}
+	for i, rule := range flag.Rules {
+		rule = normalizeRule(rule)
+		if err := validateRule(rule, schema); err != nil {
+			return prefixValidationError(err, fmt.Sprintf("rules[%d].", i))
+		}
+		flag.Rules[i] = rule
+	}
 	if err := s.store.SaveFlag(ctx, flag); err != nil {
 		return fmt.Errorf(
 			"flag service: failed to create flag %w",
@@ -69,5 +80,28 @@ func (s *FlagService) DeleteFlag(context context.Context, id string) error {
 func (s *FlagService) invalidate(key string) {
 	if s.onFlagChange != nil {
 		s.onFlagChange(key)
+	}
+}
+
+func (s *FlagService) contextForFlag(ctx context.Context, flag *core.FlagConfig) (*core.ContextSchema, error) {
+	if flag.ContextID == nil || *flag.ContextID == "" {
+		return nil, nil
+	}
+	return s.store.GetContext(ctx, *flag.ContextID)
+}
+
+func prefixValidationError(err error, fieldPrefix string) error {
+	validationErr, ok := err.(*core.ValidationError)
+	if !ok {
+		return err
+	}
+	issues := make([]core.ValidationIssue, len(validationErr.Issues))
+	for i, issue := range validationErr.Issues {
+		issue.Field = fieldPrefix + issue.Field
+		issues[i] = issue
+	}
+	return &core.ValidationError{
+		Message: validationErr.Message,
+		Issues:  issues,
 	}
 }

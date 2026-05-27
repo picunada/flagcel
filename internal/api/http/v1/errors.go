@@ -10,9 +10,10 @@ import (
 )
 
 type APIError struct {
-	Status  int    `json:"-"`
-	Code    string `json:"code"`
-	Message string `json:"message"`
+	Status  int                    `json:"-"`
+	Code    string                 `json:"code"`
+	Message string                 `json:"message"`
+	Details []core.ValidationIssue `json:"details,omitempty"`
 }
 
 func (e *APIError) Error() string { return e.Message }
@@ -106,6 +107,15 @@ func toAPIError(err error) *APIError {
 	var apiErr *APIError
 	if errors.As(err, &apiErr) {
 		return apiErr
+	}
+	var validationErr *core.ValidationError
+	if errors.As(err, &validationErr) {
+		return &APIError{
+			Status:  http.StatusUnprocessableEntity,
+			Code:    "RULE_VALIDATION_FAILED",
+			Message: validationErr.Error(),
+			Details: validationErr.Issues,
+		}
 	}
 	switch {
 	case errors.Is(err, core.ErrFlagNotFound):

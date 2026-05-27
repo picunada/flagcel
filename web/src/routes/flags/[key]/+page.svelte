@@ -119,7 +119,7 @@
 			flag = { ...flag, rules: [...flag.rules, rule] };
 			creating = false;
 		} catch (e) {
-			createError = e instanceof APIError ? e.message : 'Failed to create rule';
+			createError = formatRuleError(e, 'Failed to create rule');
 		} finally {
 			ruleSubmitting = false;
 		}
@@ -136,10 +136,18 @@
 			};
 			editingRuleId = null;
 		} catch (e) {
-			editError = e instanceof APIError ? e.message : 'Failed to update rule';
+			editError = formatRuleError(e, 'Failed to update rule');
 		} finally {
 			ruleSubmitting = false;
 		}
+	}
+
+	function formatRuleError(e: unknown, fallback: string) {
+		if (!(e instanceof APIError)) return fallback;
+		if (e.details?.length) {
+			return e.details.map((detail) => detail.message).join('\n');
+		}
+		return e.message;
 	}
 
 	function requestDeleteRule(rule: Rule) {

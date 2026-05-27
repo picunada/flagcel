@@ -103,12 +103,26 @@ export type APIErrorCode =
     | "CONTEXT_NOT_FOUND"
     | "CONTEXT_NAME_TAKEN"
     | "API_KEY_NOT_FOUND"
+    | "RULE_VALIDATION_FAILED"
     | "INVALID_REQUEST"
     | "BAD_REQUEST"
     | "AUTH_NOT_CONFIGURED"
     | "UNAUTHORIZED"
     | "FORBIDDEN"
     | "INTERNAL_ERROR";
+
+export type ValidationIssue = {
+    code:
+        | "parse_error"
+        | "unknown_field"
+        | "non_bool_expression"
+        | "invalid_rollout"
+        | "missing_bucket_field"
+        | string;
+    field: string;
+    path?: string;
+    message: string;
+};
 
 export type User = {
     id: string;
@@ -140,15 +154,24 @@ export type CreateAPIKeyResponse = APIKey & {
 export class APIError extends Error {
     code: APIErrorCode;
     status: number;
-    constructor(code: APIErrorCode, message: string, status: number) {
+    details?: ValidationIssue[];
+    constructor(
+        code: APIErrorCode,
+        message: string,
+        status: number,
+        details?: ValidationIssue[],
+    ) {
         super(message);
         this.code = code;
         this.status = status;
+        this.details = details;
     }
 }
 
 type Envelope<T> = { message: string; data: T };
-type ErrorEnvelope = { error: { code: APIErrorCode; message: string } };
+type ErrorEnvelope = {
+    error: { code: APIErrorCode; message: string; details?: ValidationIssue[] };
+};
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const res = await fetch(`/api/v1${path}`, {
@@ -170,6 +193,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
             err?.code ?? "INTERNAL_ERROR",
             err?.message ?? `HTTP ${res.status}`,
             res.status,
+            err?.details,
         );
     }
 
@@ -192,6 +216,7 @@ export const api = {
                 err?.code ?? "INTERNAL_ERROR",
                 err?.message ?? `HTTP ${res.status}`,
                 res.status,
+                err?.details,
             );
         }
         return (body as Envelope<AuthMe>).data;

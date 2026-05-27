@@ -69,10 +69,6 @@ func (h *RulesHandler) CreateRule(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, InvalidRequest("invalid request body"))
 		return
 	}
-	if req.Expression == "" {
-		WriteError(w, InvalidRequest("expression is required"))
-		return
-	}
 
 	rule, err := h.service.CreateRule(r.Context(), flagKey, toCoreRule(req))
 	if err != nil {
