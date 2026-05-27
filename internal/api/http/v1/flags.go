@@ -63,7 +63,11 @@ func (h *FlagsHandler) CreateFlag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	flag := toCoreFlag(req)
+	flag, err := toCoreFlag(req)
+	if err != nil {
+		WriteError(w, InvalidRequest(err.Error()))
+		return
+	}
 
 	if err := h.service.CreateFlag(r.Context(), &flag); err != nil {
 		WriteError(w, err)

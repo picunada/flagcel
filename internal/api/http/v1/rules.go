@@ -70,7 +70,13 @@ func (h *RulesHandler) CreateRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rule, err := h.service.CreateRule(r.Context(), flagKey, toCoreRule(req))
+	coreRule, err := toCoreRule(req)
+	if err != nil {
+		WriteError(w, InvalidRequest(err.Error()))
+		return
+	}
+
+	rule, err := h.service.CreateRule(r.Context(), flagKey, coreRule)
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -92,10 +98,17 @@ func (h *RulesHandler) UpdateRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	value, err := decodeValue(req.Value, true)
+	if err != nil {
+		WriteError(w, InvalidRequest("value: "+err.Error()))
+		return
+	}
+
 	rule := core.Rule{
 		ID:         ruleID,
 		Expression: req.Expression,
 		Rollout:    toCoreRollout(req.Rollout),
+		Value:      value,
 	}
 
 	if err := h.service.UpdateRule(r.Context(), flagKey, rule); err != nil {

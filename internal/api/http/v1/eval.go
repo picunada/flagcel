@@ -44,7 +44,11 @@ func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := utils.Encode(w, r, http.StatusOK, "success", EvalResponse{Key: key, Value: value}); err != nil {
+	if err := utils.Encode(w, r, http.StatusOK, "success", EvalResponse{
+		Key:       key,
+		ValueType: string(value.Type),
+		Value:     value.Value,
+	}); err != nil {
 		WriteError(w, err)
 	}
 }
@@ -90,7 +94,12 @@ func (h *EvalHandler) EvaluateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := utils.Encode(w, r, http.StatusOK, "success", EvalAllResponse{Flags: flags}); err != nil {
+	out := make(map[string]EvalFlagValueResponse, len(flags))
+	for key, value := range flags {
+		out[key] = toEvalFlagValueResponse(value)
+	}
+
+	if err := utils.Encode(w, r, http.StatusOK, "success", EvalAllResponse{Flags: out}); err != nil {
 		WriteError(w, err)
 	}
 }

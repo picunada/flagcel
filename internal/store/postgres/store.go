@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -84,13 +85,22 @@ func (s *Store) GetFlag(ctx context.Context, key string) (*core.FlagConfig, erro
 
 	rules := make([]core.Rule, len(ruleRows))
 	for i, r := range ruleRows {
-		rules[i] = ruleRowToCore(r)
+		rule, err := ruleRowToCore(r)
+		if err != nil {
+			return nil, err
+		}
+		rules[i] = rule
+	}
+	defaultValue, err := unmarshalJSONValue(flagRow.DefaultValue)
+	if err != nil {
+		return nil, fmt.Errorf("decode flag default_value: %w", err)
 	}
 
 	return &core.FlagConfig{
 		Key:          flagRow.Key,
+		Type:         core.ValueType(flagRow.ValueType),
 		Enabled:      flagRow.Enabled,
-		DefaultValue: flagRow.DefaultValue,
+		DefaultValue: defaultValue,
 		Rules:        rules,
 		ContextID:    uuidToStringPtr(flagRow.ContextID),
 		UpdatedAt:    timestamptzToTime(flagRow.UpdatedAt),
@@ -110,15 +120,24 @@ func (s *Store) ListFlags(ctx context.Context) ([]*core.FlagConfig, error) {
 
 	rulesByFlag := make(map[string][]core.Rule, len(flagRows))
 	for _, r := range ruleRows {
-		rulesByFlag[r.FlagKey] = append(rulesByFlag[r.FlagKey], ruleRowToCore(r))
+		rule, err := ruleRowToCore(r)
+		if err != nil {
+			return nil, err
+		}
+		rulesByFlag[r.FlagKey] = append(rulesByFlag[r.FlagKey], rule)
 	}
 
 	flags := make([]*core.FlagConfig, len(flagRows))
 	for i, f := range flagRows {
+		defaultValue, err := unmarshalJSONValue(f.DefaultValue)
+		if err != nil {
+			return nil, fmt.Errorf("decode flag default_value: %w", err)
+		}
 		flags[i] = &core.FlagConfig{
 			Key:          f.Key,
+			Type:         core.ValueType(f.ValueType),
 			Enabled:      f.Enabled,
-			DefaultValue: f.DefaultValue,
+			DefaultValue: defaultValue,
 			Rules:        rulesByFlag[f.Key],
 			ContextID:    uuidToStringPtr(f.ContextID),
 			UpdatedAt:    timestamptzToTime(f.UpdatedAt),
@@ -129,6 +148,10 @@ func (s *Store) ListFlags(ctx context.Context) ([]*core.FlagConfig, error) {
 
 func (s *Store) SaveFlag(ctx context.Context, flag *core.FlagConfig) error {
 	contextID, err := stringPtrToUUID(flag.ContextID)
+	if err != nil {
+		return err
+	}
+	defaultValue, err := marshalJSONValue(flag.DefaultValue)
 	if err != nil {
 		return err
 	}
@@ -143,8 +166,9 @@ func (s *Store) SaveFlag(ctx context.Context, flag *core.FlagConfig) error {
 
 	if err := qtx.UpsertFlag(ctx, sqlcgen.UpsertFlagParams{
 		Key:          flag.Key,
+		ValueType:    string(flag.Type),
 		Enabled:      flag.Enabled,
-		DefaultValue: flag.DefaultValue,
+		DefaultValue: defaultValue,
 		ContextID:    contextID,
 	}); err != nil {
 		if isFKViolation(err) {
@@ -158,6 +182,10 @@ func (s *Store) SaveFlag(ctx context.Context, flag *core.FlagConfig) error {
 	}
 
 	for i, r := range flag.Rules {
+		value, err := marshalJSONValue(r.Value)
+		if err != nil {
+			return err
+		}
 		if err := qtx.InsertRule(ctx, sqlcgen.InsertRuleParams{
 			ID:                r.ID,
 			FlagKey:           flag.Key,
@@ -165,6 +193,7 @@ func (s *Store) SaveFlag(ctx context.Context, flag *core.FlagConfig) error {
 			RolloutPercentage: int32(r.Rollout.Percentage),
 			RolloutBucketBy:   r.Rollout.BucketBy,
 			Position:          int32(i),
+			Value:             value,
 		}); err != nil {
 			return err
 		}
@@ -188,17 +217,25 @@ func (s *Store) GetRule(ctx context.Context, flagKey, ruleID string) (*core.Rule
 		}
 		return nil, err
 	}
-	rule := ruleRowToCore(row)
+	rule, err := ruleRowToCore(row)
+	if err != nil {
+		return nil, err
+	}
 	return &rule, nil
 }
 
 func (s *Store) CreateRule(ctx context.Context, flagKey string, rule core.Rule) error {
+	value, err := marshalJSONValue(rule.Value)
+	if err != nil {
+		return err
+	}
 	if err := s.q.InsertRuleAtEnd(ctx, sqlcgen.InsertRuleAtEndParams{
 		ID:                rule.ID,
 		FlagKey:           flagKey,
 		Expression:        rule.Expression,
 		RolloutPercentage: int32(rule.Rollout.Percentage),
 		RolloutBucketBy:   rule.Rollout.BucketBy,
+		Value:             value,
 	}); err != nil {
 		return err
 	}
@@ -206,12 +243,17 @@ func (s *Store) CreateRule(ctx context.Context, flagKey string, rule core.Rule) 
 }
 
 func (s *Store) UpdateRule(ctx context.Context, flagKey string, rule core.Rule) error {
+	value, err := marshalJSONValue(rule.Value)
+	if err != nil {
+		return err
+	}
 	n, err := s.q.UpdateRule(ctx, sqlcgen.UpdateRuleParams{
 		FlagKey:           flagKey,
 		ID:                rule.ID,
 		Expression:        rule.Expression,
 		RolloutPercentage: int32(rule.Rollout.Percentage),
 		RolloutBucketBy:   rule.Rollout.BucketBy,
+		Value:             value,
 	})
 	if err != nil {
 		return err
@@ -523,7 +565,11 @@ func (s *Store) TouchAPIKey(ctx context.Context, id string) error {
 	return s.q.TouchAPIKey(ctx, keyID)
 }
 
-func ruleRowToCore(r sqlcgen.Rule) core.Rule {
+func ruleRowToCore(r sqlcgen.Rule) (core.Rule, error) {
+	value, err := unmarshalJSONValue(r.Value)
+	if err != nil {
+		return core.Rule{}, fmt.Errorf("decode rule value: %w", err)
+	}
 	return core.Rule{
 		ID:         r.ID,
 		Expression: r.Expression,
@@ -531,7 +577,8 @@ func ruleRowToCore(r sqlcgen.Rule) core.Rule {
 			Percentage: int(r.RolloutPercentage),
 			BucketBy:   r.RolloutBucketBy,
 		},
-	}
+		Value: value,
+	}, nil
 }
 
 func contextRowToCore(id pgtype.UUID, name, description string, raw []byte) (*core.ContextSchema, error) {
@@ -578,6 +625,27 @@ func marshalFields(fields []core.ContextField) ([]byte, error) {
 		fields = []core.ContextField{}
 	}
 	return json.Marshal(fields)
+}
+
+func marshalJSONValue(value any) ([]byte, error) {
+	b, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("encode json value: %w", err)
+	}
+	return b, nil
+}
+
+func unmarshalJSONValue(raw []byte) (any, error) {
+	if len(raw) == 0 {
+		return nil, nil
+	}
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	var value any
+	if err := dec.Decode(&value); err != nil {
+		return nil, err
+	}
+	return value, nil
 }
 
 func uuidToString(u pgtype.UUID) string {

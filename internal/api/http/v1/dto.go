@@ -1,10 +1,13 @@
 package v1
 
+import "encoding/json"
+
 type FlagResponse struct {
 	Key          string         `json:"key"`
+	Type         string         `json:"type"`
 	Enabled      bool           `json:"enabled"`
 	Rules        []RuleResponse `json:"rules"`
-	DefaultValue bool           `json:"default_value"`
+	DefaultValue any            `json:"default_value"`
 	ContextID    *string        `json:"context_id,omitempty"`
 	UpdatedAt    string         `json:"updated_at"`
 }
@@ -13,6 +16,7 @@ type RuleResponse struct {
 	ID         string          `json:"id"`
 	Expression string          `json:"expression"`
 	Rollout    RolloutResponse `json:"rollout"`
+	Value      any             `json:"value"`
 }
 
 type RolloutResponse struct {
@@ -22,20 +26,23 @@ type RolloutResponse struct {
 
 type CreateFlagRequest struct {
 	Key          string              `json:"key"`
+	Type         string              `json:"type"`
 	Enabled      bool                `json:"enabled"`
 	Rules        []CreateRuleRequest `json:"rules"`
-	DefaultValue bool                `json:"default_value"`
+	DefaultValue json.RawMessage     `json:"default_value"`
 	ContextID    *string             `json:"context_id,omitempty"`
 }
 
 type CreateRuleRequest struct {
 	Expression string          `json:"expression"`
 	Rollout    RolloutResponse `json:"rollout"`
+	Value      json.RawMessage `json:"value"`
 }
 
 type UpdateRuleRequest struct {
 	Expression string          `json:"expression"`
 	Rollout    RolloutResponse `json:"rollout"`
+	Value      json.RawMessage `json:"value"`
 }
 
 type ReorderRulesRequest struct {
@@ -71,15 +78,17 @@ type EvalRequest struct {
 }
 
 type EvalResponse struct {
-	Key   string `json:"key"`
-	Value bool   `json:"value"`
+	Key       string `json:"key"`
+	ValueType string `json:"value_type"`
+	Value     any    `json:"value"`
 }
 
 type EvalTraceResponse struct {
 	Key          string                   `json:"key"`
+	ValueType    string                   `json:"value_type"`
 	Enabled      bool                     `json:"enabled"`
-	DefaultValue bool                     `json:"default_value"`
-	Value        bool                     `json:"value"`
+	DefaultValue any                      `json:"default_value"`
+	Value        any                      `json:"value"`
 	Reason       string                   `json:"reason"`
 	Error        string                   `json:"error,omitempty"`
 	MatchedRule  *EvalMatchedRuleResponse `json:"matched_rule,omitempty"`
@@ -91,12 +100,14 @@ type EvalMatchedRuleResponse struct {
 	ID         string `json:"id"`
 	Index      int    `json:"index"`
 	Expression string `json:"expression"`
+	Value      any    `json:"value"`
 }
 
 type EvalRuleResultResponse struct {
 	ID         string `json:"id"`
 	Index      int    `json:"index"`
 	Expression string `json:"expression"`
+	Value      any    `json:"value"`
 	Matched    bool   `json:"matched"`
 	Error      string `json:"error,omitempty"`
 }
@@ -111,7 +122,12 @@ type EvalBucketResponse struct {
 }
 
 type EvalAllResponse struct {
-	Flags map[string]bool `json:"flags"`
+	Flags map[string]EvalFlagValueResponse `json:"flags"`
+}
+
+type EvalFlagValueResponse struct {
+	ValueType string `json:"value_type"`
+	Value     any    `json:"value"`
 }
 
 type UserResponse struct {

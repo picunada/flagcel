@@ -1,10 +1,10 @@
 -- name: GetFlag :one
-SELECT key, enabled, default_value, context_id, updated_at
+SELECT key, value_type, enabled, default_value, context_id, updated_at
 FROM flags
 WHERE key = $1;
 
 -- name: ListFlags :many
-SELECT key, enabled, default_value, context_id, updated_at
+SELECT key, value_type, enabled, default_value, context_id, updated_at
 FROM flags
 ORDER BY key;
 
@@ -18,9 +18,10 @@ SELECT * FROM rules
 ORDER BY flag_key, position;
 
 -- name: UpsertFlag :exec
-INSERT INTO flags (key, enabled, default_value, context_id, updated_at)
-VALUES ($1, $2, $3, $4, NOW())
+INSERT INTO flags (key, value_type, enabled, default_value, context_id, updated_at)
+VALUES ($1, $2, $3, $4, $5, NOW())
 ON CONFLICT (key) DO UPDATE SET
+    value_type    = EXCLUDED.value_type,
     enabled       = EXCLUDED.enabled,
     default_value = EXCLUDED.default_value,
     context_id    = EXCLUDED.context_id,
@@ -30,8 +31,8 @@ ON CONFLICT (key) DO UPDATE SET
 DELETE FROM rules WHERE flag_key = $1;
 
 -- name: InsertRule :exec
-INSERT INTO rules (id, flag_key, expression, rollout_percentage, rollout_bucket_by, position)
-VALUES ($1, $2, $3, $4, $5, $6);
+INSERT INTO rules (id, flag_key, expression, rollout_percentage, rollout_bucket_by, position, value)
+VALUES ($1, $2, $3, $4, $5, $6, $7);
 
 -- name: DeleteFlag :exec
 DELETE FROM flags WHERE key = $1;
@@ -46,17 +47,19 @@ SELECT * FROM rules
 WHERE flag_key = $1 AND id = $2;
 
 -- name: InsertRuleAtEnd :exec
-INSERT INTO rules (id, flag_key, expression, rollout_percentage, rollout_bucket_by, position)
+INSERT INTO rules (id, flag_key, expression, rollout_percentage, rollout_bucket_by, position, value)
 VALUES (
     $1, $2, $3, $4, $5,
-    COALESCE((SELECT MAX(position) + 1 FROM rules WHERE flag_key = $2), 0)
+    COALESCE((SELECT MAX(position) + 1 FROM rules WHERE flag_key = $2), 0),
+    $6
 );
 
 -- name: UpdateRule :execrows
 UPDATE rules
 SET expression         = $3,
     rollout_percentage = $4,
-    rollout_bucket_by  = $5
+    rollout_bucket_by  = $5,
+    value              = $6
 WHERE flag_key = $1 AND id = $2;
 
 -- name: DeleteRule :execrows

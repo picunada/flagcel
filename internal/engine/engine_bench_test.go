@@ -177,7 +177,7 @@ func BenchmarkEvaluateAll_CompilePerEval(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		out := make(map[string]bool, flagCount)
+		out := make(map[string]core.FlagValue, flagCount)
 		for _, c := range cfgs {
 			flag, err := e.CompileFlagForContext(c.Key, c, benchContextSchema())
 			if err != nil {
@@ -208,7 +208,7 @@ func BenchmarkEvaluateAll_PreCompiled(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		out := make(map[string]bool, flagCount)
+		out := make(map[string]core.FlagValue, flagCount)
 		for _, f := range flags {
 			out[f.Key] = e.Evaluate(f, ctx)
 		}

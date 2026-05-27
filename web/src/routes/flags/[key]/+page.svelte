@@ -5,6 +5,7 @@
 		api,
 		APIError,
 		type Flag,
+		type FlagValue,
 		type CreateRuleRequest,
 		type ContextSchema,
 		type EvalTrace
@@ -17,6 +18,8 @@
 	import SectionHeader from '$lib/components/ui/section-header.svelte';
 	import RuleEditor from '$lib/components/rule-editor.svelte';
 	import ContextPicker from '$lib/components/context-picker.svelte';
+	import ValueEditor from '$lib/components/value-editor.svelte';
+	import { formatFlagValue, valueBadgeVariant } from '$lib/values';
 	import { Trash2, Plus, Pencil, ArrowUp, ArrowDown, Play, RotateCcw } from 'lucide-svelte';
 	import type { PageProps } from './$types';
 
@@ -68,9 +71,7 @@
 		}
 	}
 
-	async function patch(
-		updates: Partial<Pick<Flag, 'enabled' | 'default_value' | 'context_id'>>
-	) {
+	async function patch(updates: Partial<Pick<Flag, 'enabled' | 'default_value' | 'context_id'>>) {
 		const prev = {
 			enabled: flag.enabled,
 			default_value: flag.default_value,
@@ -82,10 +83,15 @@
 		try {
 			await api.createFlag({
 				key: flag.key,
+				type: flag.type,
 				enabled: flag.enabled,
 				default_value: flag.default_value,
 				context_id: flag.context_id ?? null,
-				rules: flag.rules.map((r) => ({ expression: r.expression, rollout: r.rollout }))
+				rules: flag.rules.map((r) => ({
+					expression: r.expression,
+					rollout: r.rollout,
+					value: r.value
+				}))
 			});
 			if ('context_id' in updates) {
 				await loadContext(flag.context_id ?? null);
@@ -311,6 +317,10 @@
 				return reason.replaceAll('_', ' ');
 		}
 	}
+
+	async function updateDefaultValue(value: FlagValue) {
+		await patch({ default_value: value });
+	}
 </script>
 
 <div class="space-y-10">
@@ -346,6 +356,13 @@
 		<Card class="motion-panel divide-y divide-border/60">
 			<div class="flex items-center justify-between gap-4 p-5">
 				<div class="space-y-1">
+					<p class="text-sm">type</p>
+					<p class="text-xs text-muted-foreground">value shape returned by evaluation</p>
+				</div>
+				<Badge variant="muted">{flag.type}</Badge>
+			</div>
+			<div class="flex items-center justify-between gap-4 p-5">
+				<div class="space-y-1">
 					<p class="text-sm">enabled</p>
 					<p class="text-xs text-muted-foreground">
 						when off, the default value is returned for every request
@@ -357,16 +374,21 @@
 					onchange={(v) => patch({ enabled: v })}
 				/>
 			</div>
-			<div class="flex items-center justify-between gap-4 p-5">
+			<div class="flex flex-wrap items-start justify-between gap-4 p-5">
 				<div class="space-y-1">
 					<p class="text-sm">default value</p>
 					<p class="text-xs text-muted-foreground">returned when no rule matches</p>
 				</div>
-				<BoolToggle
-					value={flag.default_value}
-					disabled={saving}
-					onchange={(v) => patch({ default_value: v })}
-				/>
+				<div class="min-w-48 max-w-full flex-1 sm:flex-none sm:basis-80">
+					<ValueEditor
+						type={flag.type}
+						value={flag.default_value}
+						id="default-value"
+						align="end"
+						disabled={saving}
+						onchange={updateDefaultValue}
+					/>
+				</div>
 			</div>
 			<div class="flex flex-wrap items-center justify-between gap-4 p-5">
 				<div class="space-y-1">
@@ -471,12 +493,13 @@
 											dot
 											variant={playgroundResult.error
 												? 'destructive'
-												: playgroundResult.value
-													? 'success'
-													: 'muted'}
+												: valueBadgeVariant(playgroundResult.value)}
 										>
-											{String(playgroundResult.value)}
+											{formatFlagValue(playgroundResult.value)}
 										</Badge>
+										<p class="mt-2 font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
+											{playgroundResult.value_type}
+										</p>
 									</div>
 								</div>
 								<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
@@ -507,6 +530,9 @@
 								{#if playgroundResult.matched_rule}
 									<p class="mt-2 font-mono text-xs text-foreground">
 										#{String(playgroundResult.matched_rule.index + 1).padStart(2, '0')}
+									</p>
+									<p class="mt-2 font-mono text-xs text-muted-foreground">
+										value <span class="text-foreground">{formatFlagValue(playgroundResult.matched_rule.value)}</span>
 									</p>
 									<pre
 										class="mt-2 max-h-32 overflow-auto whitespace-pre-wrap break-words border-l-2 border-success/40 pl-3 font-mono text-xs text-muted-foreground">{playgroundResult.matched_rule.expression}</pre>
@@ -607,6 +633,7 @@
 									<RuleEditor
 										{rule}
 										{context}
+										valueType={flag.type}
 										submitting={ruleSubmitting}
 										error={editError}
 										submitLabel="save changes"
@@ -652,6 +679,10 @@
 											class="flex flex-wrap items-center gap-4 text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground"
 										>
 											<span>
+												value
+												<span class="font-mono text-foreground">{formatFlagValue(rule.value)}</span>
+											</span>
+											<span>
 												rollout
 												<span class="text-foreground">{rule.rollout.percentage}%</span>
 											</span>
@@ -696,6 +727,7 @@
 					</p>
 					<RuleEditor
 						{context}
+						valueType={flag.type}
 						submitting={ruleSubmitting}
 						error={createError}
 						submitLabel="add rule"
