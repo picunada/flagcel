@@ -39,6 +39,10 @@
 				return reason.replaceAll('_', ' ');
 		}
 	}
+
+	function hasRuleErrors(trace: EvalTrace): boolean {
+		return trace.rule_results.some((ruleResult) => Boolean(ruleResult.error));
+	}
 </script>
 
 <div class="space-y-4">
@@ -96,7 +100,9 @@
 					<div class="mt-2">
 						<Badge
 							dot
-							variant={result.error ? 'destructive' : valueBadgeVariant(result.value)}
+							variant={result.error || hasRuleErrors(result)
+								? 'destructive'
+								: valueBadgeVariant(result.value)}
 						>
 							{formatFlagValue(result.value)}
 						</Badge>
@@ -180,19 +186,31 @@
 					</p>
 					<div class="mt-2 space-y-1.5">
 						{#each result.rule_results as ruleResult (ruleResult.id || ruleResult.index)}
-							<div class="flex items-center justify-between gap-3 font-mono text-xs">
-								<span class="text-muted-foreground">
-									#{String(ruleResult.index + 1).padStart(2, '0')}
-								</span>
-								<span
-									class={ruleResult.error
-										? 'text-destructive'
-										: ruleResult.matched
-											? 'text-success'
-											: 'text-muted-foreground'}
-								>
-									{ruleResult.error ? 'error' : ruleResult.matched ? 'match' : 'no match'}
-								</span>
+							<div class="border-t border-border/60 pt-2 first:border-t-0 first:pt-0">
+								<div class="flex items-center justify-between gap-3 font-mono text-xs">
+									<span class="text-muted-foreground">
+										#{String(ruleResult.index + 1).padStart(2, '0')}
+									</span>
+									<span
+										class={ruleResult.error
+											? 'text-destructive'
+											: ruleResult.matched
+												? 'text-success'
+												: 'text-muted-foreground'}
+									>
+										{ruleResult.error ? 'error' : ruleResult.matched ? 'match' : 'no match'}
+									</span>
+								</div>
+								{#if ruleResult.error}
+									<p class="mt-2 break-words font-mono text-xs text-destructive">
+										{ruleResult.error}
+									</p>
+								{/if}
+								<pre
+									class="mt-2 max-h-24 overflow-auto whitespace-pre-wrap break-words border-l-2 border-border pl-3 font-mono text-xs text-muted-foreground">{ruleResult.expression}</pre>
+								<p class="mt-2 font-mono text-xs text-muted-foreground">
+									value <span class="text-foreground">{formatFlagValue(ruleResult.value)}</span>
+								</p>
 							</div>
 						{/each}
 					</div>
