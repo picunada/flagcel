@@ -8,23 +8,33 @@ export type Rollout = {
 
 export type Rule = {
     id: string;
+    description?: string;
     expression: string;
     rollout: Rollout;
     value: FlagValue;
+    created_at: string;
+    updated_at: string;
+    created_by?: string | null;
+    deleted_by?: string | null;
 };
 
 export type Flag = {
     key: string;
+    description?: string;
     type: ValueType;
     enabled: boolean;
     rules: Rule[];
     default_value: FlagValue;
     context_id?: string | null;
+    created_at: string;
     updated_at: string;
+    created_by?: string | null;
+    deleted_by?: string | null;
 };
 
 export type CreateFlagRequest = {
     key: string;
+    description?: string;
     type?: ValueType;
     enabled?: boolean;
     rules?: CreateRuleRequest[];
@@ -33,6 +43,7 @@ export type CreateFlagRequest = {
 };
 
 export type CreateRuleRequest = {
+    description?: string;
     expression: string;
     rollout: Rollout;
     value?: FlagValue;
@@ -97,6 +108,10 @@ export type ContextSchema = {
     name: string;
     description?: string;
     fields: ContextField[];
+    created_at: string;
+    updated_at: string;
+    created_by?: string | null;
+    deleted_by?: string | null;
 };
 
 export type CreateContextRequest = {
@@ -140,7 +155,12 @@ export type User = {
     id: string;
     email: string;
     name?: string;
+    description?: string;
     admin: boolean;
+    created_at: string;
+    updated_at: string;
+    created_by?: string | null;
+    deleted_by?: string | null;
 };
 
 export type AuthMe = {
@@ -153,10 +173,19 @@ export type AuthMe = {
 export type APIKey = {
     id: string;
     name: string;
+    description?: string;
     prefix: string;
     created_at: string;
+    updated_at: string;
     last_used_at?: string;
     revoked_at?: string;
+    created_by?: string | null;
+    deleted_by?: string | null;
+};
+
+export type CreateAPIKeyRequest = {
+    name: string;
+    description?: string;
 };
 
 export type CreateAPIKeyResponse = APIKey & {
@@ -298,10 +327,10 @@ export function createApi(fetchFn: Fetch = fetch) {
             }),
 
         listAPIKeys: () => request<APIKey[]>("/api-keys"),
-        createAPIKey: (name: string) =>
+        createAPIKey: (name: string, description = "") =>
             request<CreateAPIKeyResponse>("/api-keys", {
                 method: "POST",
-                body: JSON.stringify({ name }),
+                body: JSON.stringify({ name, description }),
             }),
         revokeAPIKey: (id: string) =>
             request<void>(`/api-keys/${encodeURIComponent(id)}`, {
