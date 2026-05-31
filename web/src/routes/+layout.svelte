@@ -1,44 +1,47 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     import { beforeNavigate, goto } from "$app/navigation";
     import { browser } from "$app/environment";
     import "../app.css";
     import { page } from "$app/state";
-    import type { Snippet } from "svelte";
+    import { expoOut } from "svelte/easing";
     import { LogOut } from "lucide-svelte";
-    import { api, APIError, type AuthMe } from "$lib/api";
+    import { api } from "$lib/api";
     import Button from "$lib/components/ui/button.svelte";
     import ClickSpark from "$lib/components/svelte-bits/click-spark.svelte";
+    import type { LayoutProps } from "./$types";
 
-    const AUTH_CACHE_KEY = "flagcel.auth";
+    let { children, data }: LayoutProps = $props();
 
-    let { children }: { children: Snippet } = $props();
+    const auth = $derived(data.auth);
 
-    const cached = browser ? readCachedAuth() : null;
-    let auth = $state<AuthMe | null>(cached);
-    let authChecked = $state(cached !== null);
+    const prefersReducedMotion =
+        browser && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    function readCachedAuth(): AuthMe | null {
-        try {
-            const raw = sessionStorage.getItem(AUTH_CACHE_KEY);
-            return raw ? (JSON.parse(raw) as AuthMe) : null;
-        } catch {
-            return null;
-        }
-    }
-
-    function writeCachedAuth(value: AuthMe | null) {
-        try {
-            if (value) sessionStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(value));
-            else sessionStorage.removeItem(AUTH_CACHE_KEY);
-        } catch {
-            /* ignore */
-        }
-    }
+    // Suppress intro animations on the very first paint (mirrors the `no-intro`
+    // class); everything mounted after is allowed to transition.
+    let ready = $state(false);
 
     beforeNavigate(() => {
         if (browser) document.documentElement.classList.remove("no-intro");
     });
+
+    const dur = (ms: number) => (ready && !prefersReducedMotion ? ms : 0);
+
+    // Horizontal collapse: animates width + horizontal margin + opacity so the
+    // glass pill grows and shrinks smoothly as groups enter or leave. The margin
+    // is folded in so no gap is left behind while a group collapses.
+    function collapseX(node: HTMLElement, { duration = 260 } = {}) {
+        const { width } = node.getBoundingClientRect();
+        const { marginLeft, marginRight } = getComputedStyle(node);
+        const ml = parseFloat(marginLeft);
+        const mr = parseFloat(marginRight);
+        return {
+            duration: dur(duration),
+            easing: expoOut,
+            css: (t: number) =>
+                `overflow:hidden;white-space:nowrap;opacity:${t};width:${t * width}px;margin-left:${t * ml}px;margin-right:${t * mr}px`,
+        };
+    }
 
     const nav = [
         { href: "/", label: "flags" },
@@ -55,41 +58,12 @@
         return pathname === href || pathname.startsWith(`${href}/`);
     }
 
-    onMount(checkAuth);
-
-    async function checkAuth() {
-        try {
-            const fresh = await api.me();
-            auth = fresh;
-            writeCachedAuth(fresh);
-            if (
-                fresh.auth_enabled &&
-                !fresh.authenticated &&
-                page.url.pathname !== "/login"
-            ) {
-                await goto("/login");
-            } else if (page.url.pathname === "/login" && fresh.authenticated) {
-                await goto("/");
-            }
-        } catch (e) {
-            if (
-                e instanceof APIError &&
-                e.status === 401 &&
-                page.url.pathname !== "/login"
-            ) {
-                writeCachedAuth(null);
-                auth = null;
-                await goto("/login");
-            }
-        } finally {
-            authChecked = true;
-        }
-    }
+    $effect(() => {
+        ready = true;
+    });
 
     async function logout() {
         await api.logout();
-        auth = null;
-        writeCachedAuth(null);
         await goto("/login");
     }
 </script>
@@ -107,11 +81,11 @@
             class="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4 sm:pt-5"
         >
             <div
-                class="glass-pill flex items-center gap-3 rounded-sm px-4 py-2 sm:gap-4 sm:px-5"
+                class="glass-pill flex items-center rounded-sm px-4 py-2 sm:px-5"
             >
                 <a
                     href="/"
-                    class="flex items-center gap-2 font-mono text-xs font-medium uppercase tracking-[0.12em]"
+                    class="flex h-6 items-center gap-2 font-mono text-xs font-medium uppercase tracking-[0.12em]"
                 >
                     <span
                         class="inline-flex h-4 w-4 items-center justify-center text-success"
@@ -135,63 +109,73 @@
                     </span>
                     <span>flagcel</span>
                 </a>
-                <span
-                    class="h-3 w-px bg-[rgba(255,255,255,0.18)]"
-                    aria-hidden="true"
-                ></span>
-                <nav
-                    class="flex items-center gap-4 text-xs uppercase tracking-[0.12em]"
-                >
-                    {#each nav as item (item.href)}
-                        {@const active =
-                            !item.external && isActiveNavItem(item.href)}
-                        {#if !item.authEnabled || auth?.auth_enabled}
-                            <a
-                                href={item.href}
-                                target={item.external ? "_blank" : undefined}
-                                rel={item.external ? "noopener" : undefined}
-                                class="inline-flex items-baseline gap-1 transition-colors {active
-                                    ? 'text-foreground'
-                                    : 'text-muted-foreground hover:text-foreground'}"
-                            >
-                                {item.label}{#if item.icon}<span
-                                        class="text-muted-foreground text-[0.85em]"
-                                        >{item.icon}</span
-                                    >{/if}
-                            </a>
-                        {/if}
-                    {/each}
-                </nav>
-                {#if auth?.authenticated}
-                    <span
-                        class="h-3 w-px bg-[rgba(255,255,255,0.18)]"
-                        aria-hidden="true"
-                    ></span>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        class="h-6 px-2"
-                        title="Sign out"
-                        onclick={logout}
+                {#if page.url.pathname !== "/login"}
+                    <div
+                        class="ml-3 flex items-center gap-3 sm:ml-4 sm:gap-4"
+                        transition:collapseX
                     >
-                        <LogOut class="h-3.5 w-3.5" />
-                    </Button>
+                        <span
+                            class="h-3 w-px bg-[rgba(255,255,255,0.18)]"
+                            aria-hidden="true"
+                        ></span>
+                        <nav
+                            class="flex items-center gap-4 text-xs uppercase tracking-[0.12em]"
+                        >
+                            {#each nav as item (item.href)}
+                                {@const active =
+                                    !item.external && isActiveNavItem(item.href)}
+                                {#if !item.authEnabled || auth?.auth_enabled}
+                                    <a
+                                        href={item.href}
+                                        target={item.external
+                                            ? "_blank"
+                                            : undefined}
+                                        rel={item.external
+                                            ? "noopener"
+                                            : undefined}
+                                        class="inline-flex items-baseline gap-1 transition-colors {active
+                                            ? 'text-foreground'
+                                            : 'text-muted-foreground hover:text-foreground'}"
+                                    >
+                                        {item.label}{#if item.icon}<span
+                                                class="text-muted-foreground text-[0.85em]"
+                                                >{item.icon}</span
+                                            >{/if}
+                                    </a>
+                                {/if}
+                            {/each}
+                        </nav>
+                    </div>
+                {/if}
+                {#if page.url.pathname !== "/login" && auth?.authenticated}
+                    <div
+                        class="ml-3 flex items-center gap-3 sm:ml-4 sm:gap-4"
+                        transition:collapseX
+                    >
+                        <span
+                            class="h-3 w-px bg-[rgba(255,255,255,0.18)]"
+                            aria-hidden="true"
+                        ></span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            class="-mr-2 h-6 px-2"
+                            title="Sign out"
+                            onclick={logout}
+                        >
+                            <LogOut class="h-3.5 w-3.5" />
+                        </Button>
+                    </div>
                 {/if}
             </div>
         </header>
 
         <main
-            class="motion-page mx-auto w-full max-w-5xl flex-1 px-6 pb-16 pt-32 sm:pt-36"
+            class="mx-auto w-full max-w-5xl flex-1 px-6 pb-16 pt-32 sm:pt-36"
         >
-            {#if authChecked || page.url.pathname === "/login"}
+            <div class="min-w-0">
                 {@render children()}
-            {:else}
-                <div
-                    class="py-24 text-center text-xs uppercase tracking-[0.14em] text-muted-foreground"
-                >
-                    authenticating
-                </div>
-            {/if}
+            </div>
         </main>
 
         <footer

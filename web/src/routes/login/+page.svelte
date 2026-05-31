@@ -1,33 +1,18 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     import { goto } from "$app/navigation";
-    import { api, APIError, type AuthMe } from "$lib/api";
+    import { api, APIError } from "$lib/api";
     import Button from "$lib/components/ui/button.svelte";
     import Card from "$lib/components/ui/card.svelte";
     import Input from "$lib/components/ui/input.svelte";
     import { LogIn } from "lucide-svelte";
+    import type { PageProps } from "./$types";
 
-    let auth = $state<AuthMe | null>(null);
+    let { data }: PageProps = $props();
+
     let email = $state("");
     let password = $state("");
-    let loading = $state(true);
     let submitting = $state(false);
     let error = $state<string | null>(null);
-
-    onMount(loadAuth);
-
-    async function loadAuth() {
-        try {
-            auth = await api.me();
-            if (auth.authenticated) {
-                await goto("/");
-            }
-        } catch (e) {
-            error = e instanceof APIError ? e.message : "Failed to load auth settings";
-        } finally {
-            loading = false;
-        }
-    }
 
     function login() {
         window.location.href = "/auth/login";
@@ -57,13 +42,7 @@
     </header>
 
     <Card class="motion-panel space-y-5 p-6 text-center">
-        {#if loading}
-            <p
-                class="text-xs uppercase tracking-[0.14em] text-muted-foreground"
-            >
-                loading
-            </p>
-        {:else if auth?.mode === "oidc"}
+        {#if data.auth?.mode === "oidc"}
             <p class="text-sm text-[rgba(255,255,255,0.74)]">
                 Use your configured SSO provider to access flags, contexts, and API keys.
             </p>

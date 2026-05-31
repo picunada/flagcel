@@ -185,43 +185,27 @@ type ErrorEnvelope = {
     error: { code: APIErrorCode; message: string; details?: ValidationIssue[] };
 };
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-    const res = await fetch(`/api/v1${path}`, {
-        ...init,
-        headers: {
-            "Content-Type": "application/json",
-            ...(init?.headers ?? {}),
-        },
-    });
+type Fetch = typeof globalThis.fetch;
 
-    if (res.status === 204) return undefined as T;
-
-    const text = await res.text();
-    const body = text ? JSON.parse(text) : null;
-
-    if (!res.ok) {
-        const err = (body as ErrorEnvelope | null)?.error;
-        throw new APIError(
-            err?.code ?? "INTERNAL_ERROR",
-            err?.message ?? `HTTP ${res.status}`,
-            res.status,
-            err?.details,
-        );
-    }
-
-    return (body as Envelope<T>).data;
-}
-
-export const api = {
-    me: () => request<AuthMe>("/auth/me"),
-    passwordLogin: async (email: string, password: string) => {
-        const res = await fetch("/api/v1/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
+/**
+ * Build an API client bound to a specific `fetch`. Inside `load` functions pass
+ * the `fetch` SvelteKit provides; elsewhere `api` (bound to the global fetch) is fine.
+ */
+export function createApi(fetchFn: Fetch = fetch) {
+    async function request<T>(path: string, init?: RequestInit): Promise<T> {
+        const res = await fetchFn(`/api/v1${path}`, {
+            ...init,
+            headers: {
+                "Content-Type": "application/json",
+                ...(init?.headers ?? {}),
+            },
         });
+
+        if (res.status === 204) return undefined as T;
+
         const text = await res.text();
         const body = text ? JSON.parse(text) : null;
+
         if (!res.ok) {
             const err = (body as ErrorEnvelope | null)?.error;
             throw new APIError(
@@ -231,73 +215,101 @@ export const api = {
                 err?.details,
             );
         }
-        return (body as Envelope<AuthMe>).data;
-    },
-    logout: () => request<void>("/auth/logout", { method: "POST" }),
 
-    listFlags: () => request<Flag[]>("/flags"),
-    getFlag: (key: string) =>
-        request<Flag>(`/flags/${encodeURIComponent(key)}`),
-    createFlag: (body: CreateFlagRequest) =>
-        request<Flag>("/flags", { method: "POST", body: JSON.stringify(body) }),
-    deleteFlag: (key: string) =>
-        request<void>(`/flags/${encodeURIComponent(key)}`, {
-            method: "DELETE",
-        }),
+        return (body as Envelope<T>).data;
+    }
 
-    listRules: (key: string) =>
-        request<Rule[]>(`/flags/${encodeURIComponent(key)}/rules`),
-    createRule: (key: string, body: CreateRuleRequest) =>
-        request<Rule>(`/flags/${encodeURIComponent(key)}/rules`, {
-            method: "POST",
-            body: JSON.stringify(body),
-        }),
-    updateRule: (key: string, id: string, body: UpdateRuleRequest) =>
-        request<Rule>(`/flags/${encodeURIComponent(key)}/rules/${id}`, {
-            method: "PUT",
-            body: JSON.stringify(body),
-        }),
-    deleteRule: (key: string, id: string) =>
-        request<void>(`/flags/${encodeURIComponent(key)}/rules/${id}`, {
-            method: "DELETE",
-        }),
-    reorderRules: (key: string, ruleIds: string[]) =>
-        request<void>(`/flags/${encodeURIComponent(key)}/rules/reorder`, {
-            method: "POST",
-            body: JSON.stringify({ rule_ids: ruleIds }),
-        }),
-    evaluateFlag: (key: string, context: Record<string, unknown>) =>
-        request<EvalTrace>(`/flags/${encodeURIComponent(key)}/evaluate`, {
-            method: "POST",
-            body: JSON.stringify({ context }),
-        }),
+    return {
+        me: () => request<AuthMe>("/auth/me"),
+        passwordLogin: async (email: string, password: string) => {
+            const res = await fetchFn("/api/v1/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
+            const text = await res.text();
+            const body = text ? JSON.parse(text) : null;
+            if (!res.ok) {
+                const err = (body as ErrorEnvelope | null)?.error;
+                throw new APIError(
+                    err?.code ?? "INTERNAL_ERROR",
+                    err?.message ?? `HTTP ${res.status}`,
+                    res.status,
+                    err?.details,
+                );
+            }
+            return (body as Envelope<AuthMe>).data;
+        },
+        logout: () => request<void>("/auth/logout", { method: "POST" }),
 
-    listContexts: () => request<ContextSchema[]>("/contexts"),
-    getContext: (id: string) =>
-        request<ContextSchema>(`/contexts/${encodeURIComponent(id)}`),
-    createContext: (body: CreateContextRequest) =>
-        request<ContextSchema>("/contexts", {
-            method: "POST",
-            body: JSON.stringify(body),
-        }),
-    updateContext: (id: string, body: UpdateContextRequest) =>
-        request<ContextSchema>(`/contexts/${encodeURIComponent(id)}`, {
-            method: "PUT",
-            body: JSON.stringify(body),
-        }),
-    deleteContext: (id: string) =>
-        request<void>(`/contexts/${encodeURIComponent(id)}`, {
-            method: "DELETE",
-        }),
+        listFlags: () => request<Flag[]>("/flags"),
+        getFlag: (key: string) =>
+            request<Flag>(`/flags/${encodeURIComponent(key)}`),
+        createFlag: (body: CreateFlagRequest) =>
+            request<Flag>("/flags", { method: "POST", body: JSON.stringify(body) }),
+        deleteFlag: (key: string) =>
+            request<void>(`/flags/${encodeURIComponent(key)}`, {
+                method: "DELETE",
+            }),
 
-    listAPIKeys: () => request<APIKey[]>("/api-keys"),
-    createAPIKey: (name: string) =>
-        request<CreateAPIKeyResponse>("/api-keys", {
-            method: "POST",
-            body: JSON.stringify({ name }),
-        }),
-    revokeAPIKey: (id: string) =>
-        request<void>(`/api-keys/${encodeURIComponent(id)}`, {
-            method: "DELETE",
-        }),
-};
+        listRules: (key: string) =>
+            request<Rule[]>(`/flags/${encodeURIComponent(key)}/rules`),
+        createRule: (key: string, body: CreateRuleRequest) =>
+            request<Rule>(`/flags/${encodeURIComponent(key)}/rules`, {
+                method: "POST",
+                body: JSON.stringify(body),
+            }),
+        updateRule: (key: string, id: string, body: UpdateRuleRequest) =>
+            request<Rule>(`/flags/${encodeURIComponent(key)}/rules/${id}`, {
+                method: "PUT",
+                body: JSON.stringify(body),
+            }),
+        deleteRule: (key: string, id: string) =>
+            request<void>(`/flags/${encodeURIComponent(key)}/rules/${id}`, {
+                method: "DELETE",
+            }),
+        reorderRules: (key: string, ruleIds: string[]) =>
+            request<void>(`/flags/${encodeURIComponent(key)}/rules/reorder`, {
+                method: "POST",
+                body: JSON.stringify({ rule_ids: ruleIds }),
+            }),
+        evaluateFlag: (key: string, context: Record<string, unknown>) =>
+            request<EvalTrace>(`/flags/${encodeURIComponent(key)}/evaluate`, {
+                method: "POST",
+                body: JSON.stringify({ context }),
+            }),
+
+        listContexts: () => request<ContextSchema[]>("/contexts"),
+        getContext: (id: string) =>
+            request<ContextSchema>(`/contexts/${encodeURIComponent(id)}`),
+        createContext: (body: CreateContextRequest) =>
+            request<ContextSchema>("/contexts", {
+                method: "POST",
+                body: JSON.stringify(body),
+            }),
+        updateContext: (id: string, body: UpdateContextRequest) =>
+            request<ContextSchema>(`/contexts/${encodeURIComponent(id)}`, {
+                method: "PUT",
+                body: JSON.stringify(body),
+            }),
+        deleteContext: (id: string) =>
+            request<void>(`/contexts/${encodeURIComponent(id)}`, {
+                method: "DELETE",
+            }),
+
+        listAPIKeys: () => request<APIKey[]>("/api-keys"),
+        createAPIKey: (name: string) =>
+            request<CreateAPIKeyResponse>("/api-keys", {
+                method: "POST",
+                body: JSON.stringify({ name }),
+            }),
+        revokeAPIKey: (id: string) =>
+            request<void>(`/api-keys/${encodeURIComponent(id)}`, {
+                method: "DELETE",
+            }),
+    };
+}
+
+export type Api = ReturnType<typeof createApi>;
+
+export const api = createApi();

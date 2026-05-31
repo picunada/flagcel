@@ -1,6 +1,6 @@
-import { api } from "$lib/api";
+import { createApi } from "$lib/api";
 import { runLoad } from "$lib/load";
 import type { PageLoad } from "./$types";
 
-export const load: PageLoad = ({ url }) =>
-    runLoad(async () => ({ contexts: await api.listContexts() }), url.pathname);
+export const load: PageLoad = ({ url, fetch }) =>
+    runLoad(async () => ({ contexts: await createApi(fetch).listContexts() }), url.pathname);

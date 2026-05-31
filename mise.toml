@@ -1,4 +1,6 @@
 [tools]
 go = "latest"
 k6 = "latest"
+node = "latest"
+pnpm = "latest"
 sqlc = "latest"
