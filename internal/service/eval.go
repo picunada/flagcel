@@ -7,8 +7,8 @@ import (
 	"hash/fnv"
 	"sync"
 
+	"github.com/picunada/flagcel/evalcore"
 	"github.com/picunada/flagcel/internal/core"
-	"github.com/picunada/flagcel/internal/engine"
 	"github.com/picunada/flagcel/internal/store/postgres"
 )
 
@@ -17,7 +17,7 @@ type EvalService struct {
 	cache *compiledFlagCache
 }
 
-func NewEvalService(store *postgres.Store, eng *engine.Engine) *EvalService {
+func NewEvalService(store *postgres.Store, eng *evalcore.Engine) *EvalService {
 	return &EvalService{
 		store: store,
 		cache: &compiledFlagCache{
@@ -27,7 +27,7 @@ func NewEvalService(store *postgres.Store, eng *engine.Engine) *EvalService {
 	}
 }
 
-func (s *EvalService) Evaluate(ctx context.Context, key string, user engine.DataContext) (core.FlagValue, error) {
+func (s *EvalService) Evaluate(ctx context.Context, key string, user evalcore.DataContext) (core.FlagValue, error) {
 	if compiled, ok := s.cache.Get(key); ok {
 		return s.cache.Evaluate(compiled, user), nil
 	}
@@ -47,14 +47,14 @@ func (s *EvalService) Evaluate(ctx context.Context, key string, user engine.Data
 	return s.cache.Evaluate(compiled, user), nil
 }
 
-func (s *EvalService) EvaluateWithTrace(ctx context.Context, key string, user engine.DataContext) (engine.EvaluationTrace, error) {
+func (s *EvalService) EvaluateWithTrace(ctx context.Context, key string, user evalcore.DataContext) (evalcore.EvaluationTrace, error) {
 	cfg, err := s.store.GetFlag(ctx, key)
 	if err != nil {
-		return engine.EvaluationTrace{}, fmt.Errorf("eval service: get flag %w", err)
+		return evalcore.EvaluationTrace{}, fmt.Errorf("eval service: get flag %w", err)
 	}
 	schema, err := s.contextForFlag(ctx, cfg)
 	if err != nil {
-		return engine.EvaluationTrace{}, err
+		return evalcore.EvaluationTrace{}, err
 	}
 
 	return s.cache.engine.EvaluateConfigForContext(*cfg, schema, user), nil
@@ -68,7 +68,7 @@ func (s *EvalService) InvalidateFlag(key string) {
 	s.cache.InvalidateFlag(key)
 }
 
-func (s *EvalService) EvaluateAll(ctx context.Context, user engine.DataContext) (map[string]core.FlagValue, error) {
+func (s *EvalService) EvaluateAll(ctx context.Context, user evalcore.DataContext) (map[string]core.FlagValue, error) {
 	if flags, ok := s.cache.All(); ok {
 		out := make(map[string]core.FlagValue, len(flags))
 		for _, flag := range flags {
@@ -130,7 +130,7 @@ func (s *EvalService) contextForFlagCached(ctx context.Context, cfg *core.FlagCo
 }
 
 type compiledFlagCache struct {
-	engine *engine.Engine
+	engine *evalcore.Engine
 
 	mu        sync.RWMutex
 	flags     map[string]cachedFlag
@@ -141,10 +141,10 @@ type cachedFlag struct {
 	signature     uint64
 	baseSignature uint64
 	contextID     string
-	flag          *engine.Flag
+	flag          *evalcore.Flag
 }
 
-func (c *compiledFlagCache) Get(key string) (*engine.Flag, bool) {
+func (c *compiledFlagCache) Get(key string) (*evalcore.Flag, bool) {
 	c.mu.RLock()
 	cached, ok := c.flags[key]
 	c.mu.RUnlock()
@@ -154,20 +154,20 @@ func (c *compiledFlagCache) Get(key string) (*engine.Flag, bool) {
 	return cached.flag, true
 }
 
-func (c *compiledFlagCache) All() ([]*engine.Flag, bool) {
+func (c *compiledFlagCache) All() ([]*evalcore.Flag, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	if !c.allLoaded {
 		return nil, false
 	}
-	flags := make([]*engine.Flag, 0, len(c.flags))
+	flags := make([]*evalcore.Flag, 0, len(c.flags))
 	for _, cached := range c.flags {
 		flags = append(flags, cached.flag)
 	}
 	return flags, true
 }
 
-func (c *compiledFlagCache) GetOrCompile(cfg core.FlagConfig, schema *core.ContextSchema) (*engine.Flag, error) {
+func (c *compiledFlagCache) GetOrCompile(cfg core.FlagConfig, schema *core.ContextSchema) (*evalcore.Flag, error) {
 	cfg = normalizeFlag(cfg)
 	signature := flagSignature(cfg, schema)
 
@@ -213,7 +213,7 @@ func (c *compiledFlagCache) SetAll(flags map[string]cachedFlag) {
 	c.mu.Unlock()
 }
 
-func (c *compiledFlagCache) GetOrCompileLazy(cfg core.FlagConfig, loadSchema func() (*core.ContextSchema, error)) (*engine.Flag, error) {
+func (c *compiledFlagCache) GetOrCompileLazy(cfg core.FlagConfig, loadSchema func() (*core.ContextSchema, error)) (*evalcore.Flag, error) {
 	cfg = normalizeFlag(cfg)
 	baseSignature := flagBaseSignature(cfg)
 
@@ -249,7 +249,7 @@ func (c *compiledFlagCache) InvalidateFlag(key string) {
 	c.mu.Unlock()
 }
 
-func (c *compiledFlagCache) Evaluate(flag *engine.Flag, user engine.DataContext) core.FlagValue {
+func (c *compiledFlagCache) Evaluate(flag *evalcore.Flag, user evalcore.DataContext) core.FlagValue {
 	return c.engine.Evaluate(flag, user)
 }
 

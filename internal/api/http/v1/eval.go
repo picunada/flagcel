@@ -3,8 +3,8 @@ package v1
 import (
 	"net/http"
 
+	"github.com/picunada/flagcel/evalcore"
 	"github.com/picunada/flagcel/internal/api/http/utils"
-	"github.com/picunada/flagcel/internal/engine"
 	"github.com/picunada/flagcel/internal/service"
 )
 
@@ -38,7 +38,7 @@ func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	value, err := h.service.Evaluate(r.Context(), key, engine.DataContext(req.Context))
+	value, err := h.service.Evaluate(r.Context(), key, evalcore.DataContext(req.Context))
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -66,7 +66,7 @@ func (h *EvalHandler) EvaluateFlag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	trace, err := h.service.EvaluateWithTrace(r.Context(), key, engine.DataContext(req.Context))
+	trace, err := h.service.EvaluateWithTrace(r.Context(), key, evalcore.DataContext(req.Context))
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -88,7 +88,7 @@ func (h *EvalHandler) EvaluateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	flags, err := h.service.EvaluateAll(r.Context(), engine.DataContext(req.Context))
+	flags, err := h.service.EvaluateAll(r.Context(), evalcore.DataContext(req.Context))
 	if err != nil {
 		WriteError(w, err)
 		return

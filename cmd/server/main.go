@@ -10,10 +10,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 
+	"github.com/picunada/flagcel/evalcore"
 	"github.com/picunada/flagcel/internal/api/http/debug"
 	v1 "github.com/picunada/flagcel/internal/api/http/v1"
 	"github.com/picunada/flagcel/internal/config"
-	"github.com/picunada/flagcel/internal/engine"
 	"github.com/picunada/flagcel/internal/service"
 	"github.com/picunada/flagcel/internal/store/postgres"
 	"github.com/picunada/flagcel/internal/store/postgres/migrations"
@@ -65,12 +65,12 @@ func runServer() {
 
 	store := postgres.NewStore(pool)
 
-	celEnv, err := engine.NewCELEnv()
+	celEnv, err := evalcore.NewCELEnv()
 	if err != nil {
 		logger.Error("init cel env", "err", err)
 		os.Exit(1)
 	}
-	eng := engine.NewEngine(celEnv)
+	eng := evalcore.NewEngine(celEnv)
 
 	evalSvc := service.NewEvalService(store, eng)
 	flagSvc := service.NewFlagService(store, evalSvc.InvalidateFlag)

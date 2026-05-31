@@ -1,4 +1,4 @@
-package engine
+package eval
 
 import (
 	"sort"
@@ -6,14 +6,13 @@ import (
 	"unicode"
 
 	"github.com/google/cel-go/cel"
-	"github.com/picunada/flagcel/internal/core"
 )
 
 func NewCELEnv() (*cel.Env, error) {
 	return NewCELEnvForContext(nil)
 }
 
-func NewCELEnvForContext(schema *core.ContextSchema) (*cel.Env, error) {
+func NewCELEnvForContext(schema *ContextSchema) (*cel.Env, error) {
 	opts := []cel.EnvOption{
 		cel.HomogeneousAggregateLiterals(),
 	}

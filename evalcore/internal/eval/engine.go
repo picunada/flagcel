@@ -1,11 +1,10 @@
-package engine
+package eval
 
 import (
 	"fmt"
 	"log/slog"
 
 	"github.com/google/cel-go/cel"
-	"github.com/picunada/flagcel/internal/core"
 )
 
 type Engine struct {
@@ -19,9 +18,9 @@ func NewEngine(celEnv *cel.Env) *Engine {
 type DataContext map[string]any
 
 // Evaluate each rule in flag and return the matched rule value, or the flag default value.
-func (e *Engine) Evaluate(flag *Flag, data DataContext) core.FlagValue {
+func (e *Engine) Evaluate(flag *Flag, data DataContext) FlagValue {
 	if flag == nil {
-		return core.FlagValue{Type: core.ValueTypeBoolean, Value: false}
+		return FlagValue{Type: ValueTypeBoolean, Value: false}
 	}
 
 	if !flag.Enabled {
@@ -48,14 +47,14 @@ func (e *Engine) Evaluate(flag *Flag, data DataContext) core.FlagValue {
 	return flagValue(flag.Type, flag.DefaultValue)
 }
 
-func flagValue(valueType core.ValueType, value any) core.FlagValue {
+func flagValue(valueType ValueType, value any) FlagValue {
 	if valueType == "" {
-		valueType = core.ValueTypeBoolean
+		valueType = ValueTypeBoolean
 	}
-	if value == nil && valueType == core.ValueTypeBoolean {
+	if value == nil && valueType == ValueTypeBoolean {
 		value = false
 	}
-	return core.FlagValue{Type: valueType, Value: value}
+	return FlagValue{Type: valueType, Value: value}
 }
 
 func (e *Engine) evaluateExpression(program cel.Program, data DataContext) (bool, error) {

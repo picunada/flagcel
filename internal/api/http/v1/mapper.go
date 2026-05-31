@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/picunada/flagcel/evalcore"
 	"github.com/picunada/flagcel/internal/core"
-	"github.com/picunada/flagcel/internal/engine"
 )
 
 func toCoreFlag(r CreateFlagRequest) (core.FlagConfig, error) {
@@ -137,7 +137,7 @@ func toFlagResponses(flags []*core.FlagConfig) []FlagResponse {
 	return out
 }
 
-func toEvalTraceResponse(t engine.EvaluationTrace) EvalTraceResponse {
+func toEvalTraceResponse(t evalcore.EvaluationTrace) EvalTraceResponse {
 	out := EvalTraceResponse{
 		Key:          t.Key,
 		ValueType:    string(t.Type),

@@ -11,8 +11,8 @@ import (
 	"github.com/google/cel-go/common/operators"
 	celtypes "github.com/google/cel-go/common/types"
 
+	"github.com/picunada/flagcel/evalcore"
 	"github.com/picunada/flagcel/internal/core"
-	"github.com/picunada/flagcel/internal/engine"
 )
 
 func normalizeRule(rule core.Rule) core.Rule {
@@ -183,7 +183,7 @@ func validateRule(rule core.Rule, schema *core.ContextSchema) error {
 	}
 
 	if rule.Expression != "" {
-		env, err := engine.NewCELEnvForContext(schema)
+		env, err := evalcore.NewCELEnvForContext(schema)
 		if err != nil {
 			return fmt.Errorf("rule validation: build CEL env: %w", err)
 		}

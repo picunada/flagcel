@@ -1,17 +1,16 @@
-package engine
+package eval
 
 import (
 	"fmt"
 
 	"github.com/google/cel-go/cel"
-	"github.com/picunada/flagcel/internal/core"
 )
 
-func (e *Engine) CompileFlag(key string, config core.FlagConfig) (*Flag, error) {
+func (e *Engine) CompileFlag(key string, config FlagConfig) (*Flag, error) {
 	return e.compileFlag(key, config, e.celEnv)
 }
 
-func (e *Engine) CompileFlagForContext(key string, config core.FlagConfig, schema *core.ContextSchema) (*Flag, error) {
+func (e *Engine) CompileFlagForContext(key string, config FlagConfig, schema *ContextSchema) (*Flag, error) {
 	env, err := NewCELEnvForContext(schema)
 	if err != nil {
 		return nil, err
@@ -19,7 +18,7 @@ func (e *Engine) CompileFlagForContext(key string, config core.FlagConfig, schem
 	return e.compileFlag(key, config, env)
 }
 
-func (e *Engine) compileFlag(key string, config core.FlagConfig, env *cel.Env) (*Flag, error) {
+func (e *Engine) compileFlag(key string, config FlagConfig, env *cel.Env) (*Flag, error) {
 	flag := &Flag{
 		Key:          key,
 		Type:         config.Type,
@@ -28,9 +27,9 @@ func (e *Engine) compileFlag(key string, config core.FlagConfig, env *cel.Env) (
 		Rules:        make([]CompiledRule, 0, len(config.Rules)),
 	}
 	if flag.Type == "" {
-		flag.Type = core.ValueTypeBoolean
+		flag.Type = ValueTypeBoolean
 	}
-	if flag.DefaultValue == nil && flag.Type == core.ValueTypeBoolean {
+	if flag.DefaultValue == nil && flag.Type == ValueTypeBoolean {
 		flag.DefaultValue = false
 	}
 
@@ -51,8 +50,8 @@ func (e *Engine) compileFlag(key string, config core.FlagConfig, env *cel.Env) (
 	return flag, nil
 }
 
-func ruleValue(rule core.Rule, valueType core.ValueType) any {
-	if rule.Value == nil && valueType == core.ValueTypeBoolean {
+func ruleValue(rule Rule, valueType ValueType) any {
+	if rule.Value == nil && valueType == ValueTypeBoolean {
 		return true
 	}
 	return rule.Value

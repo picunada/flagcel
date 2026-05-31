@@ -1,15 +1,14 @@
-// In package engine — what evaluation operates on.
-package engine
+// In package eval — what evaluation operates on.
+package eval
 
 import (
 	"github.com/google/cel-go/cel"
-	"github.com/picunada/flagcel/internal/core"
 )
 
 // In memory highly accessed types
 type Flag struct {
 	Key          string
-	Type         core.ValueType
+	Type         ValueType
 	Enabled      bool
 	Rules        []CompiledRule // pre-compiled, ready to evaluate
 	DefaultValue any
@@ -21,9 +20,4 @@ type CompiledRule struct {
 	Program cel.Program // exported — accessed by Engine.Evaluate
 	Rollout Rollout
 	Value   any
-}
-
-type Rollout struct {
-	Percentage int
-	BucketBy   string
 }

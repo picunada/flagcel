@@ -1,4 +1,4 @@
-package engine
+package eval
 
 import (
 	"crypto/sha1"
@@ -10,6 +10,11 @@ import (
 
 func (e *Engine) bucket(flagKey string, user DataContext, rollout Rollout) bool {
 	return e.bucketDetails(flagKey, user, rollout).InRollout
+}
+
+func Bucket(flagKey string, user DataContext, rollout Rollout) bool {
+	var e Engine
+	return e.bucket(flagKey, user, rollout)
 }
 
 func (e *Engine) bucketDetails(flagKey string, user DataContext, rollout Rollout) BucketTrace {

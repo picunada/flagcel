@@ -3,8 +3,8 @@ package service
 import (
 	"testing"
 
+	"github.com/picunada/flagcel/evalcore"
 	"github.com/picunada/flagcel/internal/core"
-	"github.com/picunada/flagcel/internal/engine"
 )
 
 func TestCompiledFlagCacheGetOrCompileReusesUnchangedFlag(t *testing.T) {
@@ -215,13 +215,13 @@ func TestCompiledFlagCacheInvalidateContext(t *testing.T) {
 	}
 }
 
-func newTestEngine(t *testing.T) *engine.Engine {
+func newTestEngine(t *testing.T) *evalcore.Engine {
 	t.Helper()
-	env, err := engine.NewCELEnv()
+	env, err := evalcore.NewCELEnv()
 	if err != nil {
 		t.Fatalf("new cel env: %v", err)
 	}
-	return engine.NewEngine(env)
+	return evalcore.NewEngine(env)
 }
 
 func userFlagConfig() core.FlagConfig {
