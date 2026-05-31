@@ -50,6 +50,7 @@ func (s *ContextService) CreateContext(ctx context.Context, c *core.ContextSchem
 	if err := s.store.CreateContext(ctx, c); err != nil {
 		return nil, fmt.Errorf("context service: failed to create context %w", err)
 	}
+	s.invalidate(c.ID)
 	out, err := s.store.GetContext(ctx, c.ID)
 	if err != nil {
 		return nil, fmt.Errorf("context service: failed to load created context %w", err)

@@ -342,6 +342,42 @@ paths:
                 $ref: "#/components/schemas/EvalAllEnvelope"
         "401": { $ref: "#/components/responses/Unauthorized" }
 
+  /eval/definitions:
+    get:
+      tags: [Evaluation]
+      summary: Get raw flag definitions for SDK polling
+      security:
+        - bearerAPIKey: []
+      parameters:
+        - in: header
+          name: If-None-Match
+          schema:
+            type: string
+          description: Previous ETag returned by this endpoint.
+      responses:
+        "200":
+          description: Flag definitions and referenced context schemas
+          headers:
+            ETag:
+              schema:
+                type: string
+              description: Current in-memory definitions version.
+            Cache-Control:
+              schema:
+                type: string
+              description: Cache validator policy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvalDefinitionsEnvelope"
+        "304":
+          description: Definitions have not changed since the supplied ETag
+          headers:
+            ETag:
+              schema:
+                type: string
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /eval/{key}:
     parameters:
       - $ref: "#/components/parameters/FlagKey"
@@ -729,6 +765,27 @@ components:
           additionalProperties:
             $ref: "#/components/schemas/EvalFlagValue"
 
+    EvalDefinitions:
+      type: object
+      required: [flags]
+      properties:
+        flags:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlagDefinition"
+        contexts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Context"
+
+    FlagDefinition:
+      allOf:
+        - $ref: "#/components/schemas/Flag"
+        - type: object
+          properties:
+            context_schema:
+              $ref: "#/components/schemas/Context"
+
     EvalFlagValue:
       type: object
       required: [value_type, value]
@@ -851,6 +908,13 @@ components:
           properties:
             data:
               $ref: "#/components/schemas/EvalAllResponse"
+    EvalDefinitionsEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/EvalDefinitions"
     APIKeyListEnvelope:
       allOf:
         - $ref: "#/components/schemas/SuccessEnvelope"

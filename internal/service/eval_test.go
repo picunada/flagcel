@@ -215,6 +215,23 @@ func TestCompiledFlagCacheInvalidateContext(t *testing.T) {
 	}
 }
 
+func TestEvalServiceDefinitionsETagBumpsOnInvalidation(t *testing.T) {
+	svc := NewEvalService(nil, newTestEngine(t))
+
+	first := svc.DefinitionsETag()
+	svc.InvalidateFlag("feature-a")
+	second := svc.DefinitionsETag()
+	if second == first {
+		t.Fatal("expected flag invalidation to bump definitions ETag")
+	}
+
+	svc.InvalidateContext("context-user")
+	third := svc.DefinitionsETag()
+	if third == second {
+		t.Fatal("expected context invalidation to bump definitions ETag")
+	}
+}
+
 func newTestEngine(t *testing.T) *evalcore.Engine {
 	t.Helper()
 	env, err := evalcore.NewCELEnv()

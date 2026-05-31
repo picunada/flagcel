@@ -2,6 +2,7 @@ package v1
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/picunada/flagcel/evalcore"
 	"github.com/picunada/flagcel/internal/api/http/utils"
@@ -17,12 +18,54 @@ func NewEvalHandler(s *service.EvalService) *EvalHandler {
 }
 
 func (h *EvalHandler) Register(mux *http.ServeMux) {
+	mux.HandleFunc("GET /eval/definitions", h.GetDefinitions)
 	mux.HandleFunc("POST /eval", h.EvaluateAll)
 	mux.HandleFunc("POST /eval/{key}", h.Evaluate)
 }
 
 func (h *EvalHandler) RegisterAdmin(mux *http.ServeMux) {
 	mux.HandleFunc("POST /flags/{key}/evaluate", h.EvaluateFlag)
+}
+
+func (h *EvalHandler) GetDefinitions(w http.ResponseWriter, r *http.Request) {
+	etag := h.service.DefinitionsETag()
+	if etagMatches(r.Header.Get("If-None-Match"), etag) {
+		setDefinitionsHeaders(w, etag)
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+
+	defs, etag, err := h.service.Definitions(r.Context())
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	setDefinitionsHeaders(w, etag)
+	if err := utils.Encode(w, r, http.StatusOK, "success", defs); err != nil {
+		WriteError(w, err)
+	}
+}
+
+func setDefinitionsHeaders(w http.ResponseWriter, etag string) {
+	w.Header().Set("ETag", etag)
+	w.Header().Set("Cache-Control", "no-cache")
+}
+
+func etagMatches(header, etag string) bool {
+	for _, candidate := range strings.Split(header, ",") {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "*" {
+			return true
+		}
+		if strings.HasPrefix(candidate, "W/") {
+			candidate = strings.TrimSpace(strings.TrimPrefix(candidate, "W/"))
+		}
+		if candidate == etag {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {

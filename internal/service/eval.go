@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"hash/fnv"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/picunada/flagcel/evalcore"
 	"github.com/picunada/flagcel/internal/core"
@@ -13,18 +15,21 @@ import (
 )
 
 type EvalService struct {
-	store *postgres.Store
-	cache *compiledFlagCache
+	store              *postgres.Store
+	cache              *compiledFlagCache
+	definitionsVersion atomic.Uint64
 }
 
 func NewEvalService(store *postgres.Store, eng *evalcore.Engine) *EvalService {
-	return &EvalService{
+	s := &EvalService{
 		store: store,
 		cache: &compiledFlagCache{
 			engine: eng,
 			flags:  make(map[string]cachedFlag),
 		},
 	}
+	s.definitionsVersion.Store(uint64(time.Now().UnixNano()))
+	return s
 }
 
 func (s *EvalService) Evaluate(ctx context.Context, key string, user evalcore.DataContext) (core.FlagValue, error) {
@@ -62,10 +67,59 @@ func (s *EvalService) EvaluateWithTrace(ctx context.Context, key string, user ev
 
 func (s *EvalService) InvalidateContext(id string) {
 	s.cache.InvalidateContext(id)
+	s.bumpDefinitionsVersion()
 }
 
 func (s *EvalService) InvalidateFlag(key string) {
 	s.cache.InvalidateFlag(key)
+	s.bumpDefinitionsVersion()
+}
+
+func (s *EvalService) DefinitionsETag() string {
+	return fmt.Sprintf(`"%d"`, s.definitionsVersion.Load())
+}
+
+func (s *EvalService) Definitions(ctx context.Context) (evalcore.Definitions, string, error) {
+	etag := s.DefinitionsETag()
+	cfgs, err := s.store.ListFlags(ctx)
+	if err != nil {
+		return evalcore.Definitions{}, etag, fmt.Errorf("eval service: list definition flags %w", err)
+	}
+
+	flags := make([]evalcore.FlagDefinition, len(cfgs))
+	contexts := make([]evalcore.ContextSchema, 0)
+	seenContexts := make(map[string]struct{})
+
+	for i, cfg := range cfgs {
+		flag := normalizeFlag(*cfg)
+		if flag.Rules == nil {
+			flag.Rules = []core.Rule{}
+		}
+		flags[i] = evalcore.FlagDefinition{FlagConfig: flag}
+		if flag.ContextID == nil || *flag.ContextID == "" {
+			continue
+		}
+
+		contextID := *flag.ContextID
+		if _, ok := seenContexts[contextID]; ok {
+			continue
+		}
+		schema, err := s.store.GetContext(ctx, contextID)
+		if err != nil {
+			return evalcore.Definitions{}, etag, fmt.Errorf("eval service: get definition context %w", err)
+		}
+		contexts = append(contexts, *schema)
+		seenContexts[contextID] = struct{}{}
+	}
+
+	return evalcore.Definitions{
+		Flags:    flags,
+		Contexts: contexts,
+	}, etag, nil
+}
+
+func (s *EvalService) bumpDefinitionsVersion() {
+	s.definitionsVersion.Add(1)
 }
 
 func (s *EvalService) EvaluateAll(ctx context.Context, user evalcore.DataContext) (map[string]core.FlagValue, error) {
