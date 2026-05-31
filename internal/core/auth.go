@@ -18,14 +18,23 @@ type User struct {
 	OIDCSubject string
 	Email       string
 	Name        string
+	Description string
 	Admin       bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	CreatedBy   *string
+	DeletedBy   *string
 }
 
 type APIKey struct {
-	ID         string
-	Name       string
-	Prefix     string
-	CreatedAt  time.Time
-	LastUsedAt *time.Time
-	RevokedAt  *time.Time
+	ID          string
+	Name        string
+	Description string
+	Prefix      string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	LastUsedAt  *time.Time
+	RevokedAt   *time.Time
+	CreatedBy   *string
+	DeletedBy   *string
 }

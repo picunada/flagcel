@@ -4,19 +4,28 @@ import "encoding/json"
 
 type FlagResponse struct {
 	Key          string         `json:"key"`
+	Description  string         `json:"description,omitempty"`
 	Type         string         `json:"type"`
 	Enabled      bool           `json:"enabled"`
 	Rules        []RuleResponse `json:"rules"`
 	DefaultValue any            `json:"default_value"`
 	ContextID    *string        `json:"context_id,omitempty"`
+	CreatedAt    string         `json:"created_at"`
 	UpdatedAt    string         `json:"updated_at"`
+	CreatedBy    *string        `json:"created_by,omitempty"`
+	DeletedBy    *string        `json:"deleted_by,omitempty"`
 }
 
 type RuleResponse struct {
-	ID         string          `json:"id"`
-	Expression string          `json:"expression"`
-	Rollout    RolloutResponse `json:"rollout"`
-	Value      any             `json:"value"`
+	ID          string          `json:"id"`
+	Description string          `json:"description,omitempty"`
+	Expression  string          `json:"expression"`
+	Rollout     RolloutResponse `json:"rollout"`
+	Value       any             `json:"value"`
+	CreatedAt   string          `json:"created_at"`
+	UpdatedAt   string          `json:"updated_at"`
+	CreatedBy   *string         `json:"created_by,omitempty"`
+	DeletedBy   *string         `json:"deleted_by,omitempty"`
 }
 
 type RolloutResponse struct {
@@ -26,6 +35,7 @@ type RolloutResponse struct {
 
 type CreateFlagRequest struct {
 	Key          string              `json:"key"`
+	Description  string              `json:"description"`
 	Type         string              `json:"type"`
 	Enabled      bool                `json:"enabled"`
 	Rules        []CreateRuleRequest `json:"rules"`
@@ -34,15 +44,17 @@ type CreateFlagRequest struct {
 }
 
 type CreateRuleRequest struct {
-	Expression string          `json:"expression"`
-	Rollout    RolloutResponse `json:"rollout"`
-	Value      json.RawMessage `json:"value"`
+	Description string          `json:"description"`
+	Expression  string          `json:"expression"`
+	Rollout     RolloutResponse `json:"rollout"`
+	Value       json.RawMessage `json:"value"`
 }
 
 type UpdateRuleRequest struct {
-	Expression string          `json:"expression"`
-	Rollout    RolloutResponse `json:"rollout"`
-	Value      json.RawMessage `json:"value"`
+	Description string          `json:"description"`
+	Expression  string          `json:"expression"`
+	Rollout     RolloutResponse `json:"rollout"`
+	Value       json.RawMessage `json:"value"`
 }
 
 type ReorderRulesRequest struct {
@@ -59,6 +71,10 @@ type ContextResponse struct {
 	Name        string            `json:"name"`
 	Description string            `json:"description,omitempty"`
 	Fields      []ContextFieldDTO `json:"fields"`
+	CreatedAt   string            `json:"created_at"`
+	UpdatedAt   string            `json:"updated_at"`
+	CreatedBy   *string           `json:"created_by,omitempty"`
+	DeletedBy   *string           `json:"deleted_by,omitempty"`
 }
 
 type CreateContextRequest struct {
@@ -131,10 +147,15 @@ type EvalFlagValueResponse struct {
 }
 
 type UserResponse struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
-	Name  string `json:"name,omitempty"`
-	Admin bool   `json:"admin"`
+	ID          string  `json:"id"`
+	Email       string  `json:"email"`
+	Name        string  `json:"name,omitempty"`
+	Description string  `json:"description,omitempty"`
+	Admin       bool    `json:"admin"`
+	CreatedAt   string  `json:"created_at"`
+	UpdatedAt   string  `json:"updated_at"`
+	CreatedBy   *string `json:"created_by,omitempty"`
+	DeletedBy   *string `json:"deleted_by,omitempty"`
 }
 
 type AuthMeResponse struct {
@@ -150,16 +171,21 @@ type PasswordLoginRequest struct {
 }
 
 type APIKeyResponse struct {
-	ID         string  `json:"id"`
-	Name       string  `json:"name"`
-	Prefix     string  `json:"prefix"`
-	CreatedAt  string  `json:"created_at"`
-	LastUsedAt *string `json:"last_used_at,omitempty"`
-	RevokedAt  *string `json:"revoked_at,omitempty"`
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description,omitempty"`
+	Prefix      string  `json:"prefix"`
+	CreatedAt   string  `json:"created_at"`
+	UpdatedAt   string  `json:"updated_at"`
+	LastUsedAt  *string `json:"last_used_at,omitempty"`
+	RevokedAt   *string `json:"revoked_at,omitempty"`
+	CreatedBy   *string `json:"created_by,omitempty"`
+	DeletedBy   *string `json:"deleted_by,omitempty"`
 }
 
 type CreateAPIKeyRequest struct {
-	Name string `json:"name"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 type CreateAPIKeyResponse struct {

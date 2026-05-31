@@ -105,18 +105,20 @@ func (h *RulesHandler) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rule := core.Rule{
-		ID:         ruleID,
-		Expression: req.Expression,
-		Rollout:    toCoreRollout(req.Rollout),
-		Value:      value,
+		ID:          ruleID,
+		Description: req.Description,
+		Expression:  req.Expression,
+		Rollout:     toCoreRollout(req.Rollout),
+		Value:       value,
 	}
 
-	if err := h.service.UpdateRule(r.Context(), flagKey, rule); err != nil {
+	saved, err := h.service.UpdateRule(r.Context(), flagKey, rule)
+	if err != nil {
 		WriteError(w, err)
 		return
 	}
 
-	if err := utils.Encode(w, r, http.StatusOK, "success", toRuleResponse(rule)); err != nil {
+	if err := utils.Encode(w, r, http.StatusOK, "success", toRuleResponse(*saved)); err != nil {
 		WriteError(w, err)
 		return
 	}

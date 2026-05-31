@@ -31,6 +31,7 @@ func toCoreFlag(r CreateFlagRequest) (core.FlagConfig, error) {
 	}
 	return core.FlagConfig{
 		Key:          r.Key,
+		Description:  r.Description,
 		Type:         valueType,
 		Enabled:      r.Enabled,
 		Rules:        rules,
@@ -45,9 +46,10 @@ func toCoreRule(r CreateRuleRequest) (core.Rule, error) {
 		return core.Rule{}, fmt.Errorf("value: %w", err)
 	}
 	return core.Rule{
-		Expression: r.Expression,
-		Rollout:    toCoreRollout(r.Rollout),
-		Value:      value,
+		Description: r.Description,
+		Expression:  r.Expression,
+		Rollout:     toCoreRollout(r.Rollout),
+		Value:       value,
 	}, nil
 }
 
@@ -93,21 +95,30 @@ func toFlagResponse(f core.FlagConfig) FlagResponse {
 	}
 	return FlagResponse{
 		Key:          f.Key,
+		Description:  f.Description,
 		Type:         string(f.Type),
 		Enabled:      f.Enabled,
 		Rules:        rules,
 		DefaultValue: f.DefaultValue,
 		ContextID:    f.ContextID,
+		CreatedAt:    formatTime(f.CreatedAt),
 		UpdatedAt:    formatTime(f.UpdatedAt),
+		CreatedBy:    f.CreatedBy,
+		DeletedBy:    f.DeletedBy,
 	}
 }
 
 func toRuleResponse(r core.Rule) RuleResponse {
 	return RuleResponse{
-		ID:         r.ID,
-		Expression: r.Expression,
-		Rollout:    toRolloutResponse(r.Rollout),
-		Value:      r.Value,
+		ID:          r.ID,
+		Description: r.Description,
+		Expression:  r.Expression,
+		Rollout:     toRolloutResponse(r.Rollout),
+		Value:       r.Value,
+		CreatedAt:   formatTime(r.CreatedAt),
+		UpdatedAt:   formatTime(r.UpdatedAt),
+		CreatedBy:   r.CreatedBy,
+		DeletedBy:   r.DeletedBy,
 	}
 }
 
@@ -205,6 +216,10 @@ func toContextResponse(c core.ContextSchema) ContextResponse {
 		Name:        c.Name,
 		Description: c.Description,
 		Fields:      fields,
+		CreatedAt:   formatTime(c.CreatedAt),
+		UpdatedAt:   formatTime(c.UpdatedAt),
+		CreatedBy:   c.CreatedBy,
+		DeletedBy:   c.DeletedBy,
 	}
 }
 

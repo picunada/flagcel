@@ -16,12 +16,14 @@ import (
 )
 
 func normalizeRule(rule core.Rule) core.Rule {
+	rule.Description = strings.TrimSpace(rule.Description)
 	rule.Expression = strings.TrimSpace(rule.Expression)
 	rule.Rollout.BucketBy = strings.TrimSpace(rule.Rollout.BucketBy)
 	return rule
 }
 
 func normalizeFlag(flag core.FlagConfig) core.FlagConfig {
+	flag.Description = strings.TrimSpace(flag.Description)
 	if flag.Type == "" {
 		flag.Type = core.ValueTypeBoolean
 	}

@@ -4,12 +4,16 @@ import "time"
 
 type FlagConfig struct {
 	Key          string    `json:"key"`
+	Description  string    `json:"description,omitempty"`
 	Type         ValueType `json:"type"`
 	Enabled      bool      `json:"enabled"`
 	Rules        []Rule    `json:"rules"`
 	DefaultValue any       `json:"default_value"`
 	ContextID    *string   `json:"context_id,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
+	CreatedBy    *string   `json:"created_by,omitempty"`
+	DeletedBy    *string   `json:"deleted_by,omitempty"`
 }
 
 type ValueType string
@@ -27,10 +31,15 @@ type FlagValue struct {
 }
 
 type Rule struct {
-	ID         string  `json:"id"`
-	Expression string  `json:"expression"`
-	Rollout    Rollout `json:"rollout"`
-	Value      any     `json:"value"`
+	ID          string    `json:"id"`
+	Description string    `json:"description,omitempty"`
+	Expression  string    `json:"expression"`
+	Rollout     Rollout   `json:"rollout"`
+	Value       any       `json:"value"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	CreatedBy   *string   `json:"created_by,omitempty"`
+	DeletedBy   *string   `json:"deleted_by,omitempty"`
 }
 
 type Rollout struct {

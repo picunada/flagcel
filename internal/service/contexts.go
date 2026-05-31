@@ -50,7 +50,11 @@ func (s *ContextService) CreateContext(ctx context.Context, c *core.ContextSchem
 	if err := s.store.CreateContext(ctx, c); err != nil {
 		return nil, fmt.Errorf("context service: failed to create context %w", err)
 	}
-	return c, nil
+	out, err := s.store.GetContext(ctx, c.ID)
+	if err != nil {
+		return nil, fmt.Errorf("context service: failed to load created context %w", err)
+	}
+	return out, nil
 }
 
 func (s *ContextService) UpdateContext(ctx context.Context, c *core.ContextSchema) (*core.ContextSchema, error) {
@@ -64,7 +68,11 @@ func (s *ContextService) UpdateContext(ctx context.Context, c *core.ContextSchem
 		return nil, fmt.Errorf("context service: failed to update context %w", err)
 	}
 	s.invalidate(c.ID)
-	return c, nil
+	out, err := s.store.GetContext(ctx, c.ID)
+	if err != nil {
+		return nil, fmt.Errorf("context service: failed to load updated context %w", err)
+	}
+	return out, nil
 }
 
 func (s *ContextService) DeleteContext(ctx context.Context, id string) error {

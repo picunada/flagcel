@@ -58,26 +58,34 @@ func (s *RuleService) CreateRule(ctx context.Context, flagKey string, rule core.
 		return nil, fmt.Errorf("rule service: failed to create rule %w", err)
 	}
 	s.invalidate(flagKey)
-	return &rule, nil
+	out, err := s.store.GetRule(ctx, flagKey, rule.ID)
+	if err != nil {
+		return nil, fmt.Errorf("rule service: failed to load created rule %w", err)
+	}
+	return out, nil
 }
 
-func (s *RuleService) UpdateRule(ctx context.Context, flagKey string, rule core.Rule) error {
+func (s *RuleService) UpdateRule(ctx context.Context, flagKey string, rule core.Rule) (*core.Rule, error) {
 	rule = normalizeRule(rule)
 	flag, schema, err := s.flagAndContext(ctx, flagKey)
 	if err != nil {
-		return fmt.Errorf("rule service: failed to load flag context %w", err)
+		return nil, fmt.Errorf("rule service: failed to load flag context %w", err)
 	}
 	if err := validateRule(rule, schema); err != nil {
-		return err
+		return nil, err
 	}
 	if err := validateRuleValue(rule, flag.Type); err != nil {
-		return err
+		return nil, err
 	}
 	if err := s.store.UpdateRule(ctx, flagKey, rule); err != nil {
-		return fmt.Errorf("rule service: failed to update rule %w", err)
+		return nil, fmt.Errorf("rule service: failed to update rule %w", err)
 	}
 	s.invalidate(flagKey)
-	return nil
+	out, err := s.store.GetRule(ctx, flagKey, rule.ID)
+	if err != nil {
+		return nil, fmt.Errorf("rule service: failed to load updated rule %w", err)
+	}
+	return out, nil
 }
 
 func (s *RuleService) DeleteRule(ctx context.Context, flagKey, ruleID string) error {

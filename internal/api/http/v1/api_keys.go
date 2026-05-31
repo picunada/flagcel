@@ -44,7 +44,7 @@ func (h *APIKeysHandler) Create(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, InvalidRequest("invalid request body"))
 		return
 	}
-	created, err := h.service.CreateAPIKey(r.Context(), req.Name)
+	created, err := h.service.CreateAPIKey(r.Context(), req.Name, req.Description)
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -68,21 +68,30 @@ func (h *APIKeysHandler) Revoke(w http.ResponseWriter, r *http.Request) {
 
 func toUserResponse(user *core.User) *UserResponse {
 	return &UserResponse{
-		ID:    user.ID,
-		Email: user.Email,
-		Name:  user.Name,
-		Admin: user.Admin,
+		ID:          user.ID,
+		Email:       user.Email,
+		Name:        user.Name,
+		Description: user.Description,
+		Admin:       user.Admin,
+		CreatedAt:   formatTime(user.CreatedAt),
+		UpdatedAt:   formatTime(user.UpdatedAt),
+		CreatedBy:   user.CreatedBy,
+		DeletedBy:   user.DeletedBy,
 	}
 }
 
 func toAPIKeyResponse(key *core.APIKey) APIKeyResponse {
 	return APIKeyResponse{
-		ID:         key.ID,
-		Name:       key.Name,
-		Prefix:     key.Prefix,
-		CreatedAt:  formatTime(key.CreatedAt),
-		LastUsedAt: formatTimePtr(key.LastUsedAt),
-		RevokedAt:  formatTimePtr(key.RevokedAt),
+		ID:          key.ID,
+		Name:        key.Name,
+		Description: key.Description,
+		Prefix:      key.Prefix,
+		CreatedAt:   formatTime(key.CreatedAt),
+		UpdatedAt:   formatTime(key.UpdatedAt),
+		LastUsedAt:  formatTimePtr(key.LastUsedAt),
+		RevokedAt:   formatTimePtr(key.RevokedAt),
+		CreatedBy:   key.CreatedBy,
+		DeletedBy:   key.DeletedBy,
 	}
 }
 

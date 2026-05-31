@@ -253,7 +253,7 @@ func (s *AuthService) RevokeSession(ctx context.Context, token string) error {
 	return s.store.DeleteSessionByHash(ctx, s.hash(token))
 }
 
-func (s *AuthService) CreateAPIKey(ctx context.Context, name string) (*CreatedAPIKey, error) {
+func (s *AuthService) CreateAPIKey(ctx context.Context, name, description string) (*CreatedAPIKey, error) {
 	if !s.Enabled() {
 		return nil, core.ErrAuthNotConfigured
 	}
@@ -261,6 +261,7 @@ func (s *AuthService) CreateAPIKey(ctx context.Context, name string) (*CreatedAP
 	if name == "" {
 		return nil, fmt.Errorf("name is required")
 	}
+	description = strings.TrimSpace(description)
 	prefixPart, err := randomToken(6)
 	if err != nil {
 		return nil, err
@@ -271,7 +272,7 @@ func (s *AuthService) CreateAPIKey(ctx context.Context, name string) (*CreatedAP
 	}
 	prefix := "fc_" + prefixPart
 	token := prefix + "_" + secretPart
-	key, err := s.store.CreateAPIKey(ctx, uuid.NewString(), name, prefix, s.hash(token))
+	key, err := s.store.CreateAPIKey(ctx, uuid.NewString(), name, description, prefix, s.hash(token))
 	if err != nil {
 		return nil, err
 	}

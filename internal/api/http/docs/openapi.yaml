@@ -467,12 +467,17 @@ components:
 
     User:
       type: object
-      required: [id, email, admin]
+      required: [id, email, admin, created_at, updated_at]
       properties:
         id: { type: string, format: uuid }
         email: { type: string, format: email }
         name: { type: string }
+        description: { type: string }
         admin: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        created_by: { type: string, format: uuid, nullable: true }
+        deleted_by: { type: string, format: uuid, nullable: true }
 
     AuthMe:
       type: object
@@ -509,9 +514,10 @@ components:
 
     Rule:
       type: object
-      required: [id, expression, rollout, value]
+      required: [id, expression, rollout, value, created_at, updated_at]
       properties:
         id: { type: string, format: uuid }
+        description: { type: string }
         expression:
           type: string
           example: "user.country == 'US'"
@@ -519,12 +525,17 @@ components:
           $ref: "#/components/schemas/Rollout"
         value:
           $ref: "#/components/schemas/FlagValue"
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        created_by: { type: string, format: uuid, nullable: true }
+        deleted_by: { type: string, format: uuid, nullable: true }
 
     Flag:
       type: object
-      required: [key, type, enabled, rules, default_value, updated_at]
+      required: [key, type, enabled, rules, default_value, created_at, updated_at]
       properties:
         key: { type: string, example: new-checkout }
+        description: { type: string }
         type:
           type: string
           enum: [boolean, string, number, json]
@@ -539,13 +550,17 @@ components:
           type: string
           format: uuid
           nullable: true
+        created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
+        created_by: { type: string, format: uuid, nullable: true }
+        deleted_by: { type: string, format: uuid, nullable: true }
 
     CreateFlagRequest:
       type: object
       required: [key]
       properties:
         key: { type: string }
+        description: { type: string }
         type:
           type: string
           enum: [boolean, string, number, json]
@@ -569,6 +584,7 @@ components:
       type: object
       required: [expression, rollout]
       properties:
+        description: { type: string }
         expression: { type: string }
         rollout:
           $ref: "#/components/schemas/Rollout"
@@ -601,7 +617,7 @@ components:
 
     Context:
       type: object
-      required: [id, name, fields]
+      required: [id, name, fields, created_at, updated_at]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
@@ -610,6 +626,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ContextField"
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        created_by: { type: string, format: uuid, nullable: true }
+        deleted_by: { type: string, format: uuid, nullable: true }
 
     CreateContextRequest:
       type: object
@@ -732,20 +752,25 @@ components:
 
     APIKey:
       type: object
-      required: [id, name, prefix, created_at]
+      required: [id, name, prefix, created_at, updated_at]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
+        description: { type: string }
         prefix: { type: string, example: fc_vT4... }
         created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
         last_used_at: { type: string, format: date-time, nullable: true }
         revoked_at: { type: string, format: date-time, nullable: true }
+        created_by: { type: string, format: uuid, nullable: true }
+        deleted_by: { type: string, format: uuid, nullable: true }
 
     CreateAPIKeyRequest:
       type: object
       required: [name]
       properties:
         name: { type: string }
+        description: { type: string }
 
     CreatedAPIKey:
       allOf:

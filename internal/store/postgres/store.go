@@ -98,12 +98,16 @@ func (s *Store) GetFlag(ctx context.Context, key string) (*core.FlagConfig, erro
 
 	return &core.FlagConfig{
 		Key:          flagRow.Key,
+		Description:  flagRow.Description,
 		Type:         core.ValueType(flagRow.ValueType),
 		Enabled:      flagRow.Enabled,
 		DefaultValue: defaultValue,
 		Rules:        rules,
 		ContextID:    uuidToStringPtr(flagRow.ContextID),
+		CreatedAt:    timestamptzToTime(flagRow.CreatedAt),
 		UpdatedAt:    timestamptzToTime(flagRow.UpdatedAt),
+		CreatedBy:    uuidToStringPtr(flagRow.CreatedBy),
+		DeletedBy:    uuidToStringPtr(flagRow.DeletedBy),
 	}, nil
 }
 
@@ -135,12 +139,16 @@ func (s *Store) ListFlags(ctx context.Context) ([]*core.FlagConfig, error) {
 		}
 		flags[i] = &core.FlagConfig{
 			Key:          f.Key,
+			Description:  f.Description,
 			Type:         core.ValueType(f.ValueType),
 			Enabled:      f.Enabled,
 			DefaultValue: defaultValue,
 			Rules:        rulesByFlag[f.Key],
 			ContextID:    uuidToStringPtr(f.ContextID),
+			CreatedAt:    timestamptzToTime(f.CreatedAt),
 			UpdatedAt:    timestamptzToTime(f.UpdatedAt),
+			CreatedBy:    uuidToStringPtr(f.CreatedBy),
+			DeletedBy:    uuidToStringPtr(f.DeletedBy),
 		}
 	}
 	return flags, nil
@@ -170,6 +178,7 @@ func (s *Store) SaveFlag(ctx context.Context, flag *core.FlagConfig) error {
 		Enabled:      flag.Enabled,
 		DefaultValue: defaultValue,
 		ContextID:    contextID,
+		Description:  flag.Description,
 	}); err != nil {
 		if isFKViolation(err) {
 			return core.ErrContextNotFound
@@ -194,6 +203,7 @@ func (s *Store) SaveFlag(ctx context.Context, flag *core.FlagConfig) error {
 			RolloutBucketBy:   r.Rollout.BucketBy,
 			Position:          int32(i),
 			Value:             value,
+			Description:       r.Description,
 		}); err != nil {
 			return err
 		}
@@ -236,6 +246,7 @@ func (s *Store) CreateRule(ctx context.Context, flagKey string, rule core.Rule) 
 		RolloutPercentage: int32(rule.Rollout.Percentage),
 		RolloutBucketBy:   rule.Rollout.BucketBy,
 		Value:             value,
+		Description:       rule.Description,
 	}); err != nil {
 		return err
 	}
@@ -254,6 +265,7 @@ func (s *Store) UpdateRule(ctx context.Context, flagKey string, rule core.Rule) 
 		RolloutPercentage: int32(rule.Rollout.Percentage),
 		RolloutBucketBy:   rule.Rollout.BucketBy,
 		Value:             value,
+		Description:       rule.Description,
 	})
 	if err != nil {
 		return err
@@ -330,7 +342,7 @@ func (s *Store) ListContexts(ctx context.Context) ([]*core.ContextSchema, error)
 	}
 	out := make([]*core.ContextSchema, 0, len(rows))
 	for _, r := range rows {
-		c, err := contextRowToCore(r.ID, r.Name, r.Description, r.Fields)
+		c, err := contextRowToCore(r.ID, r.Name, r.Description, r.Fields, r.CreatedAt, r.UpdatedAt, r.CreatedBy, r.DeletedBy)
 		if err != nil {
 			return nil, err
 		}
@@ -351,7 +363,7 @@ func (s *Store) GetContext(ctx context.Context, id string) (*core.ContextSchema,
 		}
 		return nil, err
 	}
-	return contextRowToCore(row.ID, row.Name, row.Description, row.Fields)
+	return contextRowToCore(row.ID, row.Name, row.Description, row.Fields, row.CreatedAt, row.UpdatedAt, row.CreatedBy, row.DeletedBy)
 }
 
 func (s *Store) CreateContext(ctx context.Context, c *core.ContextSchema) error {
@@ -434,7 +446,7 @@ func (s *Store) UpsertUserByOIDC(ctx context.Context, user *core.User) (*core.Us
 	if err != nil {
 		return nil, err
 	}
-	return userRowToCore(row.ID, row.OidcSubject, row.Email, row.Name, row.Admin), nil
+	return userRowToCore(row.ID, row.OidcSubject, row.Email, row.Name, row.Description, row.Admin, row.CreatedAt, row.UpdatedAt, row.CreatedBy, row.DeletedBy), nil
 }
 
 func (s *Store) UpsertLocalAdmin(ctx context.Context, user *core.User, passwordHash string) (*core.User, error) {
@@ -452,7 +464,7 @@ func (s *Store) UpsertLocalAdmin(ctx context.Context, user *core.User, passwordH
 	if err != nil {
 		return nil, err
 	}
-	return userRowToCore(row.ID, row.OidcSubject, row.Email, row.Name, row.Admin), nil
+	return userRowToCore(row.ID, row.OidcSubject, row.Email, row.Name, row.Description, row.Admin, row.CreatedAt, row.UpdatedAt, row.CreatedBy, row.DeletedBy), nil
 }
 
 func (s *Store) GetUserByEmail(ctx context.Context, email string) (*core.User, string, error) {
@@ -463,7 +475,7 @@ func (s *Store) GetUserByEmail(ctx context.Context, email string) (*core.User, s
 		}
 		return nil, "", err
 	}
-	return userRowToCore(row.ID, row.OidcSubject, row.Email, row.Name, row.Admin), row.PasswordHash, nil
+	return userRowToCore(row.ID, row.OidcSubject, row.Email, row.Name, row.Description, row.Admin, row.CreatedAt, row.UpdatedAt, row.CreatedBy, row.DeletedBy), row.PasswordHash, nil
 }
 
 func (s *Store) CreateSession(ctx context.Context, id, userID, tokenHash string, expiresAt time.Time) error {
@@ -491,7 +503,7 @@ func (s *Store) GetUserBySessionHash(ctx context.Context, tokenHash string) (*co
 		}
 		return nil, err
 	}
-	return userRowToCore(row.ID, row.OidcSubject, row.Email, row.Name, row.Admin), nil
+	return userRowToCore(row.ID, row.OidcSubject, row.Email, row.Name, row.Description, row.Admin, row.CreatedAt, row.UpdatedAt, row.CreatedBy, row.DeletedBy), nil
 }
 
 func (s *Store) DeleteSessionByHash(ctx context.Context, tokenHash string) error {
@@ -502,21 +514,22 @@ func (s *Store) DeleteExpiredSessions(ctx context.Context) error {
 	return s.q.DeleteExpiredSessions(ctx)
 }
 
-func (s *Store) CreateAPIKey(ctx context.Context, id, name, prefix, secretHash string) (*core.APIKey, error) {
+func (s *Store) CreateAPIKey(ctx context.Context, id, name, description, prefix, secretHash string) (*core.APIKey, error) {
 	keyID, err := stringToUUID(id)
 	if err != nil {
 		return nil, fmt.Errorf("invalid api key id: %w", err)
 	}
 	row, err := s.q.CreateAPIKey(ctx, sqlcgen.CreateAPIKeyParams{
-		ID:         keyID,
-		Name:       name,
-		Prefix:     prefix,
-		SecretHash: secretHash,
+		ID:          keyID,
+		Name:        name,
+		Description: description,
+		Prefix:      prefix,
+		SecretHash:  secretHash,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return apiKeyRowToCore(row.ID, row.Name, row.Prefix, row.CreatedAt, row.LastUsedAt, row.RevokedAt), nil
+	return apiKeyRowToCore(row.ID, row.Name, row.Description, row.Prefix, row.CreatedAt, row.UpdatedAt, row.LastUsedAt, row.RevokedAt, row.CreatedBy, row.DeletedBy), nil
 }
 
 func (s *Store) ListAPIKeys(ctx context.Context) ([]*core.APIKey, error) {
@@ -526,7 +539,7 @@ func (s *Store) ListAPIKeys(ctx context.Context) ([]*core.APIKey, error) {
 	}
 	keys := make([]*core.APIKey, 0, len(rows))
 	for _, row := range rows {
-		keys = append(keys, apiKeyRowToCore(row.ID, row.Name, row.Prefix, row.CreatedAt, row.LastUsedAt, row.RevokedAt))
+		keys = append(keys, apiKeyRowToCore(row.ID, row.Name, row.Description, row.Prefix, row.CreatedAt, row.UpdatedAt, row.LastUsedAt, row.RevokedAt, row.CreatedBy, row.DeletedBy))
 	}
 	return keys, nil
 }
@@ -539,7 +552,7 @@ func (s *Store) GetAPIKeyByHash(ctx context.Context, secretHash string) (*core.A
 		}
 		return nil, err
 	}
-	return apiKeyRowToCore(row.ID, row.Name, row.Prefix, row.CreatedAt, row.LastUsedAt, row.RevokedAt), nil
+	return apiKeyRowToCore(row.ID, row.Name, row.Description, row.Prefix, row.CreatedAt, row.UpdatedAt, row.LastUsedAt, row.RevokedAt, row.CreatedBy, row.DeletedBy), nil
 }
 
 func (s *Store) RevokeAPIKey(ctx context.Context, id string) error {
@@ -571,17 +584,22 @@ func ruleRowToCore(r sqlcgen.Rule) (core.Rule, error) {
 		return core.Rule{}, fmt.Errorf("decode rule value: %w", err)
 	}
 	return core.Rule{
-		ID:         r.ID,
-		Expression: r.Expression,
+		ID:          r.ID,
+		Description: r.Description,
+		Expression:  r.Expression,
 		Rollout: core.Rollout{
 			Percentage: int(r.RolloutPercentage),
 			BucketBy:   r.RolloutBucketBy,
 		},
-		Value: value,
+		Value:     value,
+		CreatedAt: timestamptzToTime(r.CreatedAt),
+		UpdatedAt: timestamptzToTime(r.UpdatedAt),
+		CreatedBy: uuidToStringPtr(r.CreatedBy),
+		DeletedBy: uuidToStringPtr(r.DeletedBy),
 	}, nil
 }
 
-func contextRowToCore(id pgtype.UUID, name, description string, raw []byte) (*core.ContextSchema, error) {
+func contextRowToCore(id pgtype.UUID, name, description string, raw []byte, createdAt, updatedAt pgtype.Timestamptz, createdBy, deletedBy pgtype.UUID) (*core.ContextSchema, error) {
 	var fields []core.ContextField
 	if len(raw) > 0 {
 		if err := json.Unmarshal(raw, &fields); err != nil {
@@ -596,27 +614,40 @@ func contextRowToCore(id pgtype.UUID, name, description string, raw []byte) (*co
 		Name:        name,
 		Description: description,
 		Fields:      fields,
+		CreatedAt:   timestamptzToTime(createdAt),
+		UpdatedAt:   timestamptzToTime(updatedAt),
+		CreatedBy:   uuidToStringPtr(createdBy),
+		DeletedBy:   uuidToStringPtr(deletedBy),
 	}, nil
 }
 
-func userRowToCore(id pgtype.UUID, oidcSubject, email, name string, admin bool) *core.User {
+func userRowToCore(id pgtype.UUID, oidcSubject, email, name, description string, admin bool, createdAt, updatedAt pgtype.Timestamptz, createdBy, deletedBy pgtype.UUID) *core.User {
 	return &core.User{
 		ID:          uuidToString(id),
 		OIDCSubject: oidcSubject,
 		Email:       email,
 		Name:        name,
+		Description: description,
 		Admin:       admin,
+		CreatedAt:   timestamptzToTime(createdAt),
+		UpdatedAt:   timestamptzToTime(updatedAt),
+		CreatedBy:   uuidToStringPtr(createdBy),
+		DeletedBy:   uuidToStringPtr(deletedBy),
 	}
 }
 
-func apiKeyRowToCore(id pgtype.UUID, name, prefix string, createdAt, lastUsedAt, revokedAt pgtype.Timestamptz) *core.APIKey {
+func apiKeyRowToCore(id pgtype.UUID, name, description, prefix string, createdAt, updatedAt, lastUsedAt, revokedAt pgtype.Timestamptz, createdBy, deletedBy pgtype.UUID) *core.APIKey {
 	return &core.APIKey{
-		ID:         uuidToString(id),
-		Name:       name,
-		Prefix:     prefix,
-		CreatedAt:  timestamptzToTime(createdAt),
-		LastUsedAt: timestamptzToTimePtr(lastUsedAt),
-		RevokedAt:  timestamptzToTimePtr(revokedAt),
+		ID:          uuidToString(id),
+		Name:        name,
+		Description: description,
+		Prefix:      prefix,
+		CreatedAt:   timestamptzToTime(createdAt),
+		UpdatedAt:   timestamptzToTime(updatedAt),
+		LastUsedAt:  timestamptzToTimePtr(lastUsedAt),
+		RevokedAt:   timestamptzToTimePtr(revokedAt),
+		CreatedBy:   uuidToStringPtr(createdBy),
+		DeletedBy:   uuidToStringPtr(deletedBy),
 	}
 }
 
