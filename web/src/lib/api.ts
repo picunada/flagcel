@@ -216,30 +216,53 @@ type ErrorEnvelope = {
 
 type Fetch = typeof globalThis.fetch;
 
+const offlineMessage =
+    "Backend server is not responding. Check that Flagcel is running, then retry.";
+
+async function readResponseBody(res: Response) {
+    const text = await res.text();
+    if (!text) return null;
+
+    try {
+        return JSON.parse(text) as unknown;
+    } catch {
+        if (!res.ok) return null;
+        throw new APIError(
+            "INTERNAL_ERROR",
+            "Backend returned an invalid response.",
+            res.status,
+        );
+    }
+}
+
 /**
  * Build an API client bound to a specific `fetch`. Inside `load` functions pass
  * the `fetch` SvelteKit provides; elsewhere `api` (bound to the global fetch) is fine.
  */
 export function createApi(fetchFn: Fetch = fetch) {
     async function request<T>(path: string, init?: RequestInit): Promise<T> {
-        const res = await fetchFn(`/api/v1${path}`, {
-            ...init,
-            headers: {
-                "Content-Type": "application/json",
-                ...(init?.headers ?? {}),
-            },
-        });
+        let res: Response;
+        try {
+            res = await fetchFn(`/api/v1${path}`, {
+                ...init,
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(init?.headers ?? {}),
+                },
+            });
+        } catch {
+            throw new APIError("INTERNAL_ERROR", offlineMessage, 0);
+        }
 
         if (res.status === 204) return undefined as T;
 
-        const text = await res.text();
-        const body = text ? JSON.parse(text) : null;
+        const body = await readResponseBody(res);
 
         if (!res.ok) {
             const err = (body as ErrorEnvelope | null)?.error;
             throw new APIError(
                 err?.code ?? "INTERNAL_ERROR",
-                err?.message ?? `HTTP ${res.status}`,
+                err?.message ?? (res.status >= 500 ? offlineMessage : `HTTP ${res.status}`),
                 res.status,
                 err?.details,
             );
@@ -251,18 +274,22 @@ export function createApi(fetchFn: Fetch = fetch) {
     return {
         me: () => request<AuthMe>("/auth/me"),
         passwordLogin: async (email: string, password: string) => {
-            const res = await fetchFn("/api/v1/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-            });
-            const text = await res.text();
-            const body = text ? JSON.parse(text) : null;
+            let res: Response;
+            try {
+                res = await fetchFn("/api/v1/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password }),
+                });
+            } catch {
+                throw new APIError("INTERNAL_ERROR", offlineMessage, 0);
+            }
+            const body = await readResponseBody(res);
             if (!res.ok) {
                 const err = (body as ErrorEnvelope | null)?.error;
                 throw new APIError(
                     err?.code ?? "INTERNAL_ERROR",
-                    err?.message ?? `HTTP ${res.status}`,
+                    err?.message ?? (res.status >= 500 ? offlineMessage : `HTTP ${res.status}`),
                     res.status,
                     err?.details,
                 );

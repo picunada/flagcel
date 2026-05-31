@@ -6,6 +6,11 @@ export const ssr = false;
 export const prerender = false;
 export const trailingSlash = "never";
 
+const unauthenticatedAuth: AuthMe = {
+    auth_enabled: false,
+    authenticated: false,
+};
+
 export const load: LayoutLoad = async ({ url, fetch }) => {
     let auth: AuthMe;
     try {
@@ -14,6 +19,13 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
         if (e instanceof APIError && e.status === 401) {
             if (url.pathname !== "/login") throw redirect(307, "/login");
             return { auth: { auth_enabled: true, authenticated: false } satisfies AuthMe };
+        }
+        if (e instanceof APIError && (e.status === 0 || e.status >= 500)) {
+            return {
+                auth: unauthenticatedAuth,
+                backendUnavailable: true,
+                backendMessage: e.message,
+            };
         }
         throw e;
     }
