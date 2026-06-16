@@ -2,7 +2,7 @@ import { createApi } from "$lib/api";
 import { runLoad } from "$lib/load";
 import type { PageLoad } from "./$types";
 
-export const load: PageLoad = ({ params, url, fetch }) => {
+export const load: PageLoad = ({ url, fetch }) => {
     const api = createApi(fetch);
     return runLoad(async () => {
         const environments = await api.listEnvironments();
@@ -13,10 +13,6 @@ export const load: PageLoad = ({ params, url, fetch }) => {
         if (!selectedEnvironment) {
             throw new Error("No environments are configured.");
         }
-        const flag = await api.getFlag(selectedEnvironment.id, params.key);
-        const context = flag.context_id
-            ? await api.getContext(flag.context_id).catch(() => null)
-            : null;
-        return { environments, selectedEnvironment, flag, context };
+        return { environments, selectedEnvironment };
     }, url.pathname);
 };

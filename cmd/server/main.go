@@ -75,6 +75,7 @@ func runServer() {
 	evalSvc := service.NewEvalService(store, eng)
 	flagSvc := service.NewFlagService(store, evalSvc.InvalidateFlag)
 	ruleSvc := service.NewRuleService(store, evalSvc.InvalidateFlag)
+	envSvc := service.NewEnvironmentService(store)
 	ctxSvc := service.NewContextService(store, evalSvc.InvalidateContext)
 	authSvc, err := service.NewAuthService(ctx, service.AuthConfig{
 		OIDCIssuerURL:     cfg.Auth.OIDCIssuerURL,
@@ -99,7 +100,7 @@ func runServer() {
 		WriteTimeout:    cfg.HTTP.WriteTimeout,
 		IdleTimeout:     cfg.HTTP.IdleTimeout,
 		ShutdownTimeout: cfg.HTTP.ShutdownTimeout,
-	}, flagSvc, ruleSvc, ctxSvc, evalSvc, authSvc, logger)
+	}, flagSvc, ruleSvc, envSvc, ctxSvc, evalSvc, authSvc, logger)
 
 	if cfg.DebugAddr != "" {
 		dbg := debug.NewServer(cfg.DebugAddr, logger)

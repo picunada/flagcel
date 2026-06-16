@@ -8,18 +8,20 @@ import (
 )
 
 type Handlers struct {
-	Flags    *FlagsHandler
-	Rules    *RulesHandler
-	Contexts *ContextsHandler
-	Eval     *EvalHandler
-	Auth     *AuthHandler
-	APIKeys  *APIKeysHandler
+	Flags        *FlagsHandler
+	Rules        *RulesHandler
+	Environments *EnvironmentsHandler
+	Contexts     *ContextsHandler
+	Eval         *EvalHandler
+	Auth         *AuthHandler
+	APIKeys      *APIKeysHandler
 }
 
 func NewRouter(h *Handlers) http.Handler {
 	admin := http.NewServeMux()
 	h.Flags.Register(admin)
 	h.Rules.Register(admin)
+	h.Environments.Register(admin)
 	h.Contexts.Register(admin)
 	h.APIKeys.Register(admin)
 	h.Eval.RegisterAdmin(admin)
@@ -34,7 +36,7 @@ func NewRouter(h *Handlers) http.Handler {
 	h.Auth.RegisterAPI(v1)
 	v1.Handle("/eval", evalProtected)
 	v1.Handle("/eval/", evalProtected)
-	for _, prefix := range []string{"/flags", "/flags/", "/rules", "/rules/", "/contexts", "/contexts/", "/api-keys", "/api-keys/"} {
+	for _, prefix := range []string{"/flags", "/flags/", "/rules", "/rules/", "/environments", "/environments/", "/contexts", "/contexts/", "/api-keys", "/api-keys/"} {
 		v1.Handle(prefix, adminProtected)
 	}
 

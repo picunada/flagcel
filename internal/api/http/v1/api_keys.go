@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -44,9 +45,13 @@ func (h *APIKeysHandler) Create(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, InvalidRequest("invalid request body"))
 		return
 	}
-	created, err := h.service.CreateAPIKey(r.Context(), req.Name, req.Description)
+	created, err := h.service.CreateAPIKey(r.Context(), req.Name, req.Description, req.EnvironmentID)
 	if err != nil {
-		WriteError(w, err)
+		if errors.Is(err, core.ErrEnvironmentNotFound) || errors.Is(err, core.ErrAuthNotConfigured) {
+			WriteError(w, err)
+		} else {
+			WriteError(w, InvalidRequest(err.Error()))
+		}
 		return
 	}
 	resp := CreateAPIKeyResponse{
@@ -82,16 +87,17 @@ func toUserResponse(user *core.User) *UserResponse {
 
 func toAPIKeyResponse(key *core.APIKey) APIKeyResponse {
 	return APIKeyResponse{
-		ID:          key.ID,
-		Name:        key.Name,
-		Description: key.Description,
-		Prefix:      key.Prefix,
-		CreatedAt:   formatTime(key.CreatedAt),
-		UpdatedAt:   formatTime(key.UpdatedAt),
-		LastUsedAt:  formatTimePtr(key.LastUsedAt),
-		RevokedAt:   formatTimePtr(key.RevokedAt),
-		CreatedBy:   key.CreatedBy,
-		DeletedBy:   key.DeletedBy,
+		ID:            key.ID,
+		Name:          key.Name,
+		Description:   key.Description,
+		Prefix:        key.Prefix,
+		EnvironmentID: key.EnvironmentID,
+		CreatedAt:     formatTime(key.CreatedAt),
+		UpdatedAt:     formatTime(key.UpdatedAt),
+		LastUsedAt:    formatTimePtr(key.LastUsedAt),
+		RevokedAt:     formatTimePtr(key.RevokedAt),
+		CreatedBy:     key.CreatedBy,
+		DeletedBy:     key.DeletedBy,
 	}
 }
 

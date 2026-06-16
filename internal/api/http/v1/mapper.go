@@ -230,3 +230,33 @@ func toContextResponses(cs []*core.ContextSchema) []ContextResponse {
 	}
 	return out
 }
+
+func toCoreEnvironment(id string, req CreateEnvironmentRequest) core.Environment {
+	return core.Environment{
+		ID:          id,
+		Key:         req.Key,
+		Name:        req.Name,
+		Description: req.Description,
+	}
+}
+
+func toEnvironmentResponse(env core.Environment) EnvironmentResponse {
+	return EnvironmentResponse{
+		ID:          env.ID,
+		Key:         env.Key,
+		Name:        env.Name,
+		Description: env.Description,
+		CreatedAt:   formatTime(env.CreatedAt),
+		UpdatedAt:   formatTime(env.UpdatedAt),
+		CreatedBy:   env.CreatedBy,
+		DeletedBy:   env.DeletedBy,
+	}
+}
+
+func toEnvironmentResponses(envs []*core.Environment) []EnvironmentResponse {
+	out := make([]EnvironmentResponse, len(envs))
+	for i, env := range envs {
+		out[i] = toEnvironmentResponse(*env)
+	}
+	return out
+}

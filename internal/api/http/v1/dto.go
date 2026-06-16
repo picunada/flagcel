@@ -77,6 +77,25 @@ type ContextResponse struct {
 	DeletedBy   *string           `json:"deleted_by,omitempty"`
 }
 
+type EnvironmentResponse struct {
+	ID          string  `json:"id"`
+	Key         string  `json:"key"`
+	Name        string  `json:"name"`
+	Description string  `json:"description,omitempty"`
+	CreatedAt   string  `json:"created_at"`
+	UpdatedAt   string  `json:"updated_at"`
+	CreatedBy   *string `json:"created_by,omitempty"`
+	DeletedBy   *string `json:"deleted_by,omitempty"`
+}
+
+type CreateEnvironmentRequest struct {
+	Key         string `json:"key"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type UpdateEnvironmentRequest = CreateEnvironmentRequest
+
 type CreateContextRequest struct {
 	Name        string            `json:"name"`
 	Description string            `json:"description"`
@@ -171,21 +190,23 @@ type PasswordLoginRequest struct {
 }
 
 type APIKeyResponse struct {
-	ID          string  `json:"id"`
-	Name        string  `json:"name"`
-	Description string  `json:"description,omitempty"`
-	Prefix      string  `json:"prefix"`
-	CreatedAt   string  `json:"created_at"`
-	UpdatedAt   string  `json:"updated_at"`
-	LastUsedAt  *string `json:"last_used_at,omitempty"`
-	RevokedAt   *string `json:"revoked_at,omitempty"`
-	CreatedBy   *string `json:"created_by,omitempty"`
-	DeletedBy   *string `json:"deleted_by,omitempty"`
+	ID            string  `json:"id"`
+	Name          string  `json:"name"`
+	Description   string  `json:"description,omitempty"`
+	Prefix        string  `json:"prefix"`
+	EnvironmentID string  `json:"environment_id"`
+	CreatedAt     string  `json:"created_at"`
+	UpdatedAt     string  `json:"updated_at"`
+	LastUsedAt    *string `json:"last_used_at,omitempty"`
+	RevokedAt     *string `json:"revoked_at,omitempty"`
+	CreatedBy     *string `json:"created_by,omitempty"`
+	DeletedBy     *string `json:"deleted_by,omitempty"`
 }
 
 type CreateAPIKeyRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	EnvironmentID string `json:"environment_id"`
 }
 
 type CreateAPIKeyResponse struct {

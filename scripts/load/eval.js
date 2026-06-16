@@ -191,16 +191,33 @@ function seedFlag(cookie, contextID) {
 }
 
 function createAPIKey(cookie) {
+  const environmentID = productionEnvironmentID(cookie);
   const res = adminRequest(
     'POST',
     '/api/v1/api-keys',
-    { name: `loadtest-${FLAG_KEY}-${Date.now()}` },
+    {
+      name: `loadtest-${FLAG_KEY}-${Date.now()}`,
+      environment_id: environmentID,
+    },
     cookie,
   );
   if (res.status !== 200) {
     throw new Error(`create api key failed: ${res.status} ${res.body}`);
   }
   return dataFrom(res).token;
+}
+
+function productionEnvironmentID(cookie) {
+  const res = adminRequest('GET', '/api/v1/environments', null, cookie);
+  if (res.status !== 200) {
+    throw new Error(`list environments failed: ${res.status} ${res.body}`);
+  }
+  const environments = dataFrom(res);
+  const production = environments.find((env) => env.key === 'production') || environments[0];
+  if (!production) {
+    throw new Error('no environment available for API key');
+  }
+  return production.id;
 }
 
 function assertEvalToken(token) {

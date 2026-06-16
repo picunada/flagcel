@@ -27,14 +27,15 @@ type User struct {
 }
 
 type APIKey struct {
-	ID          string
-	Name        string
-	Description string
-	Prefix      string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	LastUsedAt  *time.Time
-	RevokedAt   *time.Time
-	CreatedBy   *string
-	DeletedBy   *string
+	ID            string
+	Name          string
+	Description   string
+	Prefix        string
+	EnvironmentID string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	LastUsedAt    *time.Time
+	RevokedAt     *time.Time
+	CreatedBy     *string
+	DeletedBy     *string
 }

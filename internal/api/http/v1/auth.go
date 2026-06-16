@@ -15,6 +15,7 @@ import (
 )
 
 type userContextKey struct{}
+type apiKeyContextKey struct{}
 
 type AuthHandler struct {
 	service *service.AuthService
@@ -186,12 +187,19 @@ func (h *AuthHandler) APIKeyMiddleware(next http.Handler) http.Handler {
 			WriteError(w, ErrUnauthorized)
 			return
 		}
-		if _, err := h.service.ValidateAPIKey(r.Context(), token); err != nil {
+		key, err := h.service.ValidateAPIKey(r.Context(), token)
+		if err != nil {
 			WriteError(w, ErrUnauthorized)
 			return
 		}
-		next.ServeHTTP(w, r)
+		ctx := context.WithValue(r.Context(), apiKeyContextKey{}, key)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func apiKeyFromRequest(r *http.Request) (*core.APIKey, bool) {
+	key, ok := r.Context().Value(apiKeyContextKey{}).(*core.APIKey)
+	return key, ok
 }
 
 func (h *AuthHandler) userFromRequest(r *http.Request) (*core.User, error) {

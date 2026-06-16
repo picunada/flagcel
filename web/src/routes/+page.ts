@@ -5,10 +5,19 @@ import type { PageLoad } from "./$types";
 export const load: PageLoad = ({ url, fetch }) => {
     const api = createApi(fetch);
     return runLoad(
-        async () => ({
-            flags: await api.listFlags(),
-            contexts: await api.listContexts(),
-        }),
+        async () => {
+            const environments = await api.listEnvironments();
+            const selectedEnvironment =
+                environments.find((env) => env.id === url.searchParams.get("environment")) ??
+                environments.find((env) => env.key === "production") ??
+                environments[0];
+            return {
+                environments,
+                selectedEnvironment,
+                flags: selectedEnvironment ? await api.listFlags(selectedEnvironment.id) : [],
+                contexts: await api.listContexts(),
+            };
+        },
         url.pathname,
     );
 };

@@ -10,10 +10,10 @@ import (
 
 type FlagService struct {
 	store        *postgres.Store
-	onFlagChange func(string)
+	onFlagChange func(string, string)
 }
 
-func NewFlagService(store *postgres.Store, onFlagChange ...func(string)) *FlagService {
+func NewFlagService(store *postgres.Store, onFlagChange ...func(string, string)) *FlagService {
 	s := &FlagService{store: store}
 	if len(onFlagChange) > 0 {
 		s.onFlagChange = onFlagChange[0]
@@ -21,9 +21,9 @@ func NewFlagService(store *postgres.Store, onFlagChange ...func(string)) *FlagSe
 	return s
 }
 
-func (s *FlagService) GetFlags(ctx context.Context) ([]*core.FlagConfig, error) {
+func (s *FlagService) GetFlags(ctx context.Context, environmentID string) ([]*core.FlagConfig, error) {
 	// Fetch flag from store
-	flags, err := s.store.ListFlags(ctx)
+	flags, err := s.store.ListFlags(ctx, environmentID)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"flag service: failder to list flags %w",
@@ -33,8 +33,8 @@ func (s *FlagService) GetFlags(ctx context.Context) ([]*core.FlagConfig, error) 
 	return flags, nil
 }
 
-func (s *FlagService) GetFlag(ctx context.Context, key string) (*core.FlagConfig, error) {
-	flag, err := s.store.GetFlag(ctx, key)
+func (s *FlagService) GetFlag(ctx context.Context, environmentID, key string) (*core.FlagConfig, error) {
+	flag, err := s.store.GetFlag(ctx, environmentID, key)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"flag service: failed to get flag %w",
@@ -44,7 +44,7 @@ func (s *FlagService) GetFlag(ctx context.Context, key string) (*core.FlagConfig
 	return flag, nil
 }
 
-func (s *FlagService) CreateFlag(ctx context.Context, flag *core.FlagConfig) error {
+func (s *FlagService) CreateFlag(ctx context.Context, environmentID string, flag *core.FlagConfig) error {
 	*flag = normalizeFlag(*flag)
 	schema, err := s.contextForFlag(ctx, flag)
 	if err != nil {
@@ -53,30 +53,30 @@ func (s *FlagService) CreateFlag(ctx context.Context, flag *core.FlagConfig) err
 	if err := validateFlag(*flag, schema); err != nil {
 		return err
 	}
-	if err := s.store.SaveFlag(ctx, flag); err != nil {
+	if err := s.store.SaveFlag(ctx, environmentID, flag); err != nil {
 		return fmt.Errorf(
 			"flag service: failed to create flag %w",
 			err,
 		)
 	}
-	s.invalidate(flag.Key)
+	s.invalidate(environmentID, flag.Key)
 	return nil
 }
 
-func (s *FlagService) DeleteFlag(context context.Context, id string) error {
-	if err := s.store.DeleteFlag(context, id); err != nil {
+func (s *FlagService) DeleteFlag(context context.Context, environmentID, id string) error {
+	if err := s.store.DeleteFlag(context, environmentID, id); err != nil {
 		return fmt.Errorf(
 			"flag service: failed to delete flag %w",
 			err,
 		)
 	}
-	s.invalidate(id)
+	s.invalidate(environmentID, id)
 	return nil
 }
 
-func (s *FlagService) invalidate(key string) {
+func (s *FlagService) invalidate(environmentID, key string) {
 	if s.onFlagChange != nil {
-		s.onFlagChange(key)
+		s.onFlagChange(environmentID, key)
 	}
 }
 

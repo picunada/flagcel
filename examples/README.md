@@ -71,7 +71,7 @@ curl -b /tmp/flagcel-cookies.txt -X POST http://localhost:8080/api/v1/flags \
 export FLAGCEL_API_KEY=$(
   curl -s -b /tmp/flagcel-cookies.txt -X POST http://localhost:8080/api/v1/api-keys \
     -H "Content-Type: application/json" \
-    -d '{"name":"local SDK examples","description":"Generated for local development"}' \
+    -d "{\"name\":\"local SDK examples\",\"description\":\"Generated for local development\",\"environment_id\":\"$(curl -s -b /tmp/flagcel-cookies.txt http://localhost:8080/api/v1/environments | jq -r '.data[] | select(.key == \"production\") | .id')\"}" \
     | jq -r '.data.token'
 )
 ```

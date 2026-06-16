@@ -44,8 +44,8 @@
     --color-success: var(--color-app-accent);
     --color-success-foreground: var(--color-app-accent-foreground);
 
-    --app-accent-rgb: 255 107 44;
-    --app-accent-hsl: 18 100 59;
+    --app-accent-rgb: 255 159 67;
+    --app-accent-hsl: 33 100 63;
 
     --color-border: rgba(255, 255, 255, 0.12);
     --color-border-strong: rgba(255, 255, 255, 0.36);
@@ -78,6 +78,26 @@
     }
     ::selection {
         background: rgb(var(--app-accent-rgb) / 0.25);
+        color: #ffffff;
+    }
+    select {
+        color-scheme: dark;
+        accent-color: var(--color-app-accent);
+    }
+    select:focus-visible {
+        border-color: rgb(var(--app-accent-rgb) / 0.64);
+        box-shadow: 0 0 0 1px rgb(var(--app-accent-rgb) / 0.42);
+    }
+    select option {
+        background: #141414;
+        color: #ffffff;
+    }
+    select option:checked {
+        background: rgb(var(--app-accent-rgb) / 0.28);
+        color: #ffffff;
+    }
+    select option:hover {
+        background: rgb(var(--app-accent-rgb) / 0.18);
         color: #ffffff;
     }
 }

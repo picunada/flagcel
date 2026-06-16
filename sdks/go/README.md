@@ -19,7 +19,7 @@ go mod tidy
 
 ## Basic Usage
 
-Create an evaluation API key in the Flagcel dashboard, then configure the provider with the API base URL. For the local server, the base URL is `http://localhost:8080/api/v1`.
+Create an environment-scoped evaluation API key in the Flagcel dashboard, then configure the provider with the API base URL. For the local server, the base URL is `http://localhost:8080/api/v1`.
 
 ```go
 package main

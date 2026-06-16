@@ -46,6 +46,104 @@ func (s *Store) NotifyAPIKeyCacheInvalidated(ctx context.Context, payload string
 	return err
 }
 
+func (s *Store) ListEnvironments(ctx context.Context) ([]*core.Environment, error) {
+	rows, err := s.q.ListEnvironments(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*core.Environment, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, environmentRowToCore(row))
+	}
+	return out, nil
+}
+
+func (s *Store) GetEnvironment(ctx context.Context, id string) (*core.Environment, error) {
+	uid, err := stringToUUID(id)
+	if err != nil {
+		return nil, core.ErrEnvironmentNotFound
+	}
+	row, err := s.q.GetEnvironment(ctx, uid)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, core.ErrEnvironmentNotFound
+		}
+		return nil, err
+	}
+	return environmentRowToCore(row), nil
+}
+
+func (s *Store) GetEnvironmentByKey(ctx context.Context, key string) (*core.Environment, error) {
+	row, err := s.q.GetEnvironmentByKey(ctx, key)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, core.ErrEnvironmentNotFound
+		}
+		return nil, err
+	}
+	return environmentRowToCore(row), nil
+}
+
+func (s *Store) CreateEnvironment(ctx context.Context, env *core.Environment) error {
+	id, err := stringToUUID(env.ID)
+	if err != nil {
+		return err
+	}
+	if err := s.q.InsertEnvironment(ctx, sqlcgen.InsertEnvironmentParams{
+		ID:          id,
+		Key:         env.Key,
+		Name:        env.Name,
+		Description: env.Description,
+	}); err != nil {
+		if isUniqueViolation(err) {
+			return core.ErrEnvironmentKeyTaken
+		}
+		return err
+	}
+	return nil
+}
+
+func (s *Store) UpdateEnvironment(ctx context.Context, env *core.Environment) error {
+	id, err := stringToUUID(env.ID)
+	if err != nil {
+		return core.ErrEnvironmentNotFound
+	}
+	n, err := s.q.UpdateEnvironment(ctx, sqlcgen.UpdateEnvironmentParams{
+		ID:          id,
+		Key:         env.Key,
+		Name:        env.Name,
+		Description: env.Description,
+	})
+	if err != nil {
+		if isUniqueViolation(err) {
+			return core.ErrEnvironmentKeyTaken
+		}
+		return err
+	}
+	if n == 0 {
+		return core.ErrEnvironmentNotFound
+	}
+	return nil
+}
+
+func (s *Store) DeleteEnvironment(ctx context.Context, id string) error {
+	uid, err := stringToUUID(id)
+	if err != nil {
+		return core.ErrEnvironmentNotFound
+	}
+	n, err := s.q.DeleteEnvironment(ctx, uid)
+	if err != nil {
+		if isFKViolation(err) {
+			return core.ErrEnvironmentInUse
+		}
+		return err
+	}
+	if n == 0 {
+		return core.ErrEnvironmentNotFound
+	}
+	return nil
+}
+
 func (s *Store) ListenAPIKeyCacheInvalidations(ctx context.Context, handle func(payload string)) error {
 	conn, err := s.pool.Acquire(ctx)
 	if err != nil {
@@ -69,8 +167,15 @@ func (s *Store) ListenAPIKeyCacheInvalidations(ctx context.Context, handle func(
 	}
 }
 
-func (s *Store) GetFlag(ctx context.Context, key string) (*core.FlagConfig, error) {
-	flagRow, err := s.q.GetFlag(ctx, key)
+func (s *Store) GetFlag(ctx context.Context, environmentID, key string) (*core.FlagConfig, error) {
+	envID, err := stringToUUID(environmentID)
+	if err != nil {
+		return nil, core.ErrEnvironmentNotFound
+	}
+	flagRow, err := s.q.GetFlag(ctx, sqlcgen.GetFlagParams{
+		EnvironmentID: envID,
+		Key:           key,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, core.ErrFlagNotFound
@@ -78,7 +183,10 @@ func (s *Store) GetFlag(ctx context.Context, key string) (*core.FlagConfig, erro
 		return nil, err
 	}
 
-	ruleRows, err := s.q.ListRulesForFlag(ctx, key)
+	ruleRows, err := s.q.ListRulesForFlag(ctx, sqlcgen.ListRulesForFlagParams{
+		EnvironmentID: envID,
+		FlagKey:       key,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -111,13 +219,17 @@ func (s *Store) GetFlag(ctx context.Context, key string) (*core.FlagConfig, erro
 	}, nil
 }
 
-func (s *Store) ListFlags(ctx context.Context) ([]*core.FlagConfig, error) {
-	flagRows, err := s.q.ListFlags(ctx)
+func (s *Store) ListFlags(ctx context.Context, environmentID string) ([]*core.FlagConfig, error) {
+	envID, err := stringToUUID(environmentID)
+	if err != nil {
+		return nil, core.ErrEnvironmentNotFound
+	}
+	flagRows, err := s.q.ListFlags(ctx, envID)
 	if err != nil {
 		return nil, err
 	}
 
-	ruleRows, err := s.q.ListAllRules(ctx)
+	ruleRows, err := s.q.ListAllRules(ctx, envID)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +266,11 @@ func (s *Store) ListFlags(ctx context.Context) ([]*core.FlagConfig, error) {
 	return flags, nil
 }
 
-func (s *Store) SaveFlag(ctx context.Context, flag *core.FlagConfig) error {
+func (s *Store) SaveFlag(ctx context.Context, environmentID string, flag *core.FlagConfig) error {
+	envID, err := stringToUUID(environmentID)
+	if err != nil {
+		return core.ErrEnvironmentNotFound
+	}
 	contextID, err := stringPtrToUUID(flag.ContextID)
 	if err != nil {
 		return err
@@ -173,20 +289,27 @@ func (s *Store) SaveFlag(ctx context.Context, flag *core.FlagConfig) error {
 	qtx := s.q.WithTx(tx)
 
 	if err := qtx.UpsertFlag(ctx, sqlcgen.UpsertFlagParams{
-		Key:          flag.Key,
-		ValueType:    string(flag.Type),
-		Enabled:      flag.Enabled,
-		DefaultValue: defaultValue,
-		ContextID:    contextID,
-		Description:  flag.Description,
+		EnvironmentID: envID,
+		Key:           flag.Key,
+		ValueType:     string(flag.Type),
+		Enabled:       flag.Enabled,
+		DefaultValue:  defaultValue,
+		ContextID:     contextID,
+		Description:   flag.Description,
 	}); err != nil {
 		if isFKViolation(err) {
+			if fkConstraintName(err) == "flags_environment_id_fkey" {
+				return core.ErrEnvironmentNotFound
+			}
 			return core.ErrContextNotFound
 		}
 		return err
 	}
 
-	if err := qtx.DeleteRulesForFlag(ctx, flag.Key); err != nil {
+	if err := qtx.DeleteRulesForFlag(ctx, sqlcgen.DeleteRulesForFlagParams{
+		EnvironmentID: envID,
+		FlagKey:       flag.Key,
+	}); err != nil {
 		return err
 	}
 
@@ -197,6 +320,7 @@ func (s *Store) SaveFlag(ctx context.Context, flag *core.FlagConfig) error {
 		}
 		if err := qtx.InsertRule(ctx, sqlcgen.InsertRuleParams{
 			ID:                r.ID,
+			EnvironmentID:     envID,
 			FlagKey:           flag.Key,
 			Expression:        r.Expression,
 			RolloutPercentage: int32(r.Rollout.Percentage),
@@ -212,14 +336,26 @@ func (s *Store) SaveFlag(ctx context.Context, flag *core.FlagConfig) error {
 	return tx.Commit(ctx)
 }
 
-func (s *Store) DeleteFlag(ctx context.Context, key string) error {
-	return s.q.DeleteFlag(ctx, key)
+func (s *Store) DeleteFlag(ctx context.Context, environmentID, key string) error {
+	envID, err := stringToUUID(environmentID)
+	if err != nil {
+		return core.ErrEnvironmentNotFound
+	}
+	return s.q.DeleteFlag(ctx, sqlcgen.DeleteFlagParams{
+		EnvironmentID: envID,
+		Key:           key,
+	})
 }
 
-func (s *Store) GetRule(ctx context.Context, flagKey, ruleID string) (*core.Rule, error) {
+func (s *Store) GetRule(ctx context.Context, environmentID, flagKey, ruleID string) (*core.Rule, error) {
+	envID, err := stringToUUID(environmentID)
+	if err != nil {
+		return nil, core.ErrEnvironmentNotFound
+	}
 	row, err := s.q.GetRule(ctx, sqlcgen.GetRuleParams{
-		FlagKey: flagKey,
-		ID:      ruleID,
+		EnvironmentID: envID,
+		FlagKey:       flagKey,
+		ID:            ruleID,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -234,13 +370,18 @@ func (s *Store) GetRule(ctx context.Context, flagKey, ruleID string) (*core.Rule
 	return &rule, nil
 }
 
-func (s *Store) CreateRule(ctx context.Context, flagKey string, rule core.Rule) error {
+func (s *Store) CreateRule(ctx context.Context, environmentID, flagKey string, rule core.Rule) error {
+	envID, err := stringToUUID(environmentID)
+	if err != nil {
+		return core.ErrEnvironmentNotFound
+	}
 	value, err := marshalJSONValue(rule.Value)
 	if err != nil {
 		return err
 	}
 	if err := s.q.InsertRuleAtEnd(ctx, sqlcgen.InsertRuleAtEndParams{
 		ID:                rule.ID,
+		EnvironmentID:     envID,
 		FlagKey:           flagKey,
 		Expression:        rule.Expression,
 		RolloutPercentage: int32(rule.Rollout.Percentage),
@@ -250,15 +391,20 @@ func (s *Store) CreateRule(ctx context.Context, flagKey string, rule core.Rule) 
 	}); err != nil {
 		return err
 	}
-	return s.touchFlag(ctx, flagKey)
+	return s.touchFlag(ctx, environmentID, flagKey)
 }
 
-func (s *Store) UpdateRule(ctx context.Context, flagKey string, rule core.Rule) error {
+func (s *Store) UpdateRule(ctx context.Context, environmentID, flagKey string, rule core.Rule) error {
+	envID, err := stringToUUID(environmentID)
+	if err != nil {
+		return core.ErrEnvironmentNotFound
+	}
 	value, err := marshalJSONValue(rule.Value)
 	if err != nil {
 		return err
 	}
 	n, err := s.q.UpdateRule(ctx, sqlcgen.UpdateRuleParams{
+		EnvironmentID:     envID,
 		FlagKey:           flagKey,
 		ID:                rule.ID,
 		Expression:        rule.Expression,
@@ -273,13 +419,18 @@ func (s *Store) UpdateRule(ctx context.Context, flagKey string, rule core.Rule) 
 	if n == 0 {
 		return core.ErrRuleNotFound
 	}
-	return s.touchFlag(ctx, flagKey)
+	return s.touchFlag(ctx, environmentID, flagKey)
 }
 
-func (s *Store) DeleteRule(ctx context.Context, flagKey, ruleID string) error {
+func (s *Store) DeleteRule(ctx context.Context, environmentID, flagKey, ruleID string) error {
+	envID, err := stringToUUID(environmentID)
+	if err != nil {
+		return core.ErrEnvironmentNotFound
+	}
 	n, err := s.q.DeleteRule(ctx, sqlcgen.DeleteRuleParams{
-		FlagKey: flagKey,
-		ID:      ruleID,
+		EnvironmentID: envID,
+		FlagKey:       flagKey,
+		ID:            ruleID,
 	})
 	if err != nil {
 		return err
@@ -287,10 +438,14 @@ func (s *Store) DeleteRule(ctx context.Context, flagKey, ruleID string) error {
 	if n == 0 {
 		return core.ErrRuleNotFound
 	}
-	return s.touchFlag(ctx, flagKey)
+	return s.touchFlag(ctx, environmentID, flagKey)
 }
 
-func (s *Store) ReorderRules(ctx context.Context, flagKey string, ruleIDs []string) error {
+func (s *Store) ReorderRules(ctx context.Context, environmentID, flagKey string, ruleIDs []string) error {
+	envID, err := stringToUUID(environmentID)
+	if err != nil {
+		return core.ErrEnvironmentNotFound
+	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -301,9 +456,10 @@ func (s *Store) ReorderRules(ctx context.Context, flagKey string, ruleIDs []stri
 
 	for i, id := range ruleIDs {
 		n, err := qtx.SetRulePosition(ctx, sqlcgen.SetRulePositionParams{
-			FlagKey:  flagKey,
-			ID:       id,
-			Position: int32(i),
+			EnvironmentID: envID,
+			FlagKey:       flagKey,
+			ID:            id,
+			Position:      int32(i),
 		})
 		if err != nil {
 			return err
@@ -313,19 +469,26 @@ func (s *Store) ReorderRules(ctx context.Context, flagKey string, ruleIDs []stri
 		}
 	}
 
-	if err := s.touchFlagWithQueries(ctx, qtx, flagKey); err != nil {
+	if err := s.touchFlagWithQueries(ctx, qtx, envID, flagKey); err != nil {
 		return err
 	}
 
 	return tx.Commit(ctx)
 }
 
-func (s *Store) touchFlag(ctx context.Context, flagKey string) error {
-	return s.touchFlagWithQueries(ctx, s.q, flagKey)
+func (s *Store) touchFlag(ctx context.Context, environmentID, flagKey string) error {
+	envID, err := stringToUUID(environmentID)
+	if err != nil {
+		return core.ErrEnvironmentNotFound
+	}
+	return s.touchFlagWithQueries(ctx, s.q, envID, flagKey)
 }
 
-func (s *Store) touchFlagWithQueries(ctx context.Context, q *sqlcgen.Queries, flagKey string) error {
-	n, err := q.TouchFlag(ctx, flagKey)
+func (s *Store) touchFlagWithQueries(ctx context.Context, q *sqlcgen.Queries, environmentID pgtype.UUID, flagKey string) error {
+	n, err := q.TouchFlag(ctx, sqlcgen.TouchFlagParams{
+		EnvironmentID: environmentID,
+		Key:           flagKey,
+	})
 	if err != nil {
 		return err
 	}
@@ -514,22 +677,30 @@ func (s *Store) DeleteExpiredSessions(ctx context.Context) error {
 	return s.q.DeleteExpiredSessions(ctx)
 }
 
-func (s *Store) CreateAPIKey(ctx context.Context, id, name, description, prefix, secretHash string) (*core.APIKey, error) {
+func (s *Store) CreateAPIKey(ctx context.Context, id, name, description, prefix, secretHash, environmentID string) (*core.APIKey, error) {
 	keyID, err := stringToUUID(id)
 	if err != nil {
 		return nil, fmt.Errorf("invalid api key id: %w", err)
 	}
+	envID, err := stringToUUID(environmentID)
+	if err != nil {
+		return nil, core.ErrEnvironmentNotFound
+	}
 	row, err := s.q.CreateAPIKey(ctx, sqlcgen.CreateAPIKeyParams{
-		ID:          keyID,
-		Name:        name,
-		Description: description,
-		Prefix:      prefix,
-		SecretHash:  secretHash,
+		ID:            keyID,
+		Name:          name,
+		Description:   description,
+		Prefix:        prefix,
+		SecretHash:    secretHash,
+		EnvironmentID: envID,
 	})
 	if err != nil {
+		if isFKViolation(err) {
+			return nil, core.ErrEnvironmentNotFound
+		}
 		return nil, err
 	}
-	return apiKeyRowToCore(row.ID, row.Name, row.Description, row.Prefix, row.CreatedAt, row.UpdatedAt, row.LastUsedAt, row.RevokedAt, row.CreatedBy, row.DeletedBy), nil
+	return apiKeyRowToCore(row.ID, row.Name, row.Description, row.Prefix, row.EnvironmentID, row.CreatedAt, row.UpdatedAt, row.LastUsedAt, row.RevokedAt, row.CreatedBy, row.DeletedBy), nil
 }
 
 func (s *Store) ListAPIKeys(ctx context.Context) ([]*core.APIKey, error) {
@@ -539,7 +710,7 @@ func (s *Store) ListAPIKeys(ctx context.Context) ([]*core.APIKey, error) {
 	}
 	keys := make([]*core.APIKey, 0, len(rows))
 	for _, row := range rows {
-		keys = append(keys, apiKeyRowToCore(row.ID, row.Name, row.Description, row.Prefix, row.CreatedAt, row.UpdatedAt, row.LastUsedAt, row.RevokedAt, row.CreatedBy, row.DeletedBy))
+		keys = append(keys, apiKeyRowToCore(row.ID, row.Name, row.Description, row.Prefix, row.EnvironmentID, row.CreatedAt, row.UpdatedAt, row.LastUsedAt, row.RevokedAt, row.CreatedBy, row.DeletedBy))
 	}
 	return keys, nil
 }
@@ -552,7 +723,7 @@ func (s *Store) GetAPIKeyByHash(ctx context.Context, secretHash string) (*core.A
 		}
 		return nil, err
 	}
-	return apiKeyRowToCore(row.ID, row.Name, row.Description, row.Prefix, row.CreatedAt, row.UpdatedAt, row.LastUsedAt, row.RevokedAt, row.CreatedBy, row.DeletedBy), nil
+	return apiKeyRowToCore(row.ID, row.Name, row.Description, row.Prefix, row.EnvironmentID, row.CreatedAt, row.UpdatedAt, row.LastUsedAt, row.RevokedAt, row.CreatedBy, row.DeletedBy), nil
 }
 
 func (s *Store) RevokeAPIKey(ctx context.Context, id string) error {
@@ -599,6 +770,19 @@ func ruleRowToCore(r sqlcgen.Rule) (core.Rule, error) {
 	}, nil
 }
 
+func environmentRowToCore(r sqlcgen.Environment) *core.Environment {
+	return &core.Environment{
+		ID:          uuidToString(r.ID),
+		Key:         r.Key,
+		Name:        r.Name,
+		Description: r.Description,
+		CreatedAt:   timestamptzToTime(r.CreatedAt),
+		UpdatedAt:   timestamptzToTime(r.UpdatedAt),
+		CreatedBy:   uuidToStringPtr(r.CreatedBy),
+		DeletedBy:   uuidToStringPtr(r.DeletedBy),
+	}
+}
+
 func contextRowToCore(id pgtype.UUID, name, description string, raw []byte, createdAt, updatedAt pgtype.Timestamptz, createdBy, deletedBy pgtype.UUID) (*core.ContextSchema, error) {
 	var fields []core.ContextField
 	if len(raw) > 0 {
@@ -636,18 +820,19 @@ func userRowToCore(id pgtype.UUID, oidcSubject, email, name, description string,
 	}
 }
 
-func apiKeyRowToCore(id pgtype.UUID, name, description, prefix string, createdAt, updatedAt, lastUsedAt, revokedAt pgtype.Timestamptz, createdBy, deletedBy pgtype.UUID) *core.APIKey {
+func apiKeyRowToCore(id pgtype.UUID, name, description, prefix string, environmentID pgtype.UUID, createdAt, updatedAt, lastUsedAt, revokedAt pgtype.Timestamptz, createdBy, deletedBy pgtype.UUID) *core.APIKey {
 	return &core.APIKey{
-		ID:          uuidToString(id),
-		Name:        name,
-		Description: description,
-		Prefix:      prefix,
-		CreatedAt:   timestamptzToTime(createdAt),
-		UpdatedAt:   timestamptzToTime(updatedAt),
-		LastUsedAt:  timestamptzToTimePtr(lastUsedAt),
-		RevokedAt:   timestamptzToTimePtr(revokedAt),
-		CreatedBy:   uuidToStringPtr(createdBy),
-		DeletedBy:   uuidToStringPtr(deletedBy),
+		ID:            uuidToString(id),
+		Name:          name,
+		Description:   description,
+		Prefix:        prefix,
+		EnvironmentID: uuidToString(environmentID),
+		CreatedAt:     timestamptzToTime(createdAt),
+		UpdatedAt:     timestamptzToTime(updatedAt),
+		LastUsedAt:    timestamptzToTimePtr(lastUsedAt),
+		RevokedAt:     timestamptzToTimePtr(revokedAt),
+		CreatedBy:     uuidToStringPtr(createdBy),
+		DeletedBy:     uuidToStringPtr(deletedBy),
 	}
 }
 
@@ -736,4 +921,12 @@ func isUniqueViolation(err error) bool {
 func isFKViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23503"
+}
+
+func fkConstraintName(err error) string {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) {
+		return ""
+	}
+	return pgErr.ConstraintName
 }
