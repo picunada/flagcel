@@ -43,3 +43,12 @@ web/node_modules/
 web/.svelte-kit/
 web/build/*
 !web/build/.gitkeep
+
+# SDK package builds
+sdks/js/node_modules/
+sdks/js/dist/
+__pycache__/
+.pytest_cache/
+sdks/python/build/
+sdks/python/*.egg-info/
+sdks/python/.venv/

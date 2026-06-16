@@ -60,7 +60,7 @@ func (e *Evaluator) Evaluate(key string, ctx DataContext) EvaluationResult {
 	if !ok {
 		return missingFlagResult(key)
 	}
-	return e.engine.EvaluateTrace(flag, ctx).Result()
+	return e.engine.EvaluateResult(flag, ctx)
 }
 
 func (e *Evaluator) EvaluateAll(ctx DataContext) map[string]EvaluationResult {

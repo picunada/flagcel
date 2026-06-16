@@ -32,6 +32,10 @@ func (e *Engine) Evaluate(flag *Flag, data DataContext) FlagValue {
 	return e.core().Evaluate(flag, data)
 }
 
+func (e *Engine) EvaluateResult(flag *Flag, data DataContext) EvaluationResult {
+	return e.core().EvaluateResult(flag, data)
+}
+
 func (e *Engine) EvaluateTrace(flag *Flag, data DataContext) EvaluationTrace {
 	return e.core().EvaluateTrace(flag, data)
 }

@@ -47,6 +47,59 @@ func (e *Engine) Evaluate(flag *Flag, data DataContext) FlagValue {
 	return flagValue(flag.Type, flag.DefaultValue)
 }
 
+func (e *Engine) EvaluateResult(flag *Flag, data DataContext) EvaluationResult {
+	if flag == nil {
+		return EvaluationResult{
+			Value:     false,
+			ValueType: ValueTypeBoolean,
+			Reason:    "not_found",
+			Error:     "flag not found",
+		}
+	}
+
+	value := flagValue(flag.Type, flag.DefaultValue)
+	result := EvaluationResult{
+		Key:       flag.Key,
+		Value:     value.Value,
+		ValueType: value.Type,
+	}
+
+	if !flag.Enabled {
+		result.Reason = "disabled"
+		return result
+	}
+
+	var firstErr string
+	for _, rule := range flag.Rules {
+		matches, err := e.evaluateExpression(rule.Program, data)
+		if err != nil {
+			if firstErr == "" {
+				firstErr = err.Error()
+			}
+			slog.Debug(fmt.Sprintf("evaluate: rule evaluation err: %s", err.Error()), "rule", rule)
+			continue
+		}
+		if !matches {
+			slog.Debug("evaluate: rule did not match", "rule", rule)
+			continue
+		}
+
+		result.Reason = "matched_rule"
+		result.Variant = rule.ID
+		result.Error = firstErr
+		if e.bucket(flag.Key, data, rule.Rollout) {
+			value = flagValue(flag.Type, rule.Value)
+			result.Value = value.Value
+			result.ValueType = value.Type
+		}
+		return result
+	}
+
+	result.Reason = "default_no_match"
+	result.Error = firstErr
+	return result
+}
+
 func flagValue(valueType ValueType, value any) FlagValue {
 	if valueType == "" {
 		valueType = ValueTypeBoolean

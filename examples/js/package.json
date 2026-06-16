@@ -1,0 +1,13 @@
+{
+  "name": "flagcel-js-sdk-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prestart": "pnpm --dir ../../sdks/js build",
+    "start": "node main.mjs"
+  },
+  "dependencies": {
+    "@flagcel/openfeature-server": "link:../../sdks/js",
+    "@openfeature/server-sdk": "^1.21.0"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "@flagcel/openfeature-server",
+  "version": "0.0.0",
+  "description": "OpenFeature server provider for Flagcel with server-side evaluation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "@openfeature/server-sdk": "^1.21.0"
+  },
+  "devDependencies": {
+    "@openfeature/server-sdk": "^1.21.0",
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
+  },
+  "sideEffects": false,
+  "license": "Apache-2.0"
+}

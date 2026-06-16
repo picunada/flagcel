@@ -17,7 +17,7 @@ func NewCELEnvForContext(schema *ContextSchema) (*cel.Env, error) {
 		cel.HomogeneousAggregateLiterals(),
 	}
 
-	roots := map[string]struct{}{}
+	roots := map[string]*cel.Type{}
 
 	if schema != nil {
 		for _, field := range schema.Fields {
@@ -26,7 +26,11 @@ func NewCELEnvForContext(schema *ContextSchema) (*cel.Env, error) {
 				root = before
 			}
 			if isCELIdentifier(root) {
-				roots[root] = struct{}{}
+				if strings.Contains(field.Path, ".") {
+					roots[root] = cel.MapType(cel.StringType, cel.DynType)
+				} else if _, exists := roots[root]; !exists {
+					roots[root] = celTypeForContextType(field.Type)
+				}
 			}
 		}
 	}
@@ -37,10 +41,29 @@ func NewCELEnvForContext(schema *ContextSchema) (*cel.Env, error) {
 	}
 	sort.Strings(names)
 	for _, root := range names {
-		opts = append(opts, cel.Variable(root, cel.MapType(cel.StringType, cel.DynType)))
+		opts = append(opts, cel.Variable(root, roots[root]))
 	}
 
 	return cel.NewEnv(opts...)
+}
+
+func celTypeForContextType(contextType ContextType) *cel.Type {
+	switch contextType {
+	case ContextTypeString, ContextTypeTimestamp:
+		return cel.StringType
+	case ContextTypeInt:
+		return cel.IntType
+	case ContextTypeDouble:
+		return cel.DoubleType
+	case ContextTypeBool:
+		return cel.BoolType
+	case ContextTypeList:
+		return cel.ListType(cel.DynType)
+	case ContextTypeMap:
+		return cel.MapType(cel.StringType, cel.DynType)
+	default:
+		return cel.DynType
+	}
 }
 
 func isCELIdentifier(s string) bool {

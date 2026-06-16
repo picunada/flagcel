@@ -2,16 +2,16 @@
 
 Self-hosted feature flag service with [CEL](https://github.com/google/cel-spec)-based targeting rules.
 
-> **Status: experimental.** Early in development — the API and storage schema may change without notice. Pin a commit if you depend on it.
+> **Status: experimental.** Early in development - the API and storage schema may change without notice. Pin a commit if you depend on it.
 
 ## Why
 
-Most feature flag services either lock you into a SaaS or ship a DSL you have to learn. Flagcel runs in your own infrastructure as a single Go binary backed by Postgres, and it uses CEL — a small, sandboxed expression language already used by Kubernetes and Envoy — for targeting rules. If you can write `user.country == "US" && request.path.startsWith("/checkout")`, you can write Flagcel rules.
+Most feature flag services either lock you into a SaaS or ship a DSL you have to learn. Flagcel runs in your own infrastructure as a single Go binary backed by Postgres, and it uses CEL - a small, sandboxed expression language already used by Kubernetes and Envoy - for targeting rules. If you can write `user.country == "US" && request.path.startsWith("/checkout")`, you can write Flagcel rules.
 
 ## Roadmap
 
-- **Client SDKs (Go, JS/TS)** — typed clients that wrap the HTTP API and handle local evaluation caching.
-- **Helm chart** — single-command install on Kubernetes with sensible production defaults.
+- **Client SDKs (Go, JS/TS, Python)** - OpenFeature providers that wrap the HTTP API and handle local evaluation caching.
+- **Helm chart** - single-command install on Kubernetes with sensible production defaults.
 
 ## Quickstart
 
@@ -26,13 +26,13 @@ Brings up Postgres + the service with hot reload on port `8080`. API docs are se
 ### Create and read a flag
 
 The Docker quickstart bootstraps a local admin account:
-`admin@localhost` / `flagcel-dev-password`.
+`admin@localhost` / `secret`.
 
 ```sh
 # Sign in and keep the admin session cookie
 curl -c cookies.txt -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@localhost","password":"flagcel-dev-password"}'
+  -d '{"email":"admin@localhost","password":"secret"}'
 
 # Create a flag with one rule (10% rollout for US users)
 curl -X POST http://localhost:8080/api/v1/flags \
@@ -109,8 +109,8 @@ shown only once when created.
 
 The full OpenAPI spec lives at [`internal/api/http/docs/openapi.yaml`](internal/api/http/docs/openapi.yaml) and is served live:
 
-- `GET /openapi.yaml` — raw spec
-- `GET /docs` — Swagger UI
+- `GET /openapi.yaml` - raw spec
+- `GET /docs` - Swagger UI
 
 Endpoint overview (all under `/api/v1`):
 
@@ -170,6 +170,53 @@ enabled, err := client.BooleanValue(ctx, "new-checkout", false, openfeature.NewT
 ```
 
 See [`sdks/go/README.md`](sdks/go/README.md) for installation, OpenFeature targeting context, polling, fail-open behavior, and typed evaluation details.
+
+### JS/TS
+
+The JS/TS SDK is an OpenFeature server provider in [`sdks/js`](sdks/js). It packages `@flagcel/openfeature-server`, bundles the `flagcel_eval.wasm` evaluator, instantiates it through Node WASI, and serializes calls through the single WASM instance.
+
+```ts
+import { OpenFeature } from "@openfeature/server-sdk";
+import { FlagcelProvider } from "@flagcel/openfeature-server";
+
+await OpenFeature.setProviderAndWait(new FlagcelProvider({
+	endpoint: "http://localhost:8080/api/v1",
+	apiKey,
+}));
+
+const client = OpenFeature.getClient("checkout-service");
+const enabled = await client.getBooleanValue("new-checkout", false, {
+	targetingKey: "u_123",
+	user: { id: "u_123", country: "US" },
+});
+```
+
+See [`sdks/js/README.md`](sdks/js/README.md) for installation, runtime requirements, targeting context, polling, and fail-open behavior.
+
+### Python
+
+The Python SDK is an OpenFeature provider in [`sdks/python`](sdks/python). It packages `flagcel-openfeature`, bundles the `flagcel_eval.wasm` evaluator, instantiates it through `wasmtime-py`, and uses a small evaluator pool for multi-threaded callers.
+
+```python
+from openfeature import api
+from openfeature.evaluation_context import EvaluationContext
+from flagcel_openfeature import FlagcelProvider
+
+api.set_provider(FlagcelProvider(
+	endpoint="http://localhost:8080/api/v1",
+	api_key=api_key,
+))
+
+client = api.get_client("checkout-service")
+enabled = client.get_boolean_value("new-checkout", False, EvaluationContext(
+	targeting_key="u_123",
+	attributes={"user": {"id": "u_123", "country": "US"}},
+))
+```
+
+See [`sdks/python/README.md`](sdks/python/README.md) for installation, targeting context, polling, fail-open behavior, and typed evaluation details.
+
+Runnable local examples for all three SDKs live in [`examples/`](examples/).
 
 ## Web UI
 
@@ -243,4 +290,4 @@ go test ./...
 
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE).
+Apache 2.0 - see [LICENSE](LICENSE).
