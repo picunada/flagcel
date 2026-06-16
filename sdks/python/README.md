@@ -1,7 +1,8 @@
 # Flagcel OpenFeature Provider for Python
 
-OpenFeature provider for Flagcel with server-side evaluation. The provider
-resolves flags by calling the Flagcel evaluation API.
+OpenFeature provider for Flagcel with local CEL evaluation. The provider polls
+Flagcel for evaluation definitions, compiles rules with `cel-expr-python`, and
+evaluates flags in-process.
 
 ```sh
 python -m pip install flagcel-openfeature
@@ -31,8 +32,22 @@ enabled = client.get_boolean_value(
 
 ## Behavior
 
-- Sends `POST /eval/{flag_key}` relative to the configured endpoint.
-- Sends JSON bodies containing `{ "context": ... }`.
+- Requires Python 3.11+.
+- Fetches `GET /eval/definitions` relative to the configured endpoint.
 - Sends `Authorization: Bearer <api_key>` when an API key is configured.
-- Returns OpenFeature defaults with error details on HTTP or network failures.
+- Polls definitions every 30 seconds by default.
+- Uses `ETag` and `If-None-Match` to avoid reloading unchanged definitions.
+- Evaluates flags locally with CEL expressions from the latest definitions.
+- Returns OpenFeature defaults with provider-not-ready details if no definitions have loaded.
+- Keeps using last-known definitions after later refresh failures.
 - Maps Flagcel reason, variant, and value type into OpenFeature resolution details.
+
+Configure the polling interval in seconds:
+
+```python
+provider = FlagcelProvider(
+    endpoint="http://localhost:8080/api/v1",
+    api_key="fc_example_secret",
+    poll_interval=10.0,
+)
+```

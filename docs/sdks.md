@@ -1,6 +1,8 @@
 # SDKs
 
-Flagcel SDKs are OpenFeature providers. Runnable local examples for all three SDKs live in [`../examples`](../examples).
+Flagcel SDKs are OpenFeature providers. Go and Python evaluate locally from polled definitions; JS/TS resolves flags through the Flagcel server-side evaluation API.
+
+Runnable local examples for all three SDKs live in [`../examples`](../examples).
 
 ## Go
 
@@ -27,7 +29,7 @@ See [`../sdks/go/README.md`](../sdks/go/README.md) for installation, OpenFeature
 
 ## JS/TS
 
-The JS/TS SDK is an OpenFeature server provider in [`../sdks/js`](../sdks/js). It packages `@flagcel/openfeature-server`, bundles the `flagcel_eval.wasm` evaluator, instantiates it through Node WASI, and serializes calls through the single WASM instance.
+The JS/TS SDK is an OpenFeature server provider in [`../sdks/js`](../sdks/js). It packages `@flagcel/openfeature-server` and resolves flags by calling the Flagcel evaluation API from Node server runtimes.
 
 ```ts
 import { OpenFeature } from "@openfeature/server-sdk";
@@ -45,11 +47,11 @@ const enabled = await client.getBooleanValue("new-checkout", false, {
 });
 ```
 
-See [`../sdks/js/README.md`](../sdks/js/README.md) for installation, runtime requirements, targeting context, polling, and fail-open behavior.
+See [`../sdks/js/README.md`](../sdks/js/README.md) for installation, runtime requirements, targeting context, and failure behavior.
 
 ## Python
 
-The Python SDK is an OpenFeature provider in [`../sdks/python`](../sdks/python). It packages `flagcel-openfeature`, bundles the `flagcel_eval.wasm` evaluator, instantiates it through `wasmtime-py`, and uses a small evaluator pool for multi-threaded callers.
+The Python SDK is an OpenFeature provider in [`../sdks/python`](../sdks/python). It packages `flagcel-openfeature`, polls `GET /api/v1/eval/definitions` with an evaluation API key, compiles definitions with `cel-expr-python`, and evaluates flags locally.
 
 ```python
 from openfeature import api

@@ -26,8 +26,9 @@ uv run python main.py
 
 ## Load Test
 
-The load test exercises the Python SDK with one HTTP request per evaluation.
-It measures OpenFeature provider overhead plus Flagcel server evaluation latency.
+The load test exercises the Python SDK's local evaluation path. It performs the
+provider's definition fetch during startup, then measures OpenFeature provider
+overhead plus local CEL evaluation latency.
 
 ```fish
 set -x FLAGCEL_API_KEY fc_your_api_key
@@ -85,4 +86,4 @@ The local SDK dependency is declared in `pyproject.toml` and resolved from
 
 For IDEs using `ty`, the repo root has a `ty.toml` that points analysis at this
 example's `.venv` and the local SDK source tree. Run `uv sync` first so
-`openfeature-sdk` is installed in `examples/python/.venv`.
+`openfeature-sdk` and `cel-expr-python` are installed in `examples/python/.venv`.

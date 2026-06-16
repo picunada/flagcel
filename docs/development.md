@@ -24,7 +24,6 @@ The `Dockerfile.dev` uses [air](https://github.com/air-verse/air) to rebuild on 
 make web-install
 make web-dev
 make build
-make wasm
 make migrate-status
 ```
 

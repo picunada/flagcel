@@ -1,17 +1,37 @@
 version = 1
 revision = 3
-requires-python = ">=3.10"
+requires-python = ">=3.11"
+
+[[package]]
+name = "cel-expr-python"
+version = "0.1.2"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/50/22/c0e631949f25b2f664d0391d1f8e67662538d58fa10cb0cd2452adfee76a/cel_expr_python-0.1.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:c25f340e2e2f60949c63d4a951ae6c4800dce570f7ee2ae4f8832b0de14639de", size = 11768735, upload-time = "2026-06-01T17:23:35.256Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/01/a1f30887dbdc839e9dfe0af0a8d2f2bc37bbd4d4216bab1ef4567f6ff4eb/cel_expr_python-0.1.2-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b56d6715ff1c011b7059e2b7fed462e34e5926f3de25e76b7298c74623813322", size = 15719095, upload-time = "2026-06-01T17:23:37.599Z" },
+    { url = "https://files.pythonhosted.org/packages/03/31/ff89b8ea544e2159498c9e30a9712278b00ba8ea498f88d0c8d3ffe4f81b/cel_expr_python-0.1.2-cp311-cp311-win_amd64.whl", hash = "sha256:5509ea5b6d9f34c213a21a5974d865298274a8b214fcb828232846dd8ec3116e", size = 7510435, upload-time = "2026-06-01T17:23:39.911Z" },
+    { url = "https://files.pythonhosted.org/packages/9f/bb/3a9f008001e86a4995d5e68785d0afc78debee9d69faf97b11bd3135a9f2/cel_expr_python-0.1.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:d98c2b821c921e41965c54688fe23bef26742f0a138a75e3928359bd2090b183", size = 11771428, upload-time = "2026-06-01T17:23:41.57Z" },
+    { url = "https://files.pythonhosted.org/packages/87/12/1309c203a38c573549a393475fb9a503b543f551618f59a74a4632a0a544/cel_expr_python-0.1.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:671b230b2fefdc621d5038ae7d9ccff651c12a9913137b03a6cf78556fba0f94", size = 17007730, upload-time = "2026-06-01T17:23:43.614Z" },
+    { url = "https://files.pythonhosted.org/packages/ed/d6/1c50a96289c52ca577910e7eca482b12f79a4ac2847ad7a9fccb22ff7be8/cel_expr_python-0.1.2-cp312-cp312-win_amd64.whl", hash = "sha256:d7b1acd64c8150ddc7bf33dbb5e9761643d6783b59d0b05b96259c327de58297", size = 14508902, upload-time = "2026-06-01T17:23:46.078Z" },
+    { url = "https://files.pythonhosted.org/packages/59/79/75d0897dd2c3c9f20376ae7a369de7b528ba7064632621463f920ad52517/cel_expr_python-0.1.2-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:a6c4e4218a4b18cc54c061f3bfc53f4cbac2ca8ae43a0c2fb2fdaa07cb7dae4d", size = 11772034, upload-time = "2026-06-01T17:23:48.768Z" },
+    { url = "https://files.pythonhosted.org/packages/8f/24/20c381d663f53bb7283e47da091afbe7f6e7e3add39fc14aa748a767b011/cel_expr_python-0.1.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:6fb2d134468317eefaed035560a07a7e783db7df256777efbae8236e96b3f6e8", size = 17007586, upload-time = "2026-06-01T17:23:50.996Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/48/130a95394dd682dc28ac8b9a2db5e8d33cf8feaa56abcd90b7d95f447065/cel_expr_python-0.1.2-cp313-cp313-win_amd64.whl", hash = "sha256:1fc95a2bfe6d1f9d643a67b65a46f7dadd8f4da73aa7c51b59821c23e648001b", size = 13209211, upload-time = "2026-06-01T17:23:54.18Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/8e/a972241000dc24364aa3c4f79ea8c27810f8f23d52913dab212b9533d207/cel_expr_python-0.1.2-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:8f431b5f3806710d0c6eeeba79a0b6268f63995fcaa62f85273f2906621894d7", size = 11775212, upload-time = "2026-06-01T17:23:56.761Z" },
+    { url = "https://files.pythonhosted.org/packages/72/e6/1fc92ee93c0ff77033358b05fab242227427bbbcd37553ad7277957c6c5f/cel_expr_python-0.1.2-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:bf8f571da3cee607e9df8a4733efd32bf479d20d5bfdabc13913076119485bc9", size = 17008509, upload-time = "2026-06-01T17:23:59.172Z" },
+]
 
 [[package]]
 name = "flagcel-openfeature"
 version = "0.0.0"
 source = { editable = "../../sdks/python" }
 dependencies = [
+    { name = "cel-expr-python" },
     { name = "openfeature-sdk" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "cel-expr-python", specifier = ">=0.1.2,<0.2" },
     { name = "openfeature-sdk", specifier = ">=0.9,<1" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8" },
 ]

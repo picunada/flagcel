@@ -6,6 +6,7 @@ from email.message import Message
 from typing import Any
 from urllib.error import HTTPError, URLError
 
+import pytest
 from openfeature.evaluation_context import EvaluationContext
 from openfeature.exception import ErrorCode
 from openfeature.flag_evaluation import Reason
@@ -13,80 +14,151 @@ from openfeature.flag_evaluation import Reason
 from flagcel_openfeature import FlagcelProvider
 
 
-def test_provider_sends_authenticated_server_side_evaluation_request() -> None:
-    calls: list[tuple[str, dict[str, str], dict[str, Any]]] = []
+def test_provider_fetches_definitions_and_evaluates_locally() -> None:
+    calls: list[tuple[str, dict[str, str], bytes | None]] = []
 
     def opener(request: Any, timeout: float | None = None) -> FakeResponse:
         del timeout
-        body = json.loads(request.data.decode("utf-8"))
-        calls.append((request.full_url, dict(request.header_items()), body))
-        return json_response(
-            {
-                "key": "enabled",
-                "value": True,
-                "value_type": "boolean",
-                "reason": "matched_rule",
-                "variant": "targeted",
-            }
+        calls.append((request.full_url, dict(request.header_items()), request.data))
+        return definitions_response(
+            definitions_fixture(
+                "checkout-copy",
+                "string",
+                "control",
+                [
+                    {
+                        "id": "pro",
+                        "expression": 'user.tier == "pro"',
+                        "rollout": {"percentage": 100},
+                        "value": "pro-copy",
+                    }
+                ],
+            ),
+            etag='"v1"',
         )
 
     provider = FlagcelProvider(
         endpoint="https://flagcel.test/api/v1",
         api_key="secret",
         http_client=opener,
+        poll_interval=3600,
     )
     provider.initialize()
+    try:
+        detail = provider.resolve_string_details(
+            "checkout-copy",
+            "fallback",
+            EvaluationContext(attributes={"user": {"tier": "pro"}}),
+        )
+    finally:
+        provider.shutdown()
 
-    detail = provider.resolve_boolean_details(
-        "enabled",
-        False,
-        EvaluationContext(targeting_key="user-123"),
-    )
-
-    assert detail.value is True
+    assert detail.value == "pro-copy"
     assert detail.reason == Reason.TARGETING_MATCH
-    assert detail.variant == "targeted"
+    assert detail.variant == "pro"
+    assert detail.flag_metadata == {
+        "flagcelReason": "matched_rule",
+        "valueType": "string",
+    }
     assert calls == [
         (
-            "https://flagcel.test/api/v1/eval/enabled",
-            {
-                "Accept": "application/json",
-                "Content-type": "application/json",
-                "Authorization": "Bearer secret",
-            },
-            {"context": {"targetingKey": "user-123"}},
+            "https://flagcel.test/api/v1/eval/definitions",
+            {"Accept": "application/json", "Authorization": "Bearer secret"},
+            None,
         )
     ]
 
 
-def test_provider_resolves_string_number_and_object_values() -> None:
+def test_provider_honors_etag_and_keeps_last_known_definitions() -> None:
+    requests = 0
+
     def opener(request: Any, timeout: float | None = None) -> FakeResponse:
+        nonlocal requests
         del timeout
-        key = request.full_url.rsplit("/", 1)[-1]
-        if key == "title":
-            return json_response({"key": key, "value": "hello", "value_type": "string", "reason": "default_no_match"})
-        if key == "count":
-            return json_response({"key": key, "value": 42, "value_type": "number", "reason": "default_no_match"})
-        return json_response({"key": key, "value": {"plan": "pro"}, "value_type": "json", "reason": "default_no_match"})
+        requests += 1
+        if requests == 1:
+            return definitions_response(
+                definitions_fixture("enabled", "boolean", True, []),
+                etag='"v1"',
+            )
+        if requests == 2:
+            assert dict(request.header_items())["If-none-match"] == '"v1"'
+            return FakeResponse(304, b"", {"ETag": '"v1"'})
+        raise HTTPError(
+            request.full_url,
+            503,
+            "Service Unavailable",
+            {},
+            FakeBody(b"temporarily unavailable"),
+        )
 
-    provider = FlagcelProvider("https://flagcel.test/api/v1", http_client=opener)
+    provider = FlagcelProvider("https://flagcel.test/api/v1", http_client=opener, poll_interval=3600)
+    provider.initialize()
+    try:
+        provider._refresh()
+        with pytest.raises(Exception):
+            provider._refresh()
 
-    title = provider.resolve_string_details("title", "", EvaluationContext())
-    count = provider.resolve_float_details("count", 0.0, EvaluationContext())
-    payload = provider.resolve_object_details("payload", {}, EvaluationContext())
+        detail = provider.resolve_boolean_details("enabled", False, EvaluationContext())
+    finally:
+        provider.shutdown()
+
+    assert detail.value is True
+    assert detail.error_code is None
+    assert requests == 3
+
+
+def test_provider_returns_default_when_initial_fetch_fails() -> None:
+    def opener(request: Any, timeout: float | None = None) -> FakeResponse:
+        del request, timeout
+        raise URLError("connection refused")
+
+    provider = FlagcelProvider("https://flagcel.test/api/v1", http_client=opener, poll_interval=3600)
+    provider.initialize()
+    try:
+        detail = provider.resolve_boolean_details("enabled", False, EvaluationContext())
+    finally:
+        provider.shutdown()
+
+    assert detail.value is False
+    assert detail.reason == Reason.ERROR
+    assert detail.error_code == ErrorCode.PROVIDER_NOT_READY
+    assert "connection refused" in str(detail.error_message)
+
+
+def test_provider_resolves_string_number_boolean_and_object_values() -> None:
+    provider = initialized_provider(
+        {
+            "flags": [
+                flag_definition("title", "string", "hello", []),
+                flag_definition("count", "number", 42, []),
+                flag_definition("enabled", "boolean", True, []),
+                flag_definition("payload", "json", {"plan": "pro"}, []),
+            ]
+        }
+    )
+    try:
+        title = provider.resolve_string_details("title", "", EvaluationContext())
+        count = provider.resolve_float_details("count", 0.0, EvaluationContext())
+        enabled = provider.resolve_boolean_details("enabled", False, EvaluationContext())
+        payload = provider.resolve_object_details("payload", {}, EvaluationContext())
+    finally:
+        provider.shutdown()
 
     assert title.value == "hello"
     assert title.reason == Reason.DEFAULT
     assert count.value == 42.0
     assert count.reason == Reason.DEFAULT
+    assert enabled.value is True
     assert payload.value == {"plan": "pro"}
-    assert payload.reason == Reason.DEFAULT
 
 
 def test_provider_returns_default_on_type_mismatch() -> None:
-    provider = initialized_provider({"key": "title", "value": "hello", "value_type": "string"})
-
-    detail = provider.resolve_boolean_details("title", True, EvaluationContext())
+    provider = initialized_provider({"flags": [flag_definition("title", "string", "hello", [])]})
+    try:
+        detail = provider.resolve_boolean_details("title", True, EvaluationContext())
+    finally:
+        provider.shutdown()
 
     assert detail.value is True
     assert detail.reason == Reason.ERROR
@@ -94,64 +166,143 @@ def test_provider_returns_default_on_type_mismatch() -> None:
 
 
 def test_integer_resolution_rejects_non_integral_float() -> None:
-    provider = initialized_provider({"key": "ratio", "value": 1.5, "value_type": "number"})
-
-    detail = provider.resolve_integer_details("ratio", 0, EvaluationContext())
+    provider = initialized_provider({"flags": [flag_definition("ratio", "number", 1.5, [])]})
+    try:
+        detail = provider.resolve_integer_details("ratio", 0, EvaluationContext())
+    finally:
+        provider.shutdown()
 
     assert detail.value == 0
     assert detail.error_code == ErrorCode.TYPE_MISMATCH
 
 
 def test_provider_returns_default_on_not_found() -> None:
-    def opener(request: Any, timeout: float | None = None) -> FakeResponse:
-        del timeout
-        raise HTTPError(
-            request.full_url,
-            404,
-            "Not Found",
-            {},
-            FakeBody(json.dumps({"error": {"code": "FLAG_NOT_FOUND", "message": "Flag not found"}}).encode("utf-8")),
-        )
-
-    provider = FlagcelProvider("https://flagcel.test/api/v1", http_client=opener)
-
-    detail = provider.resolve_boolean_details("missing", True, EvaluationContext())
+    provider = initialized_provider({"flags": [flag_definition("enabled", "boolean", True, [])]})
+    try:
+        detail = provider.resolve_boolean_details("missing", True, EvaluationContext())
+    finally:
+        provider.shutdown()
 
     assert detail.value is True
     assert detail.reason == Reason.ERROR
     assert detail.error_code == ErrorCode.FLAG_NOT_FOUND
-    assert detail.error_message == "Flag not found"
+    assert detail.error_message == "flag not found"
 
 
-def test_provider_returns_default_on_network_failure() -> None:
+def test_disabled_flag_returns_default_with_disabled_reason() -> None:
+    definitions = {
+        "flags": [
+            {
+                **flag_definition("enabled", "boolean", True, []),
+                "enabled": False,
+            }
+        ]
+    }
+    provider = initialized_provider(definitions)
+    try:
+        detail = provider.resolve_boolean_details("enabled", False, EvaluationContext())
+    finally:
+        provider.shutdown()
+
+    assert detail.value is True
+    assert detail.reason == Reason.DISABLED
+
+
+def test_rollout_bucket_excludes_context_from_rule_value() -> None:
+    provider = initialized_provider(
+        definitions_fixture(
+            "experiment",
+            "string",
+            "control",
+            [
+                {
+                    "id": "variant",
+                    "expression": 'user.tier == "pro"',
+                    "rollout": {"percentage": 0, "bucket_by": "user.id"},
+                    "value": "variant",
+                }
+            ],
+        )
+    )
+    try:
+        detail = provider.resolve_string_details(
+            "experiment",
+            "fallback",
+            EvaluationContext(attributes={"user": {"tier": "pro", "id": "u_123"}}),
+        )
+    finally:
+        provider.shutdown()
+
+    assert detail.value == "control"
+    assert detail.reason == Reason.TARGETING_MATCH
+    assert detail.variant == "variant"
+
+
+def initialized_provider(definitions: dict[str, Any]) -> FlagcelProvider:
     def opener(request: Any, timeout: float | None = None) -> FakeResponse:
         del request, timeout
-        raise URLError("connection refused")
+        return definitions_response(definitions)
 
-    provider = FlagcelProvider("https://flagcel.test/api/v1", http_client=opener)
-
-    detail = provider.resolve_boolean_details("enabled", False, EvaluationContext())
-
-    assert detail.value is False
-    assert detail.reason == Reason.ERROR
-    assert detail.error_code == ErrorCode.GENERAL
-    assert "connection refused" in str(detail.error_message)
+    provider = FlagcelProvider("https://flagcel.test/api/v1", http_client=opener, poll_interval=3600)
+    provider.initialize()
+    return provider
 
 
-def initialized_provider(result: dict[str, Any]) -> FlagcelProvider:
-    def opener(request: Any, timeout: float | None = None) -> FakeResponse:
-        del request, timeout
-        return json_response(result)
-
-    return FlagcelProvider("https://flagcel.test/api/v1", http_client=opener)
-
-
-def json_response(result: dict[str, Any]) -> "FakeResponse":
+def definitions_response(definitions: dict[str, Any], etag: str = '"v1"') -> "FakeResponse":
     return FakeResponse(
         200,
-        json.dumps({"message": "success", "data": result}).encode("utf-8"),
-        {"Content-Type": "application/json"},
+        json.dumps({"message": "success", "data": definitions}).encode("utf-8"),
+        {"Content-Type": "application/json", "ETag": etag},
     )
+
+
+def definitions_fixture(
+    key: str,
+    value_type: str,
+    default_value: Any,
+    rules: list[dict[str, Any]],
+) -> dict[str, Any]:
+    context_id = "user-context"
+    return {
+        "flags": [
+            flag_definition(
+                key,
+                value_type,
+                default_value,
+                rules,
+                context_id=context_id,
+            )
+        ],
+        "contexts": [
+            {
+                "id": context_id,
+                "name": "User",
+                "fields": [
+                    {"path": "user.tier", "type": "string"},
+                    {"path": "user.id", "type": "string"},
+                ],
+            }
+        ],
+    }
+
+
+def flag_definition(
+    key: str,
+    value_type: str,
+    default_value: Any,
+    rules: list[dict[str, Any]],
+    context_id: str | None = None,
+) -> dict[str, Any]:
+    definition = {
+        "key": key,
+        "type": value_type,
+        "enabled": True,
+        "default_value": default_value,
+        "rules": rules,
+    }
+    if context_id is not None:
+        definition["context_id"] = context_id
+    return definition
 
 
 class FakeResponse:

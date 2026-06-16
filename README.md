@@ -6,7 +6,7 @@ Self-hosted feature flags with [CEL](https://github.com/google/cel-spec)-based t
 
 ## What It Is
 
-Flagcel is a feature flag service designed to run in your own infrastructure. It ships as a Go service backed by Postgres, includes an admin dashboard, exposes an HTTP API, and supports local evaluation through OpenFeature SDK providers.
+Flagcel is a feature flag service designed to run in your own infrastructure. It ships as a Go service backed by Postgres, includes an admin dashboard, exposes an HTTP API, and supports OpenFeature SDK providers.
 
 Targeting rules are written in CEL, the same expression language used by projects like Kubernetes and Envoy. A rule can use application context directly:
 
@@ -24,7 +24,7 @@ Most feature flag systems either depend on a hosted SaaS control plane or introd
 - **Targeting:** CEL expressions plus deterministic percentage rollouts.
 - **Dashboard:** SvelteKit admin UI embedded into the Go binary for production builds.
 - **SDKs:** OpenFeature providers for Go, JS/TS, and Python.
-- **Evaluation core:** Shared Go evaluator, with a WASM build used by JS and Python SDKs.
+- **Evaluation core:** Shared Go evaluator used by the server and native Go SDK.
 - **API docs:** OpenAPI spec served by the running service.
 
 ## Quickstart
@@ -58,7 +58,7 @@ See [Quickstart](docs/quickstart.md) for creating a flag, evaluating it, and usi
 
 - [`cmd/server`](cmd/server) - server entrypoint and migration command.
 - [`internal`](internal) - API handlers, services, config, storage, and engine integration.
-- [`evalcore`](evalcore) - shared flag evaluation library and WASM target.
+- [`evalcore`](evalcore) - shared flag evaluation library.
 - [`web`](web) - SvelteKit dashboard.
 - [`sdks`](sdks) - OpenFeature providers.
 - [`examples`](examples) - runnable SDK examples.

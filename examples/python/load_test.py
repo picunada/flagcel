@@ -385,7 +385,7 @@ def print_step_metrics(results: list[WorkerResult]) -> None:
     print()
     print(
         "notes: openfeature_eval_ms includes the OpenFeature client call, provider "
-        "context serialization, HTTP request, server evaluation, and response parsing."
+        "context normalization, local CEL evaluation, and result mapping."
     )
 
 

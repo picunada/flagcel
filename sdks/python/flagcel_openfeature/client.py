@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from typing import Any, Protocol
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlsplit
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 
@@ -12,13 +13,20 @@ class URLopener(Protocol):
         ...
 
 
-class EvalClientError(RuntimeError):
+class DefinitionsClientError(RuntimeError):
     def __init__(self, message: str, status: int | None = None) -> None:
         super().__init__(message)
         self.status = status
 
 
-class EvalClient:
+@dataclass(frozen=True)
+class FetchResult:
+    definitions: dict[str, Any] | None = None
+    etag: str = ""
+    unchanged: bool = False
+
+
+class DefinitionsClient:
     def __init__(
         self,
         endpoint: str,
@@ -38,52 +46,60 @@ class EvalClient:
         self._opener = opener or urlopen
         self._timeout = timeout
 
-    def evaluate_json(self, flag_key: str, context_json: str) -> dict[str, Any]:
-        body = json.dumps(
-            {"context": json.loads(context_json)},
-            separators=(",", ":"),
-        ).encode("utf-8")
+    def fetch_definitions(self, etag: str = "") -> FetchResult:
         request = Request(
-            self._eval_url(flag_key),
-            data=body,
-            method="POST",
-            headers={
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            },
+            f"{self._endpoint}/eval/definitions",
+            method="GET",
+            headers={"Accept": "application/json"},
         )
         if self._api_key:
             request.add_header("Authorization", f"Bearer {self._api_key}")
+        if etag:
+            request.add_header("If-None-Match", etag)
 
         try:
             response = self._opener(request, timeout=self._timeout)
             try:
                 status = response.status if hasattr(response, "status") else response.getcode()
-                return self._decode_response(response, status)
+                return self._decode_response(response, status, etag)
             finally:
                 close = getattr(response, "close", None)
                 if callable(close):
                     close()
         except HTTPError as exc:
+            if exc.code == 304:
+                return FetchResult(etag=_response_etag(exc, etag), unchanged=True)
             body_text = exc.read(512).decode("utf-8", errors="replace").strip()
-            raise EvalClientError(_error_message(body_text, exc.code), exc.code) from exc
+            raise DefinitionsClientError(_error_message(body_text, exc.code), exc.code) from exc
         except URLError as exc:
-            raise EvalClientError(f"flagcel: evaluate flag: {exc.reason}") from exc
+            raise DefinitionsClientError(f"flagcel: fetch definitions: {exc.reason}") from exc
 
-    def _decode_response(self, response: Any, status: int) -> dict[str, Any]:
+    def _decode_response(self, response: Any, status: int, previous_etag: str) -> FetchResult:
+        if status == 304:
+            return FetchResult(etag=_response_etag(response, previous_etag), unchanged=True)
+
         body_text = response.read().decode("utf-8", errors="replace")
         if status < 200 or status >= 300:
-            raise EvalClientError(_error_message(body_text, status), status)
+            raise DefinitionsClientError(_error_message(body_text, status), status)
 
         envelope = json.loads(body_text)
-        return envelope["data"]
+        return FetchResult(
+            definitions=envelope["data"],
+            etag=_response_etag(response, previous_etag),
+        )
 
-    def _eval_url(self, flag_key: str) -> str:
-        return f"{self._endpoint}/eval/{quote(flag_key, safe='')}"
+
+def _response_etag(response: Any, previous: str) -> str:
+    headers = getattr(response, "headers", None)
+    if headers is not None:
+        etag = headers.get("ETag")
+        if etag:
+            return etag
+    return previous
 
 
 def _error_message(body: str, status: int) -> str:
-    fallback = f"flagcel: evaluate flag: status {status}"
+    fallback = f"flagcel: fetch definitions: status {status}"
     if not body.strip():
         return fallback
     try:

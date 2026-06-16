@@ -108,5 +108,5 @@ For a local Python SDK load test:
 
 ```sh
 cd examples/python
-LOAD_CONCURRENCY=16 FLAGCEL_PROVIDER_POOL_SIZE=16 uv run python load_test.py
+LOAD_CONCURRENCY=16 uv run python load_test.py
 ```
