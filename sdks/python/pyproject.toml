@@ -1,0 +1,16 @@
+[project]
+name = "flagcel-openfeature"
+version = "0.0.0"
+description = "OpenFeature provider for Flagcel with server-side evaluation"
+requires-python = ">=3.10"
+dependencies = [
+  "openfeature-sdk>=0.9,<1",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8",
+]
+
+[tool.setuptools]
+packages = ["flagcel_openfeature"]

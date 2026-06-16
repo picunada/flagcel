@@ -1,0 +1,3 @@
+[environment]
+python = "examples/python/.venv"
+extra-paths = ["sdks/python"]

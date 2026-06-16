@@ -1,0 +1,13 @@
+[project]
+name = "flagcel-python-sdk-example"
+version = "0.1.0"
+description = "Local example for the Flagcel Python OpenFeature provider"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "flagcel-openfeature",
+  "openfeature-sdk>=0.9,<1",
+]
+
+[tool.uv.sources]
+flagcel-openfeature = { path = "../../sdks/python", editable = true }
