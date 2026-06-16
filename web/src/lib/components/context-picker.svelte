@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api, APIError, type ContextSchema } from '$lib/api';
+	import ThemedSelect from '$lib/components/ui/themed-select.svelte';
 	import { cn } from '$lib/utils';
 
 	type Props = {
@@ -26,24 +27,20 @@
 		}
 	});
 
-	function handleChange(e: Event) {
-		const v = (e.target as HTMLSelectElement).value;
-		onchange?.(v === '' ? null : v);
-	}
+	const options = $derived([
+		{ value: '', label: 'no context' },
+		...contexts.map((ctx) => ({ value: ctx.id, label: ctx.name }))
+	]);
 </script>
 
 <div class={cn('space-y-1', className)}>
-	<select
+	<ThemedSelect
 		{disabled}
 		value={value ?? ''}
-		onchange={handleChange}
-		class="h-9 w-full rounded-sm border border-input bg-transparent px-3 text-sm transition-all duration-200 ease-out focus-visible:outline-none focus-visible:border-[rgba(255,255,255,0.36)] focus-visible:bg-[rgba(255,255,255,0.025)] disabled:cursor-not-allowed disabled:opacity-50"
-	>
-		<option value="">— no context —</option>
-		{#each contexts as ctx (ctx.id)}
-			<option value={ctx.id}>{ctx.name}</option>
-		{/each}
-	</select>
+		{options}
+		onchange={(v) => onchange?.(v === '' ? null : v)}
+		buttonClass="text-sm px-3"
+	/>
 	{#if loading}
 		<p class="text-[0.65rem] text-muted-foreground">loading contexts…</p>
 	{:else if error}

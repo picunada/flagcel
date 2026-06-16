@@ -24,10 +24,15 @@ func (h *EvalHandler) Register(mux *http.ServeMux) {
 }
 
 func (h *EvalHandler) RegisterAdmin(mux *http.ServeMux) {
-	mux.HandleFunc("POST /flags/{key}/evaluate", h.EvaluateFlag)
+	mux.HandleFunc("POST /environments/{environment_id}/flags/{key}/evaluate", h.EvaluateFlag)
 }
 
 func (h *EvalHandler) GetDefinitions(w http.ResponseWriter, r *http.Request) {
+	environmentID, err := environmentIDFromAPIKey(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
 	etag := h.service.DefinitionsETag()
 	if etagMatches(r.Header.Get("If-None-Match"), etag) {
 		setDefinitionsHeaders(w, etag)
@@ -35,7 +40,7 @@ func (h *EvalHandler) GetDefinitions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defs, etag, err := h.service.Definitions(r.Context())
+	defs, etag, err := h.service.Definitions(r.Context(), environmentID)
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -70,6 +75,11 @@ func etagMatches(header, etag string) bool {
 
 func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 	key := r.PathValue("key")
+	environmentID, err := environmentIDFromAPIKey(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
 
 	req, err := utils.Decode[EvalRequest](r)
 	if err != nil {
@@ -81,7 +91,7 @@ func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	value, err := h.service.Evaluate(r.Context(), key, evalcore.DataContext(req.Context))
+	value, err := h.service.Evaluate(r.Context(), environmentID, key, evalcore.DataContext(req.Context))
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -98,6 +108,11 @@ func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 
 func (h *EvalHandler) EvaluateFlag(w http.ResponseWriter, r *http.Request) {
 	key := r.PathValue("key")
+	environmentID := r.PathValue("environment_id")
+	if environmentID == "" {
+		WriteError(w, InvalidRequest("environment_id is required"))
+		return
+	}
 
 	req, err := utils.Decode[EvalRequest](r)
 	if err != nil {
@@ -109,7 +124,7 @@ func (h *EvalHandler) EvaluateFlag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	trace, err := h.service.EvaluateWithTrace(r.Context(), key, evalcore.DataContext(req.Context))
+	trace, err := h.service.EvaluateWithTrace(r.Context(), environmentID, key, evalcore.DataContext(req.Context))
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -121,6 +136,11 @@ func (h *EvalHandler) EvaluateFlag(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *EvalHandler) EvaluateAll(w http.ResponseWriter, r *http.Request) {
+	environmentID, err := environmentIDFromAPIKey(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
 	req, err := utils.Decode[EvalRequest](r)
 	if err != nil {
 		WriteError(w, InvalidRequest("invalid request body"))
@@ -131,7 +151,7 @@ func (h *EvalHandler) EvaluateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	flags, err := h.service.EvaluateAll(r.Context(), evalcore.DataContext(req.Context))
+	flags, err := h.service.EvaluateAll(r.Context(), environmentID, evalcore.DataContext(req.Context))
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -145,4 +165,12 @@ func (h *EvalHandler) EvaluateAll(w http.ResponseWriter, r *http.Request) {
 	if err := utils.Encode(w, r, http.StatusOK, "success", EvalAllResponse{Flags: out}); err != nil {
 		WriteError(w, err)
 	}
+}
+
+func environmentIDFromAPIKey(r *http.Request) (string, error) {
+	key, ok := apiKeyFromRequest(r)
+	if !ok || key.EnvironmentID == "" {
+		return "", ErrUnauthorized
+	}
+	return key.EnvironmentID, nil
 }

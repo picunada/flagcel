@@ -8,12 +8,14 @@ import (
 )
 
 type FlagsHandler struct {
-	service *service.FlagService
+	service      *service.FlagService
+	environments *service.EnvironmentService
 }
 
-func NewFlagsHandler(service *service.FlagService) *FlagsHandler {
+func NewFlagsHandler(service *service.FlagService, environments *service.EnvironmentService) *FlagsHandler {
 	return &FlagsHandler{
-		service: service,
+		service:      service,
+		environments: environments,
 	}
 }
 
@@ -22,10 +24,19 @@ func (h *FlagsHandler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /flags", h.CreateFlag)
 	mux.HandleFunc("GET /flags/{key}", h.GetFlag)
 	mux.HandleFunc("DELETE /flags/{key}", h.DeleteFlag)
+	mux.HandleFunc("GET /environments/{environment_id}/flags", h.GetFlags)
+	mux.HandleFunc("POST /environments/{environment_id}/flags", h.CreateFlag)
+	mux.HandleFunc("GET /environments/{environment_id}/flags/{key}", h.GetFlag)
+	mux.HandleFunc("DELETE /environments/{environment_id}/flags/{key}", h.DeleteFlag)
 }
 
 func (h *FlagsHandler) GetFlags(w http.ResponseWriter, r *http.Request) {
-	flags, err := h.service.GetFlags(r.Context())
+	environmentID, err := h.environmentID(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
+	flags, err := h.service.GetFlags(r.Context(), environmentID)
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -39,8 +50,13 @@ func (h *FlagsHandler) GetFlags(w http.ResponseWriter, r *http.Request) {
 
 func (h *FlagsHandler) GetFlag(w http.ResponseWriter, r *http.Request) {
 	key := r.PathValue("key")
+	environmentID, err := h.environmentID(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
 
-	flag, err := h.service.GetFlag(r.Context(), key)
+	flag, err := h.service.GetFlag(r.Context(), environmentID, key)
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -53,6 +69,11 @@ func (h *FlagsHandler) GetFlag(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FlagsHandler) CreateFlag(w http.ResponseWriter, r *http.Request) {
+	environmentID, err := h.environmentID(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
 	req, err := utils.Decode[CreateFlagRequest](r)
 	if err != nil {
 		WriteError(w, InvalidRequest("invalid request body"))
@@ -69,12 +90,12 @@ func (h *FlagsHandler) CreateFlag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.CreateFlag(r.Context(), &flag); err != nil {
+	if err := h.service.CreateFlag(r.Context(), environmentID, &flag); err != nil {
 		WriteError(w, err)
 		return
 	}
 
-	saved, err := h.service.GetFlag(r.Context(), flag.Key)
+	saved, err := h.service.GetFlag(r.Context(), environmentID, flag.Key)
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -88,11 +109,27 @@ func (h *FlagsHandler) CreateFlag(w http.ResponseWriter, r *http.Request) {
 
 func (h *FlagsHandler) DeleteFlag(w http.ResponseWriter, r *http.Request) {
 	key := r.PathValue("key")
+	environmentID, err := h.environmentID(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
 
-	if err := h.service.DeleteFlag(r.Context(), key); err != nil {
+	if err := h.service.DeleteFlag(r.Context(), environmentID, key); err != nil {
 		WriteError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *FlagsHandler) environmentID(r *http.Request) (string, error) {
+	if id := r.PathValue("environment_id"); id != "" {
+		return id, nil
+	}
+	env, err := h.environments.Default(r.Context())
+	if err != nil {
+		return "", err
+	}
+	return env.ID, nil
 }

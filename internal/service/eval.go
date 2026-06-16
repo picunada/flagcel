@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -24,25 +25,26 @@ func NewEvalService(store *postgres.Store, eng *evalcore.Engine) *EvalService {
 	s := &EvalService{
 		store: store,
 		cache: &compiledFlagCache{
-			engine: eng,
-			flags:  make(map[string]cachedFlag),
+			engine:    eng,
+			flags:     make(map[string]cachedFlag),
+			allLoaded: make(map[string]bool),
 		},
 	}
 	s.definitionsVersion.Store(uint64(time.Now().UnixNano()))
 	return s
 }
 
-func (s *EvalService) Evaluate(ctx context.Context, key string, user evalcore.DataContext) (core.FlagValue, error) {
-	if compiled, ok := s.cache.Get(key); ok {
+func (s *EvalService) Evaluate(ctx context.Context, environmentID, key string, user evalcore.DataContext) (core.FlagValue, error) {
+	if compiled, ok := s.cache.Get(environmentID, key); ok {
 		return s.cache.Evaluate(compiled, user), nil
 	}
 
-	cfg, err := s.store.GetFlag(ctx, key)
+	cfg, err := s.store.GetFlag(ctx, environmentID, key)
 	if err != nil {
 		return core.FlagValue{}, fmt.Errorf("eval service: get flag %w", err)
 	}
 
-	compiled, err := s.cache.GetOrCompileLazy(*cfg, func() (*core.ContextSchema, error) {
+	compiled, err := s.cache.GetOrCompileLazy(environmentID, *cfg, func() (*core.ContextSchema, error) {
 		return s.contextForFlag(ctx, cfg)
 	})
 	if err != nil {
@@ -52,8 +54,8 @@ func (s *EvalService) Evaluate(ctx context.Context, key string, user evalcore.Da
 	return s.cache.Evaluate(compiled, user), nil
 }
 
-func (s *EvalService) EvaluateWithTrace(ctx context.Context, key string, user evalcore.DataContext) (evalcore.EvaluationTrace, error) {
-	cfg, err := s.store.GetFlag(ctx, key)
+func (s *EvalService) EvaluateWithTrace(ctx context.Context, environmentID, key string, user evalcore.DataContext) (evalcore.EvaluationTrace, error) {
+	cfg, err := s.store.GetFlag(ctx, environmentID, key)
 	if err != nil {
 		return evalcore.EvaluationTrace{}, fmt.Errorf("eval service: get flag %w", err)
 	}
@@ -70,8 +72,8 @@ func (s *EvalService) InvalidateContext(id string) {
 	s.bumpDefinitionsVersion()
 }
 
-func (s *EvalService) InvalidateFlag(key string) {
-	s.cache.InvalidateFlag(key)
+func (s *EvalService) InvalidateFlag(environmentID, key string) {
+	s.cache.InvalidateFlag(environmentID, key)
 	s.bumpDefinitionsVersion()
 }
 
@@ -79,9 +81,9 @@ func (s *EvalService) DefinitionsETag() string {
 	return fmt.Sprintf(`"%d"`, s.definitionsVersion.Load())
 }
 
-func (s *EvalService) Definitions(ctx context.Context) (evalcore.Definitions, string, error) {
+func (s *EvalService) Definitions(ctx context.Context, environmentID string) (evalcore.Definitions, string, error) {
 	etag := s.DefinitionsETag()
-	cfgs, err := s.store.ListFlags(ctx)
+	cfgs, err := s.store.ListFlags(ctx, environmentID)
 	if err != nil {
 		return evalcore.Definitions{}, etag, fmt.Errorf("eval service: list definition flags %w", err)
 	}
@@ -122,8 +124,8 @@ func (s *EvalService) bumpDefinitionsVersion() {
 	s.definitionsVersion.Add(1)
 }
 
-func (s *EvalService) EvaluateAll(ctx context.Context, user evalcore.DataContext) (map[string]core.FlagValue, error) {
-	if flags, ok := s.cache.All(); ok {
+func (s *EvalService) EvaluateAll(ctx context.Context, environmentID string, user evalcore.DataContext) (map[string]core.FlagValue, error) {
+	if flags, ok := s.cache.All(environmentID); ok {
 		out := make(map[string]core.FlagValue, len(flags))
 		for _, flag := range flags {
 			out[flag.Key] = s.cache.Evaluate(flag, user)
@@ -131,7 +133,7 @@ func (s *EvalService) EvaluateAll(ctx context.Context, user evalcore.DataContext
 		return out, nil
 	}
 
-	cfgs, err := s.store.ListFlags(ctx)
+	cfgs, err := s.store.ListFlags(ctx, environmentID)
 	if err != nil {
 		return nil, fmt.Errorf("eval service: list flags %w", err)
 	}
@@ -148,11 +150,11 @@ func (s *EvalService) EvaluateAll(ctx context.Context, user evalcore.DataContext
 		if err != nil {
 			continue
 		}
-		compiledFlags[cfg.Key] = cached
+		compiledFlags[cacheKey(environmentID, cfg.Key)] = cached
 		compiled := cached.flag
 		out[cfg.Key] = s.cache.Evaluate(compiled, user)
 	}
-	s.cache.SetAll(compiledFlags)
+	s.cache.SetAll(environmentID, compiledFlags)
 	return out, nil
 }
 
@@ -188,7 +190,7 @@ type compiledFlagCache struct {
 
 	mu        sync.RWMutex
 	flags     map[string]cachedFlag
-	allLoaded bool
+	allLoaded map[string]bool
 }
 
 type cachedFlag struct {
@@ -198,9 +200,9 @@ type cachedFlag struct {
 	flag          *evalcore.Flag
 }
 
-func (c *compiledFlagCache) Get(key string) (*evalcore.Flag, bool) {
+func (c *compiledFlagCache) Get(environmentID, key string) (*evalcore.Flag, bool) {
 	c.mu.RLock()
-	cached, ok := c.flags[key]
+	cached, ok := c.flags[cacheKey(environmentID, key)]
 	c.mu.RUnlock()
 	if !ok {
 		return nil, false
@@ -208,25 +210,30 @@ func (c *compiledFlagCache) Get(key string) (*evalcore.Flag, bool) {
 	return cached.flag, true
 }
 
-func (c *compiledFlagCache) All() ([]*evalcore.Flag, bool) {
+func (c *compiledFlagCache) All(environmentID string) ([]*evalcore.Flag, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	if !c.allLoaded {
+	if !c.allLoaded[environmentID] {
 		return nil, false
 	}
 	flags := make([]*evalcore.Flag, 0, len(c.flags))
-	for _, cached := range c.flags {
+	prefix := environmentID + "\x00"
+	for key, cached := range c.flags {
+		if !strings.HasPrefix(key, prefix) {
+			continue
+		}
 		flags = append(flags, cached.flag)
 	}
 	return flags, true
 }
 
-func (c *compiledFlagCache) GetOrCompile(cfg core.FlagConfig, schema *core.ContextSchema) (*evalcore.Flag, error) {
+func (c *compiledFlagCache) GetOrCompile(environmentID string, cfg core.FlagConfig, schema *core.ContextSchema) (*evalcore.Flag, error) {
 	cfg = normalizeFlag(cfg)
 	signature := flagSignature(cfg, schema)
+	key := cacheKey(environmentID, cfg.Key)
 
 	c.mu.RLock()
-	cached, ok := c.flags[cfg.Key]
+	cached, ok := c.flags[key]
 	c.mu.RUnlock()
 	if ok && cached.signature == signature {
 		return cached.flag, nil
@@ -238,8 +245,9 @@ func (c *compiledFlagCache) GetOrCompile(cfg core.FlagConfig, schema *core.Conte
 	}
 
 	c.mu.Lock()
-	c.flags[cfg.Key] = cached
-	c.allLoaded = false
+	c.ensureMapsLocked()
+	c.flags[key] = cached
+	c.allLoaded[environmentID] = false
 	c.mu.Unlock()
 
 	return cached.flag, nil
@@ -260,19 +268,29 @@ func (c *compiledFlagCache) Compile(cfg core.FlagConfig, schema *core.ContextSch
 	}, nil
 }
 
-func (c *compiledFlagCache) SetAll(flags map[string]cachedFlag) {
+func (c *compiledFlagCache) SetAll(environmentID string, flags map[string]cachedFlag) {
 	c.mu.Lock()
-	c.flags = flags
-	c.allLoaded = true
+	c.ensureMapsLocked()
+	prefix := environmentID + "\x00"
+	for key := range c.flags {
+		if strings.HasPrefix(key, prefix) {
+			delete(c.flags, key)
+		}
+	}
+	for key, flag := range flags {
+		c.flags[key] = flag
+	}
+	c.allLoaded[environmentID] = true
 	c.mu.Unlock()
 }
 
-func (c *compiledFlagCache) GetOrCompileLazy(cfg core.FlagConfig, loadSchema func() (*core.ContextSchema, error)) (*evalcore.Flag, error) {
+func (c *compiledFlagCache) GetOrCompileLazy(environmentID string, cfg core.FlagConfig, loadSchema func() (*core.ContextSchema, error)) (*evalcore.Flag, error) {
 	cfg = normalizeFlag(cfg)
 	baseSignature := flagBaseSignature(cfg)
+	key := cacheKey(environmentID, cfg.Key)
 
 	c.mu.RLock()
-	cached, ok := c.flags[cfg.Key]
+	cached, ok := c.flags[key]
 	c.mu.RUnlock()
 	if ok && cached.baseSignature == baseSignature {
 		return cached.flag, nil
@@ -282,7 +300,7 @@ func (c *compiledFlagCache) GetOrCompileLazy(cfg core.FlagConfig, loadSchema fun
 	if err != nil {
 		return nil, err
 	}
-	return c.GetOrCompile(cfg, schema)
+	return c.GetOrCompile(environmentID, cfg, schema)
 }
 
 func (c *compiledFlagCache) InvalidateContext(id string) {
@@ -291,20 +309,36 @@ func (c *compiledFlagCache) InvalidateContext(id string) {
 	for key, cached := range c.flags {
 		if cached.contextID == id {
 			delete(c.flags, key)
-			c.allLoaded = false
 		}
+	}
+	if c.allLoaded != nil {
+		clear(c.allLoaded)
 	}
 }
 
-func (c *compiledFlagCache) InvalidateFlag(key string) {
+func (c *compiledFlagCache) InvalidateFlag(environmentID, key string) {
 	c.mu.Lock()
-	delete(c.flags, key)
-	c.allLoaded = false
+	c.ensureMapsLocked()
+	delete(c.flags, cacheKey(environmentID, key))
+	c.allLoaded[environmentID] = false
 	c.mu.Unlock()
 }
 
 func (c *compiledFlagCache) Evaluate(flag *evalcore.Flag, user evalcore.DataContext) core.FlagValue {
 	return c.engine.Evaluate(flag, user)
+}
+
+func cacheKey(environmentID, flagKey string) string {
+	return environmentID + "\x00" + flagKey
+}
+
+func (c *compiledFlagCache) ensureMapsLocked() {
+	if c.flags == nil {
+		c.flags = make(map[string]cachedFlag)
+	}
+	if c.allLoaded == nil {
+		c.allLoaded = make(map[string]bool)
+	}
 }
 
 func flagBaseSignature(cfg core.FlagConfig) uint64 {

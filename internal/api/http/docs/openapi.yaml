@@ -9,6 +9,7 @@ servers:
 
 tags:
   - name: Auth
+  - name: Environments
   - name: Flags
   - name: Rules
   - name: Contexts
@@ -97,8 +98,164 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "500": { $ref: "#/components/responses/InternalError" }
 
-  /flags/{key}/evaluate:
+  /environments:
+    get:
+      tags: [Environments]
+      summary: List environments
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Environments list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentListEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Environments]
+      summary: Create an environment
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEnvironmentRequest"
+      responses:
+        "200":
+          description: Environment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/EnvironmentKeyTaken" }
+        "422": { $ref: "#/components/responses/InvalidRequest" }
+
+  /environments/{environment_id}:
     parameters:
+      - $ref: "#/components/parameters/EnvironmentID"
+    get:
+      tags: [Environments]
+      summary: Get an environment
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Environment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/EnvironmentNotFound" }
+    put:
+      tags: [Environments]
+      summary: Update an environment
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEnvironmentRequest"
+      responses:
+        "200":
+          description: Environment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/EnvironmentNotFound" }
+        "409": { $ref: "#/components/responses/EnvironmentKeyTaken" }
+    delete:
+      tags: [Environments]
+      summary: Delete an environment
+      security:
+        - sessionCookie: []
+      responses:
+        "204":
+          description: Environment deleted
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/EnvironmentNotFound" }
+        "409": { $ref: "#/components/responses/EnvironmentInUse" }
+        "422": { $ref: "#/components/responses/InvalidRequest" }
+
+  /environments/{environment_id}/flags:
+    parameters:
+      - $ref: "#/components/parameters/EnvironmentID"
+    get:
+      tags: [Flags]
+      summary: List flags in an environment
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Flags list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlagListEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/EnvironmentNotFound" }
+    post:
+      tags: [Flags]
+      summary: Create or replace a flag in an environment
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFlagRequest"
+      responses:
+        "200":
+          description: Flag created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlagEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/EnvironmentNotFound" }
+        "422": { $ref: "#/components/responses/InvalidRequest" }
+
+  /environments/{environment_id}/flags/{key}:
+    parameters:
+      - $ref: "#/components/parameters/EnvironmentID"
+      - $ref: "#/components/parameters/FlagKey"
+    get:
+      tags: [Flags]
+      summary: Get a flag by key in an environment
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Flag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlagEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/FlagNotFound" }
+    delete:
+      tags: [Flags]
+      summary: Delete a flag and all of its rules in an environment
+      security:
+        - sessionCookie: []
+      responses:
+        "204":
+          description: Flag deleted
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/FlagNotFound" }
+
+  /environments/{environment_id}/flags/{key}/evaluate:
+    parameters:
+      - $ref: "#/components/parameters/EnvironmentID"
       - $ref: "#/components/parameters/FlagKey"
     post:
       tags: [Flags]
@@ -122,6 +279,118 @@ paths:
         "404": { $ref: "#/components/responses/FlagNotFound" }
         "422": { $ref: "#/components/responses/InvalidRequest" }
         "500": { $ref: "#/components/responses/InternalError" }
+
+  /environments/{environment_id}/flags/{key}/rules:
+    parameters:
+      - $ref: "#/components/parameters/EnvironmentID"
+      - $ref: "#/components/parameters/FlagKey"
+    get:
+      tags: [Rules]
+      summary: List rules for a flag in an environment
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Rules list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleListEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/FlagNotFound" }
+    post:
+      tags: [Rules]
+      summary: Create a rule in an environment
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRuleRequest"
+      responses:
+        "200":
+          description: Rule created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/InvalidRequest" }
+
+  /environments/{environment_id}/flags/{key}/rules/reorder:
+    parameters:
+      - $ref: "#/components/parameters/EnvironmentID"
+      - $ref: "#/components/parameters/FlagKey"
+    post:
+      tags: [Rules]
+      summary: Reorder rules in an environment
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderRulesRequest"
+      responses:
+        "204":
+          description: Rules reordered
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/RuleNotFound" }
+        "422": { $ref: "#/components/responses/InvalidRequest" }
+
+  /environments/{environment_id}/flags/{key}/rules/{id}:
+    parameters:
+      - $ref: "#/components/parameters/EnvironmentID"
+      - $ref: "#/components/parameters/FlagKey"
+      - $ref: "#/components/parameters/RuleID"
+    get:
+      tags: [Rules]
+      summary: Get a rule in an environment
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Rule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/RuleNotFound" }
+    put:
+      tags: [Rules]
+      summary: Update a rule in an environment
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRuleRequest"
+      responses:
+        "200":
+          description: Rule updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/RuleNotFound" }
+        "422": { $ref: "#/components/responses/InvalidRequest" }
+    delete:
+      tags: [Rules]
+      summary: Delete a rule in an environment
+      security:
+        - sessionCookie: []
+      responses:
+        "204":
+          description: Rule deleted
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/RuleNotFound" }
 
   /flags/{key}/rules:
     parameters:
@@ -462,6 +731,13 @@ components:
       scheme: bearer
 
   parameters:
+    EnvironmentID:
+      name: environment_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     FlagKey:
       name: key
       in: path
@@ -534,6 +810,27 @@ components:
           properties:
             data:
               $ref: "#/components/schemas/AuthMe"
+
+    Environment:
+      type: object
+      required: [id, key, name, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        key: { type: string, example: production }
+        name: { type: string, example: Production }
+        description: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        created_by: { type: string, format: uuid, nullable: true }
+        deleted_by: { type: string, format: uuid, nullable: true }
+
+    CreateEnvironmentRequest:
+      type: object
+      required: [key]
+      properties:
+        key: { type: string, example: staging }
+        name: { type: string, example: Staging }
+        description: { type: string }
 
     Rollout:
       type: object
@@ -809,12 +1106,13 @@ components:
 
     APIKey:
       type: object
-      required: [id, name, prefix, created_at, updated_at]
+      required: [id, name, prefix, environment_id, created_at, updated_at]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
         description: { type: string }
         prefix: { type: string, example: fc_vT4... }
+        environment_id: { type: string, format: uuid }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
         last_used_at: { type: string, format: date-time, nullable: true }
@@ -824,10 +1122,11 @@ components:
 
     CreateAPIKeyRequest:
       type: object
-      required: [name]
+      required: [name, environment_id]
       properties:
         name: { type: string }
         description: { type: string }
+        environment_id: { type: string, format: uuid }
 
     CreatedAPIKey:
       allOf:
@@ -855,6 +1154,22 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Flag"
+    EnvironmentEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/Environment"
+    EnvironmentListEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/Environment"
     RuleEnvelope:
       allOf:
         - $ref: "#/components/schemas/SuccessEnvelope"
@@ -941,6 +1256,10 @@ components:
           enum:
             - FLAG_NOT_FOUND
             - RULE_NOT_FOUND
+            - ENVIRONMENT_NOT_FOUND
+            - ENVIRONMENT_KEY_TAKEN
+            - ENVIRONMENT_IN_USE
+            - DEFAULT_ENVIRONMENT
             - CONTEXT_NOT_FOUND
             - CONTEXT_NAME_TAKEN
             - API_KEY_NOT_FOUND
@@ -980,6 +1299,24 @@ components:
             $ref: "#/components/schemas/ErrorEnvelope"
     RuleNotFound:
       description: Rule not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    EnvironmentNotFound:
+      description: Environment not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    EnvironmentKeyTaken:
+      description: Environment key already in use
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    EnvironmentInUse:
+      description: Environment is referenced by flags or API keys
       content:
         application/json:
           schema:

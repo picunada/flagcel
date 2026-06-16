@@ -53,5 +53,5 @@ implementation. Each evaluation sends `POST /eval/{flagKey}` to the configured
 API endpoint with a JSON body containing `{ "context": ... }`.
 
 Each request sends `Authorization: Bearer <apiKey>` when an API key is
-configured. HTTP and network failures return the OpenFeature default value with
-an error resolution.
+configured. The API key selects the evaluation environment. HTTP and network
+failures return the OpenFeature default value with an error resolution.

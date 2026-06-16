@@ -29,6 +29,26 @@ var (
 		Code:    "RULE_NOT_FOUND",
 		Message: "Rule not found",
 	}
+	ErrEnvironmentNotFound = &APIError{
+		Status:  http.StatusNotFound,
+		Code:    "ENVIRONMENT_NOT_FOUND",
+		Message: "Environment not found",
+	}
+	ErrEnvironmentKeyTaken = &APIError{
+		Status:  http.StatusConflict,
+		Code:    "ENVIRONMENT_KEY_TAKEN",
+		Message: "Environment key already in use",
+	}
+	ErrEnvironmentInUse = &APIError{
+		Status:  http.StatusConflict,
+		Code:    "ENVIRONMENT_IN_USE",
+		Message: "Environment is in use",
+	}
+	ErrDefaultEnvironment = &APIError{
+		Status:  http.StatusUnprocessableEntity,
+		Code:    "DEFAULT_ENVIRONMENT",
+		Message: "Default environment cannot be deleted",
+	}
 	ErrContextNotFound = &APIError{
 		Status:  http.StatusNotFound,
 		Code:    "CONTEXT_NOT_FOUND",
@@ -122,6 +142,14 @@ func toAPIError(err error) *APIError {
 		return ErrFlagNotFound
 	case errors.Is(err, core.ErrRuleNotFound):
 		return ErrRuleNotFound
+	case errors.Is(err, core.ErrEnvironmentNotFound):
+		return ErrEnvironmentNotFound
+	case errors.Is(err, core.ErrEnvironmentKeyTaken):
+		return ErrEnvironmentKeyTaken
+	case errors.Is(err, core.ErrEnvironmentInUse):
+		return ErrEnvironmentInUse
+	case errors.Is(err, core.ErrDefaultEnvironment):
+		return ErrDefaultEnvironment
 	case errors.Is(err, core.ErrContextNotFound):
 		return ErrContextNotFound
 	case errors.Is(err, core.ErrContextNameTaken):

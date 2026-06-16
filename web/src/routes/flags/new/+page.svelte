@@ -1,13 +1,18 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { api, APIError, type FlagValue, type ValueType } from '$lib/api';
+	import { api, APIError, type Environment, type FlagValue, type ValueType } from '$lib/api';
 	import Button from '$lib/components/ui/button.svelte';
 	import Card from '$lib/components/ui/card.svelte';
 	import Input from '$lib/components/ui/input.svelte';
+	import ThemedSelect from '$lib/components/ui/themed-select.svelte';
 	import BoolToggle from '$lib/components/ui/bool-toggle.svelte';
 	import ContextPicker from '$lib/components/context-picker.svelte';
 	import ValueEditor from '$lib/components/value-editor.svelte';
 	import { defaultValueForType } from '$lib/values';
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
+	const selectedEnvironment = $derived<Environment>(data.selectedEnvironment);
 
 	let key = $state('');
 	let type = $state<ValueType>('boolean');
@@ -17,13 +22,19 @@
 	let contextId = $state<string | null>(null);
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
+	const typeOptions = [
+		{ value: 'boolean', label: 'boolean' },
+		{ value: 'string', label: 'string' },
+		{ value: 'number', label: 'number' },
+		{ value: 'json', label: 'json' }
+	];
 
 	async function submit(e: SubmitEvent) {
 		e.preventDefault();
 		submitting = true;
 		error = null;
 		try {
-			const flag = await api.createFlag({
+			const flag = await api.createFlag(selectedEnvironment.id, {
 				key,
 				type,
 				enabled,
@@ -31,7 +42,7 @@
 				rules: [],
 				context_id: contextId
 			});
-			await goto(`/flags/${encodeURIComponent(flag.key)}`);
+			await goto(`/flags/${encodeURIComponent(flag.key)}?environment=${encodeURIComponent(selectedEnvironment.id)}`);
 		} catch (e) {
 			error = e instanceof APIError ? e.message : 'Failed to create flag';
 		} finally {
@@ -44,11 +55,12 @@
 		defaultValue = defaultValueForType(next);
 		defaultValid = true;
 	}
+
 </script>
 
 <div class="space-y-10">
 	<a
-		href="/"
+		href="/?environment={encodeURIComponent(selectedEnvironment.id)}"
 		class="inline-flex items-center gap-1.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
 	>
 		← all flags
@@ -108,17 +120,7 @@
 				>
 					type
 				</label>
-				<select
-					id="type"
-					value={type}
-					onchange={(e) => setType(e.currentTarget.value as ValueType)}
-					class="h-9 w-full rounded-sm border border-input bg-transparent px-2.5 text-sm text-foreground outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring [&>option]:bg-background"
-				>
-					<option value="boolean">boolean</option>
-					<option value="string">string</option>
-					<option value="number">number</option>
-					<option value="json">json</option>
-				</select>
+				<ThemedSelect value={type} options={typeOptions} onchange={(v) => setType(v as ValueType)} buttonClass="text-sm" />
 			</div>
 
 			<div class="space-y-5 border-t border-border/60 pt-6">
@@ -157,7 +159,7 @@
 			{/if}
 
 			<div class="flex justify-end gap-2 border-t border-border/60 pt-6">
-				<Button variant="ghost" href="/">cancel</Button>
+				<Button variant="ghost" href="/?environment={encodeURIComponent(selectedEnvironment.id)}">cancel</Button>
 				<Button variant="solid" type="submit" disabled={submitting || !key || !defaultValid}>
 					{submitting ? 'creating…' : 'create flag'}
 				</Button>

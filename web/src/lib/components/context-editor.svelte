@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import Button from '$lib/components/ui/button.svelte';
 	import Input from '$lib/components/ui/input.svelte';
+	import ThemedSelect from '$lib/components/ui/themed-select.svelte';
 	import { cn } from '$lib/utils';
 	import type {
 		ContextField,
@@ -40,6 +41,7 @@
 		'list',
 		'map'
 	];
+	const typeOptions = types.map((type) => ({ value: type, label: type }));
 
 	let name = $state(untrack(() => schema?.name ?? ''));
 	let description = $state(untrack(() => schema?.description ?? ''));
@@ -125,14 +127,14 @@
 						placeholder="user.country"
 						class="flex-1 font-mono"
 					/>
-					<select
-						bind:value={fields[i].type}
-						class="h-9 rounded-sm border border-input bg-transparent px-2 font-mono text-xs uppercase tracking-[0.1em] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:border-[rgba(255,255,255,0.36)] focus-visible:bg-[rgba(255,255,255,0.025)]"
-					>
-						{#each types as t (t)}
-							<option value={t}>{t}</option>
-						{/each}
-					</select>
+					<ThemedSelect
+						value={fields[i].type}
+						options={typeOptions}
+						onchange={(v) => (fields[i].type = v as ContextType)}
+						class="w-32"
+						buttonClass="font-mono uppercase tracking-[0.1em]"
+						mono
+					/>
 					<Button
 						size="icon"
 						variant="ghost"

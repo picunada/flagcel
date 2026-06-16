@@ -1,26 +1,59 @@
--- name: GetFlag :one
-SELECT key, value_type, enabled, default_value, context_id, description, created_at, updated_at, created_by, deleted_by
-FROM flags
+-- name: ListEnvironments :many
+SELECT id, key, name, description, created_at, updated_at, created_by, deleted_by
+FROM environments
+ORDER BY key;
+
+-- name: GetEnvironment :one
+SELECT id, key, name, description, created_at, updated_at, created_by, deleted_by
+FROM environments
+WHERE id = $1;
+
+-- name: GetEnvironmentByKey :one
+SELECT id, key, name, description, created_at, updated_at, created_by, deleted_by
+FROM environments
 WHERE key = $1;
 
--- name: ListFlags :many
-SELECT key, value_type, enabled, default_value, context_id, description, created_at, updated_at, created_by, deleted_by
+-- name: InsertEnvironment :exec
+INSERT INTO environments (id, key, name, description)
+VALUES ($1, $2, $3, $4);
+
+-- name: UpdateEnvironment :execrows
+UPDATE environments
+SET key = $2,
+    name = $3,
+    description = $4,
+    updated_at = NOW()
+WHERE id = $1;
+
+-- name: DeleteEnvironment :execrows
+DELETE FROM environments
+WHERE id = $1;
+
+-- name: GetFlag :one
+SELECT environment_id, key, value_type, enabled, default_value, context_id, description, created_at, updated_at, created_by, deleted_by
 FROM flags
+WHERE environment_id = $1 AND key = $2;
+
+-- name: ListFlags :many
+SELECT environment_id, key, value_type, enabled, default_value, context_id, description, created_at, updated_at, created_by, deleted_by
+FROM flags
+WHERE environment_id = $1
 ORDER BY key;
 
 -- name: ListRulesForFlag :many
 SELECT * FROM rules
-WHERE flag_key = $1
+WHERE environment_id = $1 AND flag_key = $2
 ORDER BY position;
 
 -- name: ListAllRules :many
 SELECT * FROM rules
+WHERE environment_id = $1
 ORDER BY flag_key, position;
 
 -- name: UpsertFlag :exec
-INSERT INTO flags (key, value_type, enabled, default_value, context_id, description, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, NOW())
-ON CONFLICT (key) DO UPDATE SET
+INSERT INTO flags (environment_id, key, value_type, enabled, default_value, context_id, description, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+ON CONFLICT (environment_id, key) DO UPDATE SET
     value_type    = EXCLUDED.value_type,
     enabled       = EXCLUDED.enabled,
     default_value = EXCLUDED.default_value,
@@ -29,51 +62,51 @@ ON CONFLICT (key) DO UPDATE SET
     updated_at    = NOW();
 
 -- name: DeleteRulesForFlag :exec
-DELETE FROM rules WHERE flag_key = $1;
+DELETE FROM rules WHERE environment_id = $1 AND flag_key = $2;
 
 -- name: InsertRule :exec
-INSERT INTO rules (id, flag_key, expression, rollout_percentage, rollout_bucket_by, position, value, description)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+INSERT INTO rules (id, environment_id, flag_key, expression, rollout_percentage, rollout_bucket_by, position, value, description)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
 
 -- name: DeleteFlag :exec
-DELETE FROM flags WHERE key = $1;
+DELETE FROM flags WHERE environment_id = $1 AND key = $2;
 
 -- name: TouchFlag :execrows
 UPDATE flags
 SET updated_at = NOW()
-WHERE key = $1;
+WHERE environment_id = $1 AND key = $2;
 
 -- name: GetRule :one
 SELECT * FROM rules
-WHERE flag_key = $1 AND id = $2;
+WHERE environment_id = $1 AND flag_key = $2 AND id = $3;
 
 -- name: InsertRuleAtEnd :exec
-INSERT INTO rules (id, flag_key, expression, rollout_percentage, rollout_bucket_by, position, value, description)
+INSERT INTO rules (id, environment_id, flag_key, expression, rollout_percentage, rollout_bucket_by, position, value, description)
 VALUES (
-    $1, $2, $3, $4, $5,
-    COALESCE((SELECT MAX(position) + 1 FROM rules WHERE flag_key = $2), 0),
-    $6, $7
+    $1, $2, $3, $4, $5, $6,
+    COALESCE((SELECT MAX(position) + 1 FROM rules WHERE environment_id = $2 AND flag_key = $3), 0),
+    $7, $8
 );
 
 -- name: UpdateRule :execrows
 UPDATE rules
-SET expression         = $3,
-    rollout_percentage = $4,
-    rollout_bucket_by  = $5,
-    value              = $6,
-    description        = $7,
+SET expression         = $4,
+    rollout_percentage = $5,
+    rollout_bucket_by  = $6,
+    value              = $7,
+    description        = $8,
     updated_at         = NOW()
-WHERE flag_key = $1 AND id = $2;
+WHERE environment_id = $1 AND flag_key = $2 AND id = $3;
 
 -- name: DeleteRule :execrows
 DELETE FROM rules
-WHERE flag_key = $1 AND id = $2;
+WHERE environment_id = $1 AND flag_key = $2 AND id = $3;
 
 -- name: SetRulePosition :execrows
 UPDATE rules
-SET position = $3,
+SET position = $4,
     updated_at = NOW()
-WHERE flag_key = $1 AND id = $2;
+WHERE environment_id = $1 AND flag_key = $2 AND id = $3;
 
 -- name: ListContexts :many
 SELECT id, name, description, fields, created_at, updated_at, created_by, deleted_by
@@ -144,17 +177,17 @@ DELETE FROM sessions WHERE token_hash = $1;
 DELETE FROM sessions WHERE expires_at <= NOW();
 
 -- name: CreateAPIKey :one
-INSERT INTO api_keys (id, name, description, prefix, secret_hash)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, name, description, prefix, created_at, updated_at, last_used_at, revoked_at, created_by, deleted_by;
+INSERT INTO api_keys (id, name, description, prefix, secret_hash, environment_id)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, name, description, prefix, environment_id, created_at, updated_at, last_used_at, revoked_at, created_by, deleted_by;
 
 -- name: ListAPIKeys :many
-SELECT id, name, description, prefix, created_at, updated_at, last_used_at, revoked_at, created_by, deleted_by
+SELECT id, name, description, prefix, environment_id, created_at, updated_at, last_used_at, revoked_at, created_by, deleted_by
 FROM api_keys
 ORDER BY created_at DESC;
 
 -- name: GetActiveAPIKeyByHash :one
-SELECT id, name, description, prefix, created_at, updated_at, last_used_at, revoked_at, created_by, deleted_by
+SELECT id, name, description, prefix, environment_id, created_at, updated_at, last_used_at, revoked_at, created_by, deleted_by
 FROM api_keys
 WHERE secret_hash = $1
   AND revoked_at IS NULL;

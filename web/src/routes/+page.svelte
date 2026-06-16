@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { APIError, type ContextSchema, type Flag } from '$lib/api';
+	import { APIError, type ContextSchema, type Environment, type Flag } from '$lib/api';
 	import Badge from '$lib/components/ui/badge.svelte';
 	import Button from '$lib/components/ui/button.svelte';
 	import Card from '$lib/components/ui/card.svelte';
 	import Input from '$lib/components/ui/input.svelte';
+	import ThemedSelect from '$lib/components/ui/themed-select.svelte';
 	import { cn } from '$lib/utils';
 	import { formatFlagValue, valueBadgeVariant } from '$lib/values';
 	import { LayoutGrid, ListFilter, Plus, Search, TableProperties } from 'lucide-svelte';
@@ -14,11 +15,29 @@
 	type SortKey = 'recent' | 'rules' | 'default' | 'status' | 'key' | 'context';
 	type ViewMode = 'table' | 'cards';
 
+	const contextFilterBaseOptions = [
+		{ value: 'all', label: 'all contexts' },
+		{ value: 'none', label: 'no context' }
+	];
+	const sortOptions = [
+		{ value: 'recent', label: 'recently changed' },
+		{ value: 'rules', label: 'rule count' },
+		{ value: 'default', label: 'default value' },
+		{ value: 'status', label: 'status' },
+		{ value: 'context', label: 'context' },
+		{ value: 'key', label: 'key' }
+	];
+
 	let { data }: PageProps = $props();
 
 	const flags = $derived<Flag[]>(data.flags);
+	const selectedEnvironment = $derived<Environment | undefined>(data.selectedEnvironment);
 	const contexts = $derived<ContextSchema[]>(data.contexts);
 	const contextById = $derived.by(() => new Map(contexts.map((ctx) => [ctx.id, ctx])));
+	const contextFilterOptions = $derived([
+		...contextFilterBaseOptions,
+		...contexts.map((ctx) => ({ value: ctx.id, label: ctx.name }))
+	]);
 
 	let error = $state<string | null>(null);
 	let query = $state('');
@@ -92,6 +111,16 @@
 		query = '';
 		statusFilter = 'all';
 		contextFilter = 'all';
+	}
+
+	function flagHref(key: string) {
+		const query = selectedEnvironment ? `?environment=${encodeURIComponent(selectedEnvironment.id)}` : '';
+		return `/flags/${encodeURIComponent(key)}${query}`;
+	}
+
+	function newFlagHref() {
+		const query = selectedEnvironment ? `?environment=${encodeURIComponent(selectedEnvironment.id)}` : '';
+		return `/flags/new${query}`;
 	}
 
 	async function refresh() {
@@ -174,32 +203,18 @@
 
 					<label class="block">
 						<span class="sr-only">Context filter</span>
-						<select
-							bind:value={contextFilter}
-							class="h-9 w-full rounded-sm border border-input bg-transparent px-2.5 text-xs text-foreground outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring [&>option]:bg-background"
-						>
-							<option value="all">all contexts</option>
-							<option value="none">no context</option>
-							{#each contexts as ctx (ctx.id)}
-								<option value={ctx.id}>{ctx.name}</option>
-							{/each}
-						</select>
+						<ThemedSelect value={contextFilter} options={contextFilterOptions} onchange={(v) => (contextFilter = v)} />
 					</label>
 
 					<label class="relative block">
 						<span class="sr-only">Sort flags</span>
 						<ListFilter class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-						<select
-							bind:value={sortKey}
-							class="h-9 w-full rounded-sm border border-input bg-transparent pl-8 pr-7 text-xs text-foreground outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring [&>option]:bg-background"
-						>
-							<option value="recent">recently changed</option>
-							<option value="rules">rule count</option>
-							<option value="default">default value</option>
-							<option value="status">status</option>
-							<option value="context">context</option>
-							<option value="key">key</option>
-						</select>
+						<ThemedSelect
+							value={sortKey}
+							options={sortOptions}
+							onchange={(v) => (sortKey = v as SortKey)}
+							buttonClass="pl-8 pr-2.5"
+						/>
 					</label>
 				</div>
 
@@ -240,7 +255,7 @@
 								<LayoutGrid class="h-3.5 w-3.5" />
 							</button>
 						</div>
-						<Button href="/flags/new" size="default" class="h-9">
+						<Button href={newFlagHref()} size="default" class="h-9">
 							<Plus class="h-3.5 w-3.5" /> new flag
 						</Button>
 					</div>
@@ -259,7 +274,7 @@
 				<p class="max-w-sm text-sm text-[rgba(255,255,255,0.7)]">
 					Create your first flag to start routing evaluations.
 				</p>
-				<Button href="/flags/new" class="mt-2">
+				<Button href={newFlagHref()} class="mt-2">
 					<Plus class="h-3.5 w-3.5" /> new flag
 				</Button>
 			</div>
@@ -276,7 +291,7 @@
 		{:else if viewMode === 'cards'}
 			<div class="motion-list grid gap-3 p-3 sm:grid-cols-2">
 				{#each filtered as flag (flag.key)}
-					<a href="/flags/{encodeURIComponent(flag.key)}" class="group block">
+					<a href={flagHref(flag.key)} class="group block">
 						<Card hoverable class="flex h-full flex-col gap-4 p-5">
 							<div class="flex items-start justify-between gap-3">
 								<div class="min-w-0 flex-1">
@@ -348,7 +363,7 @@
 							<tr class="group transition-colors hover:bg-[rgba(255,255,255,0.035)]">
 								<td class="px-3 py-2 align-middle">
 									<a
-										href="/flags/{encodeURIComponent(flag.key)}"
+										href={flagHref(flag.key)}
 										class="block max-w-[20rem] truncate text-sm text-foreground underline-offset-4 hover:underline"
 									>
 										{flag.key}
@@ -376,7 +391,7 @@
 									{formatUpdated(flag.updated_at)}
 								</td>
 								<td class="px-3 py-2 text-right align-middle">
-									<Button href="/flags/{encodeURIComponent(flag.key)}" variant="ghost" size="sm">
+									<Button href={flagHref(flag.key)} variant="ghost" size="sm">
 										open
 									</Button>
 								</td>

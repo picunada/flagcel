@@ -7,6 +7,8 @@ import (
 	"github.com/picunada/flagcel/internal/core"
 )
 
+const testEnvironmentID = "env-test"
+
 func TestCompiledFlagCacheGetOrCompileReusesUnchangedFlag(t *testing.T) {
 	eng := newTestEngine(t)
 	cache := &compiledFlagCache{
@@ -27,12 +29,12 @@ func TestCompiledFlagCacheGetOrCompileReusesUnchangedFlag(t *testing.T) {
 		},
 	}
 
-	first, err := cache.GetOrCompile(cfg, userContextSchema())
+	first, err := cache.GetOrCompile(testEnvironmentID, cfg, userContextSchema())
 	if err != nil {
 		t.Fatalf("first compile: %v", err)
 	}
 
-	second, err := cache.GetOrCompile(cfg, userContextSchema())
+	second, err := cache.GetOrCompile(testEnvironmentID, cfg, userContextSchema())
 	if err != nil {
 		t.Fatalf("second compile: %v", err)
 	}
@@ -55,13 +57,13 @@ func TestCompiledFlagCacheGetOrCompileRecompilesChangedFlag(t *testing.T) {
 		DefaultValue: false,
 	}
 
-	first, err := cache.GetOrCompile(cfg, nil)
+	first, err := cache.GetOrCompile(testEnvironmentID, cfg, nil)
 	if err != nil {
 		t.Fatalf("first compile: %v", err)
 	}
 
 	cfg.DefaultValue = true
-	second, err := cache.GetOrCompile(cfg, nil)
+	second, err := cache.GetOrCompile(testEnvironmentID, cfg, nil)
 	if err != nil {
 		t.Fatalf("second compile: %v", err)
 	}
@@ -93,13 +95,13 @@ func TestCompiledFlagCacheGetOrCompileRecompilesChangedTypedValue(t *testing.T) 
 		},
 	}
 
-	first, err := cache.GetOrCompile(cfg, userContextSchema())
+	first, err := cache.GetOrCompile(testEnvironmentID, cfg, userContextSchema())
 	if err != nil {
 		t.Fatalf("first compile: %v", err)
 	}
 
 	cfg.Rules[0].Value = "variant-b"
-	second, err := cache.GetOrCompile(cfg, userContextSchema())
+	second, err := cache.GetOrCompile(testEnvironmentID, cfg, userContextSchema())
 	if err != nil {
 		t.Fatalf("second compile: %v", err)
 	}
@@ -111,7 +113,7 @@ func TestCompiledFlagCacheGetOrCompileRecompilesChangedTypedValue(t *testing.T) 
 	cfg.Type = core.ValueTypeJSON
 	cfg.DefaultValue = map[string]any{"name": "control"}
 	cfg.Rules[0].Value = map[string]any{"name": "variant"}
-	second, err = cache.GetOrCompile(cfg, userContextSchema())
+	second, err = cache.GetOrCompile(testEnvironmentID, cfg, userContextSchema())
 	if err != nil {
 		t.Fatalf("third compile: %v", err)
 	}
@@ -149,7 +151,7 @@ func TestCompiledFlagCacheGetOrCompileRecompilesChangedContext(t *testing.T) {
 		},
 	}
 
-	first, err := cache.GetOrCompile(cfg, schema)
+	first, err := cache.GetOrCompile(testEnvironmentID, cfg, schema)
 	if err != nil {
 		t.Fatalf("first compile: %v", err)
 	}
@@ -158,7 +160,7 @@ func TestCompiledFlagCacheGetOrCompileRecompilesChangedContext(t *testing.T) {
 		Path: "request.method",
 		Type: core.ContextTypeString,
 	})
-	second, err := cache.GetOrCompile(cfg, schema)
+	second, err := cache.GetOrCompile(testEnvironmentID, cfg, schema)
 	if err != nil {
 		t.Fatalf("second compile: %v", err)
 	}
@@ -176,11 +178,11 @@ func TestCompiledFlagCacheGetOrCompileLazyDoesNotLoadContextOnHit(t *testing.T) 
 	}
 
 	cfg := userFlagConfig()
-	if _, err := cache.GetOrCompile(cfg, userContextSchema()); err != nil {
+	if _, err := cache.GetOrCompile(testEnvironmentID, cfg, userContextSchema()); err != nil {
 		t.Fatalf("first compile: %v", err)
 	}
 
-	_, err := cache.GetOrCompileLazy(cfg, func() (*core.ContextSchema, error) {
+	_, err := cache.GetOrCompileLazy(testEnvironmentID, cfg, func() (*core.ContextSchema, error) {
 		t.Fatal("schema loader should not run on cache hit")
 		return nil, nil
 	})
@@ -197,14 +199,14 @@ func TestCompiledFlagCacheInvalidateContext(t *testing.T) {
 	}
 
 	cfg := userFlagConfig()
-	first, err := cache.GetOrCompile(cfg, userContextSchema())
+	first, err := cache.GetOrCompile(testEnvironmentID, cfg, userContextSchema())
 	if err != nil {
 		t.Fatalf("first compile: %v", err)
 	}
 
 	cache.InvalidateContext("context-user")
 
-	second, err := cache.GetOrCompileLazy(cfg, func() (*core.ContextSchema, error) {
+	second, err := cache.GetOrCompileLazy(testEnvironmentID, cfg, func() (*core.ContextSchema, error) {
 		return userContextSchema(), nil
 	})
 	if err != nil {
@@ -219,7 +221,7 @@ func TestEvalServiceDefinitionsETagBumpsOnInvalidation(t *testing.T) {
 	svc := NewEvalService(nil, newTestEngine(t))
 
 	first := svc.DefinitionsETag()
-	svc.InvalidateFlag("feature-a")
+	svc.InvalidateFlag(testEnvironmentID, "feature-a")
 	second := svc.DefinitionsETag()
 	if second == first {
 		t.Fatal("expected flag invalidation to bump definitions ETag")

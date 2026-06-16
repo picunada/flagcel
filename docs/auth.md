@@ -10,7 +10,7 @@ When OIDC is not configured, Flagcel uses local email/password auth. On startup 
 
 ## Evaluation API Keys
 
-Evaluation clients should use bearer API keys created from the dashboard's `keys` page:
+Evaluation clients should use bearer API keys created from the dashboard's `keys` page. Each key is scoped to one environment, and that key selects the environment for `/eval` requests:
 
 ```sh
 curl -X POST http://localhost:8080/api/v1/eval/new-checkout \

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Check, Copy, KeyRound, Plus, Trash2 } from "lucide-svelte";
-    import { api, APIError, type APIKey, type CreateAPIKeyResponse } from "$lib/api";
+    import { api, APIError, type APIKey, type CreateAPIKeyResponse, type Environment } from "$lib/api";
     import { invalidateAll } from "$app/navigation";
     import Badge from "$lib/components/ui/badge.svelte";
     import Button from "$lib/components/ui/button.svelte";
@@ -12,6 +12,9 @@
 
     let { data }: PageProps = $props();
     const keys = $derived<APIKey[]>(data.keys);
+    const environments = $derived<Environment[]>(data.environments);
+    const selectedEnvironment = $derived<Environment>(data.selectedEnvironment);
+    const environmentById = $derived.by(() => new Map(environments.map((env) => [env.id, env])));
 
     let name = $state("");
     let creating = $state(false);
@@ -29,7 +32,7 @@
         error = null;
         created = null;
         try {
-            created = await api.createAPIKey(name);
+            created = await api.createAPIKey(name, selectedEnvironment.id);
             name = "";
             await invalidateAll();
         } catch (e) {
@@ -73,6 +76,7 @@
         if (!value) return "never";
         return new Date(value).toLocaleString();
     }
+
 </script>
 
 <section class="space-y-10">
@@ -87,7 +91,7 @@
 
     <Card class="motion-panel space-y-4 p-5">
         <SectionHeader>new key</SectionHeader>
-        <div class="flex flex-col gap-2 sm:flex-row">
+        <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
             <Input bind:value={name} placeholder="key name" onkeydown={(e) => e.key === "Enter" && createKey()} />
             <Button onclick={createKey} disabled={creating || !name.trim()}>
                 <Plus class="h-3.5 w-3.5" /> create
@@ -144,7 +148,7 @@
                                 {/if}
                             </div>
                             <p class="text-xs text-muted-foreground">
-                                <span class="font-mono">{key.prefix}</span> · created {formatDate(key.created_at)} · last used
+                                <span class="font-mono">{key.prefix}</span> · {environmentById.get(key.environment_id)?.name ?? 'missing environment'} · created {formatDate(key.created_at)} · last used
                                 {formatDate(key.last_used_at)}
                             </p>
                         </div>

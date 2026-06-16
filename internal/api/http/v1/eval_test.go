@@ -1,10 +1,12 @@
 package v1
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/picunada/flagcel/internal/core"
 	"github.com/picunada/flagcel/internal/service"
 )
 
@@ -13,6 +15,9 @@ func TestGetDefinitionsHonorsIfNoneMatch(t *testing.T) {
 	handler := NewEvalHandler(svc)
 
 	req := httptest.NewRequest(http.MethodGet, "/eval/definitions", nil)
+	req = req.WithContext(context.WithValue(req.Context(), apiKeyContextKey{}, &core.APIKey{
+		EnvironmentID: "env-test",
+	}))
 	req.Header.Set("If-None-Match", svc.DefinitionsETag())
 	rec := httptest.NewRecorder()
 

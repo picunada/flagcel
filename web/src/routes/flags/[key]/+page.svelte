@@ -30,6 +30,7 @@
 	let { data }: PageProps = $props();
 
 	let flag = $state<Flag>(untrack(() => data.flag));
+	let selectedEnvironment = $state(untrack(() => data.selectedEnvironment));
 	let context = $state<ContextSchema | null>(untrack(() => data.context));
 	let error = $state<string | null>(null);
 	let saving = $state(false);
@@ -57,6 +58,7 @@
 
 	$effect(() => {
 		flag = data.flag;
+		selectedEnvironment = data.selectedEnvironment;
 		context = data.context;
 		if (!playgroundDirty) {
 			playgroundContext = sampleContext(data.context);
@@ -85,7 +87,7 @@
 		saving = true;
 		error = null;
 		try {
-			await api.createFlag({
+			await api.createFlag(selectedEnvironment.id, {
 				key: flag.key,
 				type: flag.type,
 				enabled: flag.enabled,
@@ -112,8 +114,8 @@
 		deleteFlagSubmitting = true;
 		deleteFlagError = null;
 		try {
-			await api.deleteFlag(flag.key);
-			await goto('/');
+			await api.deleteFlag(selectedEnvironment.id, flag.key);
+			await goto(`/?environment=${encodeURIComponent(selectedEnvironment.id)}`);
 		} catch (e) {
 			deleteFlagError = e instanceof APIError ? e.message : 'Failed to delete flag';
 		} finally {
@@ -125,7 +127,7 @@
 		ruleSubmitting = true;
 		createError = null;
 		try {
-			const rule = await api.createRule(flag.key, form);
+			const rule = await api.createRule(selectedEnvironment.id, flag.key, form);
 			flag = { ...flag, rules: [...flag.rules, rule] };
 			creating = false;
 		} catch (e) {
@@ -139,7 +141,7 @@
 		ruleSubmitting = true;
 		editError = null;
 		try {
-			const updated = await api.updateRule(flag.key, id, form);
+			const updated = await api.updateRule(selectedEnvironment.id, flag.key, id, form);
 			flag = {
 				...flag,
 				rules: flag.rules.map((r) => (r.id === id ? updated : r))
@@ -175,7 +177,7 @@
 		deleteRuleError = null;
 		flag = { ...flag, rules: prev.filter((r) => r.id !== rule.id) };
 		try {
-			await api.deleteRule(flag.key, rule.id);
+			await api.deleteRule(selectedEnvironment.id, flag.key, rule.id);
 			deleteRuleOpen = false;
 			deleteRuleTarget = null;
 		} catch (e) {
@@ -196,6 +198,7 @@
 		flag = { ...flag, rules: next };
 		try {
 			await api.reorderRules(
+				selectedEnvironment.id,
 				flag.key,
 				next.map((r) => r.id)
 			);
@@ -294,7 +297,7 @@
 
 		playgroundRunning = true;
 		try {
-			playgroundResult = await api.evaluateFlag(flag.key, parsed as Record<string, unknown>);
+			playgroundResult = await api.evaluateFlag(selectedEnvironment.id, flag.key, parsed as Record<string, unknown>);
 		} catch (e) {
 			playgroundError = e instanceof APIError ? e.message : 'Failed to evaluate flag';
 		} finally {
@@ -312,11 +315,12 @@
 	async function updateDefaultValue(value: FlagValue) {
 		await patch({ default_value: value });
 	}
+
 </script>
 
 <div class="space-y-10">
 	<a
-		href="/"
+		href="/?environment={encodeURIComponent(selectedEnvironment.id)}"
 		class="inline-flex items-center gap-1.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
 	>
 		← all flags

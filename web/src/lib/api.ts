@@ -32,6 +32,23 @@ export type Flag = {
     deleted_by?: string | null;
 };
 
+export type Environment = {
+    id: string;
+    key: string;
+    name: string;
+    description?: string;
+    created_at: string;
+    updated_at: string;
+    created_by?: string | null;
+    deleted_by?: string | null;
+};
+
+export type CreateEnvironmentRequest = {
+    key: string;
+    name?: string;
+    description?: string;
+};
+
 export type CreateFlagRequest = {
     key: string;
     description?: string;
@@ -125,6 +142,10 @@ export type UpdateContextRequest = CreateContextRequest;
 export type APIErrorCode =
     | "FLAG_NOT_FOUND"
     | "RULE_NOT_FOUND"
+    | "ENVIRONMENT_NOT_FOUND"
+    | "ENVIRONMENT_KEY_TAKEN"
+    | "ENVIRONMENT_IN_USE"
+    | "DEFAULT_ENVIRONMENT"
     | "CONTEXT_NOT_FOUND"
     | "CONTEXT_NAME_TAKEN"
     | "API_KEY_NOT_FOUND"
@@ -175,6 +196,7 @@ export type APIKey = {
     name: string;
     description?: string;
     prefix: string;
+    environment_id: string;
     created_at: string;
     updated_at: string;
     last_used_at?: string;
@@ -186,6 +208,7 @@ export type APIKey = {
 export type CreateAPIKeyRequest = {
     name: string;
     description?: string;
+    environment_id: string;
 };
 
 export type CreateAPIKeyResponse = APIKey & {
@@ -271,6 +294,9 @@ export function createApi(fetchFn: Fetch = fetch) {
         return (body as Envelope<T>).data;
     }
 
+    const environmentPath = (environmentId: string, path: string) =>
+        `/environments/${encodeURIComponent(environmentId)}${path}`;
+
     return {
         me: () => request<AuthMe>("/auth/me"),
         passwordLogin: async (email: string, password: string) => {
@@ -298,39 +324,61 @@ export function createApi(fetchFn: Fetch = fetch) {
         },
         logout: () => request<void>("/auth/logout", { method: "POST" }),
 
-        listFlags: () => request<Flag[]>("/flags"),
-        getFlag: (key: string) =>
-            request<Flag>(`/flags/${encodeURIComponent(key)}`),
-        createFlag: (body: CreateFlagRequest) =>
-            request<Flag>("/flags", { method: "POST", body: JSON.stringify(body) }),
-        deleteFlag: (key: string) =>
-            request<void>(`/flags/${encodeURIComponent(key)}`, {
-                method: "DELETE",
-            }),
-
-        listRules: (key: string) =>
-            request<Rule[]>(`/flags/${encodeURIComponent(key)}/rules`),
-        createRule: (key: string, body: CreateRuleRequest) =>
-            request<Rule>(`/flags/${encodeURIComponent(key)}/rules`, {
+        listEnvironments: () => request<Environment[]>("/environments"),
+        getEnvironment: (id: string) =>
+            request<Environment>(`/environments/${encodeURIComponent(id)}`),
+        createEnvironment: (body: CreateEnvironmentRequest) =>
+            request<Environment>("/environments", {
                 method: "POST",
                 body: JSON.stringify(body),
             }),
-        updateRule: (key: string, id: string, body: UpdateRuleRequest) =>
-            request<Rule>(`/flags/${encodeURIComponent(key)}/rules/${id}`, {
+        updateEnvironment: (id: string, body: CreateEnvironmentRequest) =>
+            request<Environment>(`/environments/${encodeURIComponent(id)}`, {
                 method: "PUT",
                 body: JSON.stringify(body),
             }),
-        deleteRule: (key: string, id: string) =>
-            request<void>(`/flags/${encodeURIComponent(key)}/rules/${id}`, {
+        deleteEnvironment: (id: string) =>
+            request<void>(`/environments/${encodeURIComponent(id)}`, {
                 method: "DELETE",
             }),
-        reorderRules: (key: string, ruleIds: string[]) =>
-            request<void>(`/flags/${encodeURIComponent(key)}/rules/reorder`, {
+
+        listFlags: (environmentId: string) =>
+            request<Flag[]>(environmentPath(environmentId, "/flags")),
+        getFlag: (environmentId: string, key: string) =>
+            request<Flag>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}`)),
+        createFlag: (environmentId: string, body: CreateFlagRequest) =>
+            request<Flag>(environmentPath(environmentId, "/flags"), {
+                method: "POST",
+                body: JSON.stringify(body),
+            }),
+        deleteFlag: (environmentId: string, key: string) =>
+            request<void>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}`), {
+                method: "DELETE",
+            }),
+
+        listRules: (environmentId: string, key: string) =>
+            request<Rule[]>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}/rules`)),
+        createRule: (environmentId: string, key: string, body: CreateRuleRequest) =>
+            request<Rule>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}/rules`), {
+                method: "POST",
+                body: JSON.stringify(body),
+            }),
+        updateRule: (environmentId: string, key: string, id: string, body: UpdateRuleRequest) =>
+            request<Rule>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}/rules/${id}`), {
+                method: "PUT",
+                body: JSON.stringify(body),
+            }),
+        deleteRule: (environmentId: string, key: string, id: string) =>
+            request<void>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}/rules/${id}`), {
+                method: "DELETE",
+            }),
+        reorderRules: (environmentId: string, key: string, ruleIds: string[]) =>
+            request<void>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}/rules/reorder`), {
                 method: "POST",
                 body: JSON.stringify({ rule_ids: ruleIds }),
             }),
-        evaluateFlag: (key: string, context: Record<string, unknown>) =>
-            request<EvalTrace>(`/flags/${encodeURIComponent(key)}/evaluate`, {
+        evaluateFlag: (environmentId: string, key: string, context: Record<string, unknown>) =>
+            request<EvalTrace>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}/evaluate`), {
                 method: "POST",
                 body: JSON.stringify({ context }),
             }),
@@ -354,10 +402,10 @@ export function createApi(fetchFn: Fetch = fetch) {
             }),
 
         listAPIKeys: () => request<APIKey[]>("/api-keys"),
-        createAPIKey: (name: string, description = "") =>
+        createAPIKey: (name: string, environmentId: string, description = "") =>
             request<CreateAPIKeyResponse>("/api-keys", {
                 method: "POST",
-                body: JSON.stringify({ name, description }),
+                body: JSON.stringify({ name, description, environment_id: environmentId }),
             }),
         revokeAPIKey: (id: string) =>
             request<void>(`/api-keys/${encodeURIComponent(id)}`, {

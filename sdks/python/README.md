@@ -34,7 +34,7 @@ enabled = client.get_boolean_value(
 
 - Requires Python 3.11+.
 - Fetches `GET /eval/definitions` relative to the configured endpoint.
-- Sends `Authorization: Bearer <api_key>` when an API key is configured.
+- Sends `Authorization: Bearer <api_key>` when an API key is configured; the API key selects the evaluation environment.
 - Polls definitions every 30 seconds by default.
 - Uses `ETag` and `If-None-Match` to avoid reloading unchanged definitions.
 - Evaluates flags locally with CEL expressions from the latest definitions.

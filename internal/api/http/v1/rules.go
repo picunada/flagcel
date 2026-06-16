@@ -9,11 +9,12 @@ import (
 )
 
 type RulesHandler struct {
-	service *service.RuleService
+	service      *service.RuleService
+	environments *service.EnvironmentService
 }
 
-func NewRulesHandler(service *service.RuleService) *RulesHandler {
-	return &RulesHandler{service: service}
+func NewRulesHandler(service *service.RuleService, environments *service.EnvironmentService) *RulesHandler {
+	return &RulesHandler{service: service, environments: environments}
 }
 
 func (h *RulesHandler) Register(mux *http.ServeMux) {
@@ -23,12 +24,23 @@ func (h *RulesHandler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /flags/{key}/rules/{id}", h.GetRule)
 	mux.HandleFunc("PUT /flags/{key}/rules/{id}", h.UpdateRule)
 	mux.HandleFunc("DELETE /flags/{key}/rules/{id}", h.DeleteRule)
+	mux.HandleFunc("GET /environments/{environment_id}/flags/{key}/rules", h.ListRules)
+	mux.HandleFunc("POST /environments/{environment_id}/flags/{key}/rules", h.CreateRule)
+	mux.HandleFunc("POST /environments/{environment_id}/flags/{key}/rules/reorder", h.ReorderRules)
+	mux.HandleFunc("GET /environments/{environment_id}/flags/{key}/rules/{id}", h.GetRule)
+	mux.HandleFunc("PUT /environments/{environment_id}/flags/{key}/rules/{id}", h.UpdateRule)
+	mux.HandleFunc("DELETE /environments/{environment_id}/flags/{key}/rules/{id}", h.DeleteRule)
 }
 
 func (h *RulesHandler) ListRules(w http.ResponseWriter, r *http.Request) {
 	flagKey := r.PathValue("key")
+	environmentID, err := h.environmentID(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
 
-	rules, err := h.service.ListRules(r.Context(), flagKey)
+	rules, err := h.service.ListRules(r.Context(), environmentID, flagKey)
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -48,8 +60,13 @@ func (h *RulesHandler) ListRules(w http.ResponseWriter, r *http.Request) {
 func (h *RulesHandler) GetRule(w http.ResponseWriter, r *http.Request) {
 	flagKey := r.PathValue("key")
 	ruleID := r.PathValue("id")
+	environmentID, err := h.environmentID(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
 
-	rule, err := h.service.GetRule(r.Context(), flagKey, ruleID)
+	rule, err := h.service.GetRule(r.Context(), environmentID, flagKey, ruleID)
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -63,6 +80,11 @@ func (h *RulesHandler) GetRule(w http.ResponseWriter, r *http.Request) {
 
 func (h *RulesHandler) CreateRule(w http.ResponseWriter, r *http.Request) {
 	flagKey := r.PathValue("key")
+	environmentID, err := h.environmentID(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
 
 	req, err := utils.Decode[CreateRuleRequest](r)
 	if err != nil {
@@ -76,7 +98,7 @@ func (h *RulesHandler) CreateRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rule, err := h.service.CreateRule(r.Context(), flagKey, coreRule)
+	rule, err := h.service.CreateRule(r.Context(), environmentID, flagKey, coreRule)
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -91,6 +113,11 @@ func (h *RulesHandler) CreateRule(w http.ResponseWriter, r *http.Request) {
 func (h *RulesHandler) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	flagKey := r.PathValue("key")
 	ruleID := r.PathValue("id")
+	environmentID, err := h.environmentID(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
 
 	req, err := utils.Decode[UpdateRuleRequest](r)
 	if err != nil {
@@ -112,7 +139,7 @@ func (h *RulesHandler) UpdateRule(w http.ResponseWriter, r *http.Request) {
 		Value:       value,
 	}
 
-	saved, err := h.service.UpdateRule(r.Context(), flagKey, rule)
+	saved, err := h.service.UpdateRule(r.Context(), environmentID, flagKey, rule)
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -127,8 +154,13 @@ func (h *RulesHandler) UpdateRule(w http.ResponseWriter, r *http.Request) {
 func (h *RulesHandler) DeleteRule(w http.ResponseWriter, r *http.Request) {
 	flagKey := r.PathValue("key")
 	ruleID := r.PathValue("id")
+	environmentID, err := h.environmentID(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
 
-	if err := h.service.DeleteRule(r.Context(), flagKey, ruleID); err != nil {
+	if err := h.service.DeleteRule(r.Context(), environmentID, flagKey, ruleID); err != nil {
 		WriteError(w, err)
 		return
 	}
@@ -138,6 +170,11 @@ func (h *RulesHandler) DeleteRule(w http.ResponseWriter, r *http.Request) {
 
 func (h *RulesHandler) ReorderRules(w http.ResponseWriter, r *http.Request) {
 	flagKey := r.PathValue("key")
+	environmentID, err := h.environmentID(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
 
 	req, err := utils.Decode[ReorderRulesRequest](r)
 	if err != nil {
@@ -145,10 +182,21 @@ func (h *RulesHandler) ReorderRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.ReorderRules(r.Context(), flagKey, req.RuleIDs); err != nil {
+	if err := h.service.ReorderRules(r.Context(), environmentID, flagKey, req.RuleIDs); err != nil {
 		WriteError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *RulesHandler) environmentID(r *http.Request) (string, error) {
+	if id := r.PathValue("environment_id"); id != "" {
+		return id, nil
+	}
+	env, err := h.environments.Default(r.Context())
+	if err != nil {
+		return "", err
+	}
+	return env.ID, nil
 }

@@ -7,12 +7,15 @@
     import { LogOut } from "lucide-svelte";
     import { api } from "$lib/api";
     import Button from "$lib/components/ui/button.svelte";
+    import EnvironmentSelector from "$lib/components/environment-selector.svelte";
     import ClickSpark from "$lib/components/svelte-bits/click-spark.svelte";
     import type { LayoutProps } from "./$types";
 
     let { children, data }: LayoutProps = $props();
 
     const auth = $derived(data.auth);
+    const environments = $derived(data.environments ?? []);
+    const selectedEnvironment = $derived(data.selectedEnvironment);
     const backendUnavailable = $derived(data.backendUnavailable ?? false);
     const backendMessage = $derived(
         data.backendMessage ??
@@ -48,19 +51,24 @@
         };
     }
 
-    const nav = [
-        { href: "/", label: "flags" },
-        { href: "/contexts", label: "contexts" },
-        { href: "/api-keys", label: "keys", authEnabled: true },
-        { href: "/docs", label: "api", external: true, icon: "↗" },
-    ];
+    const environmentQuery = $derived(
+        selectedEnvironment ? `?environment=${encodeURIComponent(selectedEnvironment.id)}` : "",
+    );
 
-    function isActiveNavItem(href: string) {
+    const nav = $derived([
+        { href: `/${environmentQuery}`, match: "/", label: "flags" },
+        { href: "/contexts", match: "/contexts", label: "contexts" },
+        { href: "/environments", match: "/environments", label: "envs" },
+        { href: `/api-keys${environmentQuery}`, match: "/api-keys", label: "keys", authEnabled: true },
+        { href: "/docs", match: "/docs", label: "api", external: true, icon: "↗" },
+    ]);
+
+    function isActiveNavItem(match: string) {
         const pathname = page.url.pathname;
-        if (href === "/") {
+        if (match === "/") {
             return pathname === "/" || pathname.startsWith("/flags");
         }
-        return pathname === href || pathname.startsWith(`${href}/`);
+        return pathname === match || pathname.startsWith(`${match}/`);
     }
 
     $effect(() => {
@@ -132,7 +140,7 @@
                         >
                             {#each nav as item (item.href)}
                                 {@const active =
-                                    !item.external && isActiveNavItem(item.href)}
+                                    !item.external && isActiveNavItem(item.match)}
                                 {#if !item.authEnabled || auth?.auth_enabled}
                                     <a
                                         href={item.href}
@@ -154,6 +162,18 @@
                                 {/if}
                             {/each}
                         </nav>
+                    </div>
+                {/if}
+                {#if page.url.pathname !== "/login" && auth?.authenticated}
+                    <div
+                        class="ml-3 flex items-center gap-3 sm:ml-4"
+                        transition:collapseX
+                    >
+                        <span
+                            class="h-3 w-px bg-[rgba(255,255,255,0.18)]"
+                            aria-hidden="true"
+                        ></span>
+                        <EnvironmentSelector {environments} {selectedEnvironment} />
                     </div>
                 {/if}
                 {#if page.url.pathname !== "/login" && auth?.authenticated}
