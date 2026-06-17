@@ -236,6 +236,7 @@ export default defineConfig({
     title: "Flagcel",
     description: "Self-hosted feature flags with CEL-based targeting rules.",
     base: "/flagcel/",
+    srcDir: "src",
     cleanUrls: true,
     appearance: "dark",
     lastUpdated: true,
@@ -296,10 +297,10 @@ export default defineConfig({
             provider: "local",
         },
         socialLinks: [{ icon: "github", link: repo }],
-    editLink: {
-      pattern: `${repo}/edit/main/docs/src/:path`,
-      text: "Edit this page on GitHub",
-    },
+        editLink: {
+            pattern: `${repo}/edit/main/docs/src/:path`,
+            text: "Edit this page on GitHub",
+        },
         footer: {
             message: "Released under the Apache 2.0 License.",
             copyright: "Copyright (c) Flagcel contributors",
