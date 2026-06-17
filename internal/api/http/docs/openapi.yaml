@@ -98,6 +98,28 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "500": { $ref: "#/components/responses/InternalError" }
 
+  /flags/{key}/audit:
+    parameters:
+      - $ref: "#/components/parameters/FlagKey"
+    get:
+      tags: [Flags]
+      summary: Get a flag's change history
+      description: >-
+        Returns the flag's version timeline (newest first). Each entry is a full
+        snapshot of the flag config after the change, so consecutive entries can
+        be diffed to show exactly what changed and by whom.
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Flag change history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditEntryListEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
   /environments:
     get:
       tags: [Environments]
@@ -252,6 +274,25 @@ paths:
           description: Flag deleted
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/FlagNotFound" }
+
+  /environments/{environment_id}/flags/{key}/audit:
+    parameters:
+      - $ref: "#/components/parameters/EnvironmentID"
+      - $ref: "#/components/parameters/FlagKey"
+    get:
+      tags: [Flags]
+      summary: Get a flag's change history in an environment
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Flag change history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditEntryListEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /environments/{environment_id}/flags/{key}/evaluate:
     parameters:
@@ -861,6 +902,7 @@ components:
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
         created_by: { type: string, format: uuid, nullable: true }
+        updated_by: { type: string, format: uuid, nullable: true }
         deleted_by: { type: string, format: uuid, nullable: true }
 
     Flag:
@@ -886,7 +928,27 @@ components:
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
         created_by: { type: string, format: uuid, nullable: true }
+        updated_by: { type: string, format: uuid, nullable: true }
         deleted_by: { type: string, format: uuid, nullable: true }
+
+    AuditEntry:
+      type: object
+      required: [version, action, created_at]
+      properties:
+        version: { type: integer, example: 3 }
+        action:
+          type: string
+          enum: [created, updated, deleted]
+        actor_label:
+          type: string
+          nullable: true
+          description: Human-readable actor (e.g. email) captured when the change was made.
+        snapshot:
+          allOf:
+            - $ref: "#/components/schemas/Flag"
+          nullable: true
+          description: Full flag config after the change; null for a deletion.
+        created_at: { type: string, format: date-time }
 
     CreateFlagRequest:
       type: object
@@ -1154,6 +1216,15 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Flag"
+    AuditEntryListEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/AuditEntry"
     EnvironmentEnvelope:
       allOf:
         - $ref: "#/components/schemas/SuccessEnvelope"

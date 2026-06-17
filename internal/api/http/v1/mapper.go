@@ -46,6 +46,7 @@ func toCoreRule(r CreateRuleRequest) (core.Rule, error) {
 		return core.Rule{}, fmt.Errorf("value: %w", err)
 	}
 	return core.Rule{
+		ID:          r.ID,
 		Description: r.Description,
 		Expression:  r.Expression,
 		Rollout:     toCoreRollout(r.Rollout),
@@ -104,6 +105,7 @@ func toFlagResponse(f core.FlagConfig) FlagResponse {
 		CreatedAt:    formatTime(f.CreatedAt),
 		UpdatedAt:    formatTime(f.UpdatedAt),
 		CreatedBy:    f.CreatedBy,
+		UpdatedBy:    f.UpdatedBy,
 		DeletedBy:    f.DeletedBy,
 	}
 }
@@ -118,8 +120,32 @@ func toRuleResponse(r core.Rule) RuleResponse {
 		CreatedAt:   formatTime(r.CreatedAt),
 		UpdatedAt:   formatTime(r.UpdatedAt),
 		CreatedBy:   r.CreatedBy,
+		UpdatedBy:   r.UpdatedBy,
 		DeletedBy:   r.DeletedBy,
 	}
+}
+
+func toAuditEntryResponse(e core.AuditEntry) AuditEntryResponse {
+	var snapshot *FlagResponse
+	if e.Snapshot != nil {
+		resp := toFlagResponse(*e.Snapshot)
+		snapshot = &resp
+	}
+	return AuditEntryResponse{
+		Version:    e.Version,
+		Action:     e.Action,
+		ActorLabel: e.ActorLabel,
+		Snapshot:   snapshot,
+		CreatedAt:  formatTime(e.CreatedAt),
+	}
+}
+
+func toAuditEntryResponses(entries []*core.AuditEntry) []AuditEntryResponse {
+	out := make([]AuditEntryResponse, len(entries))
+	for i, e := range entries {
+		out[i] = toAuditEntryResponse(*e)
+	}
+	return out
 }
 
 func toRolloutResponse(r core.Rollout) RolloutResponse {

@@ -171,6 +171,7 @@ func (h *AuthHandler) AdminMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		ctx := context.WithValue(r.Context(), userContextKey{}, user)
+		ctx = core.WithActor(ctx, &core.Actor{ID: user.ID, Label: user.Email})
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

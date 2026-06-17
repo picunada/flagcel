@@ -30,12 +30,12 @@ DELETE FROM environments
 WHERE id = $1;
 
 -- name: GetFlag :one
-SELECT environment_id, key, value_type, enabled, default_value, context_id, description, created_at, updated_at, created_by, deleted_by
+SELECT environment_id, key, value_type, enabled, default_value, context_id, description, created_at, updated_at, created_by, updated_by, deleted_by
 FROM flags
 WHERE environment_id = $1 AND key = $2;
 
 -- name: ListFlags :many
-SELECT environment_id, key, value_type, enabled, default_value, context_id, description, created_at, updated_at, created_by, deleted_by
+SELECT environment_id, key, value_type, enabled, default_value, context_id, description, created_at, updated_at, created_by, updated_by, deleted_by
 FROM flags
 WHERE environment_id = $1
 ORDER BY key;
@@ -51,29 +51,31 @@ WHERE environment_id = $1
 ORDER BY flag_key, position;
 
 -- name: UpsertFlag :exec
-INSERT INTO flags (environment_id, key, value_type, enabled, default_value, context_id, description, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+INSERT INTO flags (environment_id, key, value_type, enabled, default_value, context_id, description, created_by, updated_by, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
 ON CONFLICT (environment_id, key) DO UPDATE SET
     value_type    = EXCLUDED.value_type,
     enabled       = EXCLUDED.enabled,
     default_value = EXCLUDED.default_value,
     context_id    = EXCLUDED.context_id,
     description   = EXCLUDED.description,
+    updated_by    = EXCLUDED.updated_by,
     updated_at    = NOW();
 
 -- name: DeleteRulesForFlag :exec
 DELETE FROM rules WHERE environment_id = $1 AND flag_key = $2;
 
 -- name: InsertRule :exec
-INSERT INTO rules (id, environment_id, flag_key, expression, rollout_percentage, rollout_bucket_by, position, value, description)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+INSERT INTO rules (id, environment_id, flag_key, expression, rollout_percentage, rollout_bucket_by, position, value, description, created_by, updated_by)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
 
 -- name: DeleteFlag :exec
 DELETE FROM flags WHERE environment_id = $1 AND key = $2;
 
 -- name: TouchFlag :execrows
 UPDATE flags
-SET updated_at = NOW()
+SET updated_by = $3,
+    updated_at = NOW()
 WHERE environment_id = $1 AND key = $2;
 
 -- name: GetRule :one
@@ -81,11 +83,11 @@ SELECT * FROM rules
 WHERE environment_id = $1 AND flag_key = $2 AND id = $3;
 
 -- name: InsertRuleAtEnd :exec
-INSERT INTO rules (id, environment_id, flag_key, expression, rollout_percentage, rollout_bucket_by, position, value, description)
+INSERT INTO rules (id, environment_id, flag_key, expression, rollout_percentage, rollout_bucket_by, position, value, description, created_by, updated_by)
 VALUES (
     $1, $2, $3, $4, $5, $6,
     COALESCE((SELECT MAX(position) + 1 FROM rules WHERE environment_id = $2 AND flag_key = $3), 0),
-    $7, $8
+    $7, $8, $9, $10
 );
 
 -- name: UpdateRule :execrows
@@ -95,6 +97,7 @@ SET expression         = $4,
     rollout_bucket_by  = $6,
     value              = $7,
     description        = $8,
+    updated_by         = $9,
     updated_at         = NOW()
 WHERE environment_id = $1 AND flag_key = $2 AND id = $3;
 
@@ -105,8 +108,24 @@ WHERE environment_id = $1 AND flag_key = $2 AND id = $3;
 -- name: SetRulePosition :execrows
 UPDATE rules
 SET position = $4,
+    updated_by = $5,
     updated_at = NOW()
 WHERE environment_id = $1 AND flag_key = $2 AND id = $3;
+
+-- name: InsertAuditLog :one
+INSERT INTO audit_logs (id, environment_id, resource_type, resource_id, action, version, snapshot, actor_id, actor_label, summary)
+VALUES (
+    $1, $2, $3, $4, $5,
+    COALESCE((SELECT MAX(version) FROM audit_logs WHERE environment_id = $2 AND resource_type = $3 AND resource_id = $4), 0) + 1,
+    $6, $7, $8, $9
+)
+RETURNING id, environment_id, resource_type, resource_id, action, version, snapshot, actor_id, actor_label, summary, created_at;
+
+-- name: ListFlagAuditLog :many
+SELECT id, environment_id, resource_type, resource_id, action, version, snapshot, actor_id, actor_label, summary, created_at
+FROM audit_logs
+WHERE environment_id = $1 AND resource_type = 'flag' AND resource_id = $2
+ORDER BY version DESC;
 
 -- name: ListContexts :many
 SELECT id, name, description, fields, created_at, updated_at, created_by, deleted_by

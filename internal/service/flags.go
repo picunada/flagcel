@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"github.com/picunada/flagcel/internal/core"
 	"github.com/picunada/flagcel/internal/store/postgres"
 )
@@ -44,8 +46,27 @@ func (s *FlagService) GetFlag(ctx context.Context, environmentID, key string) (*
 	return flag, nil
 }
 
+func (s *FlagService) GetFlagHistory(ctx context.Context, environmentID, key string) ([]*core.AuditEntry, error) {
+	entries, err := s.store.ListFlagAuditLog(ctx, environmentID, key)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"flag service: failed to list flag history %w",
+			err,
+		)
+	}
+	return entries, nil
+}
+
 func (s *FlagService) CreateFlag(ctx context.Context, environmentID string, flag *core.FlagConfig) error {
 	*flag = normalizeFlag(*flag)
+	// Rules are persisted by (environment_id, flag_key, id); a missing id would
+	// collide on insert when a flag has more than one rule. Assign ids to new
+	// rules while preserving any the client sent so rule identity stays stable.
+	for i := range flag.Rules {
+		if flag.Rules[i].ID == "" {
+			flag.Rules[i].ID = uuid.NewString()
+		}
+	}
 	schema, err := s.contextForFlag(ctx, flag)
 	if err != nil {
 		return fmt.Errorf("flag service: failed to load context %w", err)

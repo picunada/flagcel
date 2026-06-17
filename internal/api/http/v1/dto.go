@@ -13,6 +13,7 @@ type FlagResponse struct {
 	CreatedAt    string         `json:"created_at"`
 	UpdatedAt    string         `json:"updated_at"`
 	CreatedBy    *string        `json:"created_by,omitempty"`
+	UpdatedBy    *string        `json:"updated_by,omitempty"`
 	DeletedBy    *string        `json:"deleted_by,omitempty"`
 }
 
@@ -25,7 +26,16 @@ type RuleResponse struct {
 	CreatedAt   string          `json:"created_at"`
 	UpdatedAt   string          `json:"updated_at"`
 	CreatedBy   *string         `json:"created_by,omitempty"`
+	UpdatedBy   *string         `json:"updated_by,omitempty"`
 	DeletedBy   *string         `json:"deleted_by,omitempty"`
+}
+
+type AuditEntryResponse struct {
+	Version    int           `json:"version"`
+	Action     string        `json:"action"`
+	ActorLabel *string       `json:"actor_label,omitempty"`
+	Snapshot   *FlagResponse `json:"snapshot,omitempty"`
+	CreatedAt  string        `json:"created_at"`
 }
 
 type RolloutResponse struct {
@@ -44,6 +54,7 @@ type CreateFlagRequest struct {
 }
 
 type CreateRuleRequest struct {
+	ID          string          `json:"id,omitempty"`
 	Description string          `json:"description"`
 	Expression  string          `json:"expression"`
 	Rollout     RolloutResponse `json:"rollout"`

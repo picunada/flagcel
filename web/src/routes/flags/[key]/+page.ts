@@ -17,6 +17,9 @@ export const load: PageLoad = ({ params, url, fetch }) => {
         const context = flag.context_id
             ? await api.getContext(flag.context_id).catch(() => null)
             : null;
-        return { environments, selectedEnvironment, flag, context };
+        const history = await api
+            .getFlagAudit(selectedEnvironment.id, params.key)
+            .catch(() => []);
+        return { environments, selectedEnvironment, flag, context, history };
     }, url.pathname);
 };

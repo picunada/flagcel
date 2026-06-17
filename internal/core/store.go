@@ -29,6 +29,7 @@ type Store interface {
 	ListFlags(ctx context.Context, environmentID string) ([]*FlagConfig, error)
 	SaveFlag(ctx context.Context, environmentID string, flag *FlagConfig) error
 	DeleteFlag(ctx context.Context, environmentID, key string) error
+	ListFlagAuditLog(ctx context.Context, environmentID, flagKey string) ([]*AuditEntry, error)
 
 	GetRule(ctx context.Context, environmentID, flagKey, ruleID string) (*Rule, error)
 	CreateRule(ctx context.Context, environmentID, flagKey string, rule Rule) error

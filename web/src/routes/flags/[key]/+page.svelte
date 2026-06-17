@@ -8,8 +8,11 @@
 		type FlagValue,
 		type CreateRuleRequest,
 		type ContextSchema,
-		type EvalTrace
+		type EvalTrace,
+		type AuditEntry
 	} from '$lib/api';
+	import { describeChanges, actionBadgeVariant } from '$lib/history';
+	import { cn } from '$lib/utils';
 	import Button from '$lib/components/ui/button.svelte';
 	import Card from '$lib/components/ui/card.svelte';
 	import Badge from '$lib/components/ui/badge.svelte';
@@ -22,7 +25,7 @@
 	import EvalPlayground from '$lib/components/eval-playground.svelte';
 	import { formatFlagValue } from '$lib/values';
 	import { fly, slide } from 'svelte/transition';
-	import { Trash2, Plus, Pencil, ArrowUp, ArrowDown, FlaskConical, X, ChevronDown } from 'lucide-svelte';
+	import { Trash2, Plus, Pencil, ArrowUp, ArrowDown, FlaskConical, X, ChevronDown, History } from 'lucide-svelte';
 	import type { PageProps } from './$types';
 
 	type Rule = Flag['rules'][number];
@@ -32,6 +35,8 @@
 	let flag = $state<Flag>(untrack(() => data.flag));
 	let selectedEnvironment = $state(untrack(() => data.selectedEnvironment));
 	let context = $state<ContextSchema | null>(untrack(() => data.context));
+	let history = $state<AuditEntry[]>(untrack(() => data.history ?? []));
+	let selectedTab = $state<'rules' | 'history'>('rules');
 	let error = $state<string | null>(null);
 	let saving = $state(false);
 
@@ -60,10 +65,38 @@
 		flag = data.flag;
 		selectedEnvironment = data.selectedEnvironment;
 		context = data.context;
+		history = data.history ?? [];
 		if (!playgroundDirty) {
 			playgroundContext = sampleContext(data.context);
 		}
 	});
+
+	const timeFormatter = new Intl.DateTimeFormat(undefined, {
+		month: 'short',
+		day: 'numeric',
+		year: 'numeric',
+		hour: 'numeric',
+		minute: '2-digit'
+	});
+
+	function formatTimestamp(iso: string): string {
+		const date = new Date(iso);
+		if (Number.isNaN(date.getTime())) return iso;
+		return timeFormatter.format(date);
+	}
+
+	// History is ordered newest-first; diff each version against the next-older one.
+	const historyView = $derived(
+		history.map((entry, i) => ({
+			entry,
+			changes: describeChanges(history[i + 1]?.snapshot ?? null, entry.snapshot ?? null)
+		}))
+	);
+
+	// Prefer the human-readable actor labels captured in the audit log over the raw
+	// user IDs stored on the flag itself.
+	const createdBy = $derived(history.find((e) => e.action === 'created')?.actor_label ?? null);
+	const updatedBy = $derived(history[0]?.actor_label ?? null);
 
 	async function loadContext(id: string | null) {
 		if (!id) {
@@ -74,6 +107,16 @@
 			context = await api.getContext(id);
 		} catch {
 			context = null;
+		}
+	}
+
+	// Re-fetch the change history after a successful mutation so new versions
+	// appear without a full page reload. Failures keep the existing timeline.
+	async function refreshHistory() {
+		try {
+			history = await api.getFlagAudit(selectedEnvironment.id, flag.key);
+		} catch {
+			// ignore; the timeline will catch up on the next change or reload
 		}
 	}
 
@@ -94,6 +137,8 @@
 				default_value: flag.default_value,
 				context_id: flag.context_id ?? null,
 				rules: flag.rules.map((r) => ({
+					id: r.id,
+					description: r.description,
 					expression: r.expression,
 					rollout: r.rollout,
 					value: r.value
@@ -102,6 +147,7 @@
 			if ('context_id' in updates) {
 				await loadContext(flag.context_id ?? null);
 			}
+			void refreshHistory();
 		} catch (e) {
 			flag = { ...flag, ...prev };
 			error = e instanceof APIError ? e.message : 'Failed to save flag';
@@ -130,6 +176,7 @@
 			const rule = await api.createRule(selectedEnvironment.id, flag.key, form);
 			flag = { ...flag, rules: [...flag.rules, rule] };
 			creating = false;
+			void refreshHistory();
 		} catch (e) {
 			createError = formatRuleError(e, 'Failed to create rule');
 		} finally {
@@ -147,6 +194,7 @@
 				rules: flag.rules.map((r) => (r.id === id ? updated : r))
 			};
 			editingRuleId = null;
+			void refreshHistory();
 		} catch (e) {
 			editError = formatRuleError(e, 'Failed to update rule');
 		} finally {
@@ -180,6 +228,7 @@
 			await api.deleteRule(selectedEnvironment.id, flag.key, rule.id);
 			deleteRuleOpen = false;
 			deleteRuleTarget = null;
+			void refreshHistory();
 		} catch (e) {
 			flag = { ...flag, rules: prev };
 			deleteRuleError = e instanceof APIError ? e.message : 'Failed to delete rule';
@@ -202,6 +251,7 @@
 				flag.key,
 				next.map((r) => r.id)
 			);
+			void refreshHistory();
 		} catch (e) {
 			flag = { ...flag, rules: prev };
 			error = e instanceof APIError ? e.message : 'Failed to reorder rules';
@@ -400,6 +450,18 @@
 					/>
 				</div>
 			</div>
+			<div
+				class="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 p-5 text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground"
+			>
+				<span>
+					created {formatTimestamp(flag.created_at)}{#if createdBy}
+						· <span class="font-mono lowercase text-foreground">{createdBy}</span>{/if}
+				</span>
+				<span>
+					updated {formatTimestamp(flag.updated_at)}{#if updatedBy}
+						· <span class="font-mono lowercase text-foreground">{updatedBy}</span>{/if}
+				</span>
+			</div>
 		</Card>
 
 		{#if error}
@@ -407,25 +469,58 @@
 		{/if}
 
 		<section class="space-y-4">
-			<div class="flex flex-wrap items-center justify-between gap-3">
-				<SectionHeader>rules · evaluated top-to-bottom</SectionHeader>
-				<div class="flex items-center gap-2">
-					<Button
-						size="sm"
-						variant="ghost"
-						class="hidden lg:inline-flex"
-						aria-expanded={drawerOpen}
-						onclick={() => (drawerOpen = !drawerOpen)}
+			<div class="flex flex-wrap items-center justify-between gap-3 border-b border-border/60">
+				<div class="flex items-center gap-5">
+					<button
+						type="button"
+						onclick={() => (selectedTab = 'rules')}
+						class={cn(
+							'-mb-px border-b-2 pb-2 text-[0.7rem] uppercase tracking-[0.18em] transition-colors',
+							selectedTab === 'rules'
+								? 'border-success text-foreground'
+								: 'border-transparent text-muted-foreground hover:text-foreground'
+						)}
 					>
-						<FlaskConical class="h-3 w-3" /> test
-					</Button>
-					{#if !creating}
-						<Button size="sm" onclick={startCreate}>
-							<Plus class="h-3 w-3" /> add rule
-						</Button>
-					{/if}
+						rules
+					</button>
+					<button
+						type="button"
+						onclick={() => (selectedTab = 'history')}
+						class={cn(
+							'-mb-px inline-flex items-center gap-1.5 border-b-2 pb-2 text-[0.7rem] uppercase tracking-[0.18em] transition-colors',
+							selectedTab === 'history'
+								? 'border-success text-foreground'
+								: 'border-transparent text-muted-foreground hover:text-foreground'
+						)}
+					>
+						<History class="h-3 w-3" /> history
+						{#if history.length > 0}<span class="text-muted-foreground">({history.length})</span>{/if}
+					</button>
 				</div>
+				{#if selectedTab === 'rules'}
+					<div class="flex items-center gap-2 pb-2">
+						<Button
+							size="sm"
+							variant="ghost"
+							class="hidden lg:inline-flex"
+							aria-expanded={drawerOpen}
+							onclick={() => (drawerOpen = !drawerOpen)}
+						>
+							<FlaskConical class="h-3 w-3" /> test
+						</Button>
+						{#if !creating}
+							<Button size="sm" onclick={startCreate}>
+								<Plus class="h-3 w-3" /> add rule
+							</Button>
+						{/if}
+					</div>
+				{/if}
 			</div>
+
+		{#if selectedTab === 'rules'}
+			<p class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
+				evaluated top-to-bottom
+			</p>
 
 			{#if flag.rules.length === 0 && !creating}
 				<Card class="motion-panel p-8 text-center">
@@ -593,6 +688,47 @@
 				{/if}
 			</Card>
 		</div>
+		{:else}
+			{#if historyView.length === 0}
+				<Card class="motion-panel p-8 text-center">
+					<p class="text-xs uppercase tracking-[0.14em] text-muted-foreground">[ no history ]</p>
+					<p class="mt-3 text-sm text-[rgba(255,255,255,0.7)]">
+						Changes to this flag and its rules will appear here.
+					</p>
+				</Card>
+			{:else}
+				<div class="motion-list space-y-2">
+					{#each historyView as { entry, changes } (entry.version)}
+						<Card class="p-5">
+							<div class="flex flex-wrap items-start justify-between gap-3">
+								<div class="flex items-center gap-3">
+									<span
+										class="font-mono text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground"
+									>
+										v{entry.version}
+									</span>
+									<Badge variant={actionBadgeVariant(entry.action)} dot>{entry.action}</Badge>
+								</div>
+								<div
+									class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground"
+								>
+									<span class="font-mono text-foreground">{entry.actor_label ?? 'system'}</span>
+									<span>{formatTimestamp(entry.created_at)}</span>
+								</div>
+							</div>
+							<ul class="mt-3 space-y-1">
+								{#each changes as change}
+									<li class="flex gap-2 text-sm text-[rgba(255,255,255,0.78)]">
+										<span class="select-none text-muted-foreground">·</span>
+										<span class="font-mono text-xs leading-relaxed">{change}</span>
+									</li>
+								{/each}
+							</ul>
+						</Card>
+					{/each}
+				</div>
+			{/if}
+		{/if}
 	</section>
 </div>
 

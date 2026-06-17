@@ -11,10 +11,10 @@
     import type { PageProps } from "./$types";
 
     let { data }: PageProps = $props();
-    const keys = $derived<APIKey[]>(data.keys);
-    const environments = $derived<Environment[]>(data.environments);
     const selectedEnvironment = $derived<Environment>(data.selectedEnvironment);
-    const environmentById = $derived.by(() => new Map(environments.map((env) => [env.id, env])));
+    const keys = $derived<APIKey[]>(
+        data.keys.filter((key) => key.environment_id === selectedEnvironment.id),
+    );
 
     let name = $state("");
     let creating = $state(false);
@@ -126,12 +126,12 @@
     </Card>
 
     <div class="space-y-3">
-        <SectionHeader>keys · {keys.length}</SectionHeader>
+        <SectionHeader>keys · {selectedEnvironment.key} · {keys.length}</SectionHeader>
         {#if keys.length === 0}
             <Card class="motion-panel p-10 text-center">
                 <KeyRound class="mx-auto h-5 w-5 text-muted-foreground" />
                 <p class="mt-4 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                    [ no keys yet ]
+                    [ no keys in {selectedEnvironment.key} yet ]
                 </p>
             </Card>
         {:else}
@@ -148,7 +148,7 @@
                                 {/if}
                             </div>
                             <p class="text-xs text-muted-foreground">
-                                <span class="font-mono">{key.prefix}</span> · {environmentById.get(key.environment_id)?.name ?? 'missing environment'} · created {formatDate(key.created_at)} · last used
+                                <span class="font-mono">{key.prefix}</span> · created {formatDate(key.created_at)} · last used
                                 {formatDate(key.last_used_at)}
                             </p>
                         </div>

@@ -24,10 +24,12 @@ func (h *FlagsHandler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /flags", h.CreateFlag)
 	mux.HandleFunc("GET /flags/{key}", h.GetFlag)
 	mux.HandleFunc("DELETE /flags/{key}", h.DeleteFlag)
+	mux.HandleFunc("GET /flags/{key}/audit", h.GetFlagHistory)
 	mux.HandleFunc("GET /environments/{environment_id}/flags", h.GetFlags)
 	mux.HandleFunc("POST /environments/{environment_id}/flags", h.CreateFlag)
 	mux.HandleFunc("GET /environments/{environment_id}/flags/{key}", h.GetFlag)
 	mux.HandleFunc("DELETE /environments/{environment_id}/flags/{key}", h.DeleteFlag)
+	mux.HandleFunc("GET /environments/{environment_id}/flags/{key}/audit", h.GetFlagHistory)
 }
 
 func (h *FlagsHandler) GetFlags(w http.ResponseWriter, r *http.Request) {
@@ -63,6 +65,26 @@ func (h *FlagsHandler) GetFlag(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := utils.Encode(w, r, http.StatusOK, "success", toFlagResponse(*flag)); err != nil {
+		WriteError(w, err)
+		return
+	}
+}
+
+func (h *FlagsHandler) GetFlagHistory(w http.ResponseWriter, r *http.Request) {
+	key := r.PathValue("key")
+	environmentID, err := h.environmentID(r)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	entries, err := h.service.GetFlagHistory(r.Context(), environmentID, key)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	if err := utils.Encode(w, r, http.StatusOK, "success", toAuditEntryResponses(entries)); err != nil {
 		WriteError(w, err)
 		return
 	}

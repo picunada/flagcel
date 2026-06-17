@@ -15,6 +15,7 @@ export type Rule = {
     created_at: string;
     updated_at: string;
     created_by?: string | null;
+    updated_by?: string | null;
     deleted_by?: string | null;
 };
 
@@ -29,7 +30,18 @@ export type Flag = {
     created_at: string;
     updated_at: string;
     created_by?: string | null;
+    updated_by?: string | null;
     deleted_by?: string | null;
+};
+
+export type AuditAction = "created" | "updated" | "deleted";
+
+export type AuditEntry = {
+    version: number;
+    action: AuditAction;
+    actor_label?: string | null;
+    snapshot?: Flag | null;
+    created_at: string;
 };
 
 export type Environment = {
@@ -60,6 +72,7 @@ export type CreateFlagRequest = {
 };
 
 export type CreateRuleRequest = {
+    id?: string;
     description?: string;
     expression: string;
     rollout: Rollout;
@@ -346,6 +359,8 @@ export function createApi(fetchFn: Fetch = fetch) {
             request<Flag[]>(environmentPath(environmentId, "/flags")),
         getFlag: (environmentId: string, key: string) =>
             request<Flag>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}`)),
+        getFlagAudit: (environmentId: string, key: string) =>
+            request<AuditEntry[]>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}/audit`)),
         createFlag: (environmentId: string, body: CreateFlagRequest) =>
             request<Flag>(environmentPath(environmentId, "/flags"), {
                 method: "POST",

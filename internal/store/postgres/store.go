@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -172,7 +173,14 @@ func (s *Store) GetFlag(ctx context.Context, environmentID, key string) (*core.F
 	if err != nil {
 		return nil, core.ErrEnvironmentNotFound
 	}
-	flagRow, err := s.q.GetFlag(ctx, sqlcgen.GetFlagParams{
+	return loadFlag(ctx, s.q, envID, key)
+}
+
+// loadFlag reads a flag together with its rules using the given query handle,
+// which may be transactional. It is used both for reads and for building audit
+// snapshots inside a mutation's transaction.
+func loadFlag(ctx context.Context, q *sqlcgen.Queries, envID pgtype.UUID, key string) (*core.FlagConfig, error) {
+	flagRow, err := q.GetFlag(ctx, sqlcgen.GetFlagParams{
 		EnvironmentID: envID,
 		Key:           key,
 	})
@@ -183,7 +191,7 @@ func (s *Store) GetFlag(ctx context.Context, environmentID, key string) (*core.F
 		return nil, err
 	}
 
-	ruleRows, err := s.q.ListRulesForFlag(ctx, sqlcgen.ListRulesForFlagParams{
+	ruleRows, err := q.ListRulesForFlag(ctx, sqlcgen.ListRulesForFlagParams{
 		EnvironmentID: envID,
 		FlagKey:       key,
 	})
@@ -215,6 +223,7 @@ func (s *Store) GetFlag(ctx context.Context, environmentID, key string) (*core.F
 		CreatedAt:    timestamptzToTime(flagRow.CreatedAt),
 		UpdatedAt:    timestamptzToTime(flagRow.UpdatedAt),
 		CreatedBy:    uuidToStringPtr(flagRow.CreatedBy),
+		UpdatedBy:    uuidToStringPtr(flagRow.UpdatedBy),
 		DeletedBy:    uuidToStringPtr(flagRow.DeletedBy),
 	}, nil
 }
@@ -260,6 +269,7 @@ func (s *Store) ListFlags(ctx context.Context, environmentID string) ([]*core.Fl
 			CreatedAt:    timestamptzToTime(f.CreatedAt),
 			UpdatedAt:    timestamptzToTime(f.UpdatedAt),
 			CreatedBy:    uuidToStringPtr(f.CreatedBy),
+			UpdatedBy:    uuidToStringPtr(f.UpdatedBy),
 			DeletedBy:    uuidToStringPtr(f.DeletedBy),
 		}
 	}
@@ -280,6 +290,8 @@ func (s *Store) SaveFlag(ctx context.Context, environmentID string, flag *core.F
 		return err
 	}
 
+	actor := actorUUID(ctx)
+
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -287,6 +299,13 @@ func (s *Store) SaveFlag(ctx context.Context, environmentID string, flag *core.F
 	defer tx.Rollback(ctx)
 
 	qtx := s.q.WithTx(tx)
+
+	action := core.AuditActionCreated
+	if _, err := qtx.GetFlag(ctx, sqlcgen.GetFlagParams{EnvironmentID: envID, Key: flag.Key}); err == nil {
+		action = core.AuditActionUpdated
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		return err
+	}
 
 	if err := qtx.UpsertFlag(ctx, sqlcgen.UpsertFlagParams{
 		EnvironmentID: envID,
@@ -296,6 +315,8 @@ func (s *Store) SaveFlag(ctx context.Context, environmentID string, flag *core.F
 		DefaultValue:  defaultValue,
 		ContextID:     contextID,
 		Description:   flag.Description,
+		CreatedBy:     actor,
+		UpdatedBy:     actor,
 	}); err != nil {
 		if isFKViolation(err) {
 			if fkConstraintName(err) == "flags_environment_id_fkey" {
@@ -328,9 +349,15 @@ func (s *Store) SaveFlag(ctx context.Context, environmentID string, flag *core.F
 			Position:          int32(i),
 			Value:             value,
 			Description:       r.Description,
+			CreatedBy:         actor,
+			UpdatedBy:         actor,
 		}); err != nil {
 			return err
 		}
+	}
+
+	if err := s.recordFlagAudit(ctx, qtx, envID, flag.Key, action); err != nil {
+		return err
 	}
 
 	return tx.Commit(ctx)
@@ -341,10 +368,36 @@ func (s *Store) DeleteFlag(ctx context.Context, environmentID, key string) error
 	if err != nil {
 		return core.ErrEnvironmentNotFound
 	}
-	return s.q.DeleteFlag(ctx, sqlcgen.DeleteFlagParams{
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	// Confirm the flag exists before recording a deletion. Mirrors the prior
+	// idempotent behaviour: deleting a missing flag is a no-op.
+	if _, err := qtx.GetFlag(ctx, sqlcgen.GetFlagParams{EnvironmentID: envID, Key: key}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	if err := qtx.DeleteFlag(ctx, sqlcgen.DeleteFlagParams{
 		EnvironmentID: envID,
 		Key:           key,
-	})
+	}); err != nil {
+		return err
+	}
+
+	if err := s.recordFlagDeletion(ctx, qtx, envID, key); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (s *Store) GetRule(ctx context.Context, environmentID, flagKey, ruleID string) (*core.Rule, error) {
@@ -379,7 +432,17 @@ func (s *Store) CreateRule(ctx context.Context, environmentID, flagKey string, r
 	if err != nil {
 		return err
 	}
-	if err := s.q.InsertRuleAtEnd(ctx, sqlcgen.InsertRuleAtEndParams{
+	actor := actorUUID(ctx)
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	if err := qtx.InsertRuleAtEnd(ctx, sqlcgen.InsertRuleAtEndParams{
 		ID:                rule.ID,
 		EnvironmentID:     envID,
 		FlagKey:           flagKey,
@@ -388,10 +451,18 @@ func (s *Store) CreateRule(ctx context.Context, environmentID, flagKey string, r
 		RolloutBucketBy:   rule.Rollout.BucketBy,
 		Value:             value,
 		Description:       rule.Description,
+		CreatedBy:         actor,
+		UpdatedBy:         actor,
 	}); err != nil {
 		return err
 	}
-	return s.touchFlag(ctx, environmentID, flagKey)
+	if err := s.touchFlagWithQueries(ctx, qtx, envID, flagKey, actor); err != nil {
+		return err
+	}
+	if err := s.recordFlagAudit(ctx, qtx, envID, flagKey, core.AuditActionUpdated); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func (s *Store) UpdateRule(ctx context.Context, environmentID, flagKey string, rule core.Rule) error {
@@ -403,7 +474,17 @@ func (s *Store) UpdateRule(ctx context.Context, environmentID, flagKey string, r
 	if err != nil {
 		return err
 	}
-	n, err := s.q.UpdateRule(ctx, sqlcgen.UpdateRuleParams{
+	actor := actorUUID(ctx)
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	n, err := qtx.UpdateRule(ctx, sqlcgen.UpdateRuleParams{
 		EnvironmentID:     envID,
 		FlagKey:           flagKey,
 		ID:                rule.ID,
@@ -412,6 +493,7 @@ func (s *Store) UpdateRule(ctx context.Context, environmentID, flagKey string, r
 		RolloutBucketBy:   rule.Rollout.BucketBy,
 		Value:             value,
 		Description:       rule.Description,
+		UpdatedBy:         actor,
 	})
 	if err != nil {
 		return err
@@ -419,7 +501,13 @@ func (s *Store) UpdateRule(ctx context.Context, environmentID, flagKey string, r
 	if n == 0 {
 		return core.ErrRuleNotFound
 	}
-	return s.touchFlag(ctx, environmentID, flagKey)
+	if err := s.touchFlagWithQueries(ctx, qtx, envID, flagKey, actor); err != nil {
+		return err
+	}
+	if err := s.recordFlagAudit(ctx, qtx, envID, flagKey, core.AuditActionUpdated); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func (s *Store) DeleteRule(ctx context.Context, environmentID, flagKey, ruleID string) error {
@@ -427,7 +515,17 @@ func (s *Store) DeleteRule(ctx context.Context, environmentID, flagKey, ruleID s
 	if err != nil {
 		return core.ErrEnvironmentNotFound
 	}
-	n, err := s.q.DeleteRule(ctx, sqlcgen.DeleteRuleParams{
+	actor := actorUUID(ctx)
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	n, err := qtx.DeleteRule(ctx, sqlcgen.DeleteRuleParams{
 		EnvironmentID: envID,
 		FlagKey:       flagKey,
 		ID:            ruleID,
@@ -438,7 +536,13 @@ func (s *Store) DeleteRule(ctx context.Context, environmentID, flagKey, ruleID s
 	if n == 0 {
 		return core.ErrRuleNotFound
 	}
-	return s.touchFlag(ctx, environmentID, flagKey)
+	if err := s.touchFlagWithQueries(ctx, qtx, envID, flagKey, actor); err != nil {
+		return err
+	}
+	if err := s.recordFlagAudit(ctx, qtx, envID, flagKey, core.AuditActionUpdated); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func (s *Store) ReorderRules(ctx context.Context, environmentID, flagKey string, ruleIDs []string) error {
@@ -446,6 +550,8 @@ func (s *Store) ReorderRules(ctx context.Context, environmentID, flagKey string,
 	if err != nil {
 		return core.ErrEnvironmentNotFound
 	}
+	actor := actorUUID(ctx)
+
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -460,6 +566,7 @@ func (s *Store) ReorderRules(ctx context.Context, environmentID, flagKey string,
 			FlagKey:       flagKey,
 			ID:            id,
 			Position:      int32(i),
+			UpdatedBy:     actor,
 		})
 		if err != nil {
 			return err
@@ -469,25 +576,21 @@ func (s *Store) ReorderRules(ctx context.Context, environmentID, flagKey string,
 		}
 	}
 
-	if err := s.touchFlagWithQueries(ctx, qtx, envID, flagKey); err != nil {
+	if err := s.touchFlagWithQueries(ctx, qtx, envID, flagKey, actor); err != nil {
+		return err
+	}
+	if err := s.recordFlagAudit(ctx, qtx, envID, flagKey, core.AuditActionUpdated); err != nil {
 		return err
 	}
 
 	return tx.Commit(ctx)
 }
 
-func (s *Store) touchFlag(ctx context.Context, environmentID, flagKey string) error {
-	envID, err := stringToUUID(environmentID)
-	if err != nil {
-		return core.ErrEnvironmentNotFound
-	}
-	return s.touchFlagWithQueries(ctx, s.q, envID, flagKey)
-}
-
-func (s *Store) touchFlagWithQueries(ctx context.Context, q *sqlcgen.Queries, environmentID pgtype.UUID, flagKey string) error {
+func (s *Store) touchFlagWithQueries(ctx context.Context, q *sqlcgen.Queries, environmentID pgtype.UUID, flagKey string, updatedBy pgtype.UUID) error {
 	n, err := q.TouchFlag(ctx, sqlcgen.TouchFlagParams{
 		EnvironmentID: environmentID,
 		Key:           flagKey,
+		UpdatedBy:     updatedBy,
 	})
 	if err != nil {
 		return err
@@ -496,6 +599,71 @@ func (s *Store) touchFlagWithQueries(ctx context.Context, q *sqlcgen.Queries, en
 		return core.ErrFlagNotFound
 	}
 	return nil
+}
+
+// recordFlagAudit appends a new version to the flag's change history, snapshotting
+// the flag's full config (including rules) as it exists after the change. It must
+// be called inside the same transaction as the change so the two commit atomically.
+func (s *Store) recordFlagAudit(ctx context.Context, q *sqlcgen.Queries, environmentID pgtype.UUID, flagKey, action string) error {
+	snapshot, err := loadFlag(ctx, q, environmentID, flagKey)
+	if err != nil {
+		return err
+	}
+	return insertAudit(ctx, q, environmentID, flagKey, action, snapshot)
+}
+
+// recordFlagDeletion records a deletion with a nil snapshot; the prior state is
+// the previous version's snapshot.
+func (s *Store) recordFlagDeletion(ctx context.Context, q *sqlcgen.Queries, environmentID pgtype.UUID, flagKey string) error {
+	return insertAudit(ctx, q, environmentID, flagKey, core.AuditActionDeleted, nil)
+}
+
+func insertAudit(ctx context.Context, q *sqlcgen.Queries, environmentID pgtype.UUID, flagKey, action string, snapshot *core.FlagConfig) error {
+	id, err := stringToUUID(uuid.NewString())
+	if err != nil {
+		return err
+	}
+	var snap []byte
+	if snapshot != nil {
+		snap, err = marshalJSONValue(snapshot)
+		if err != nil {
+			return err
+		}
+	}
+	_, err = q.InsertAuditLog(ctx, sqlcgen.InsertAuditLogParams{
+		ID:            id,
+		EnvironmentID: environmentID,
+		ResourceType:  core.ResourceTypeFlag,
+		ResourceID:    flagKey,
+		Action:        action,
+		Snapshot:      snap,
+		ActorID:       actorUUID(ctx),
+		ActorLabel:    actorLabel(ctx),
+	})
+	return err
+}
+
+func (s *Store) ListFlagAuditLog(ctx context.Context, environmentID, flagKey string) ([]*core.AuditEntry, error) {
+	envID, err := stringToUUID(environmentID)
+	if err != nil {
+		return nil, core.ErrEnvironmentNotFound
+	}
+	rows, err := s.q.ListFlagAuditLog(ctx, sqlcgen.ListFlagAuditLogParams{
+		EnvironmentID: envID,
+		ResourceID:    flagKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*core.AuditEntry, 0, len(rows))
+	for _, r := range rows {
+		entry, err := auditRowToCore(r)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, entry)
+	}
+	return out, nil
 }
 
 func (s *Store) ListContexts(ctx context.Context) ([]*core.ContextSchema, error) {
@@ -766,8 +934,57 @@ func ruleRowToCore(r sqlcgen.Rule) (core.Rule, error) {
 		CreatedAt: timestamptzToTime(r.CreatedAt),
 		UpdatedAt: timestamptzToTime(r.UpdatedAt),
 		CreatedBy: uuidToStringPtr(r.CreatedBy),
+		UpdatedBy: uuidToStringPtr(r.UpdatedBy),
 		DeletedBy: uuidToStringPtr(r.DeletedBy),
 	}, nil
+}
+
+func auditRowToCore(r sqlcgen.AuditLog) (*core.AuditEntry, error) {
+	var snapshot *core.FlagConfig
+	if len(r.Snapshot) > 0 {
+		var f core.FlagConfig
+		if err := json.Unmarshal(r.Snapshot, &f); err != nil {
+			return nil, fmt.Errorf("decode audit snapshot: %w", err)
+		}
+		snapshot = &f
+	}
+	return &core.AuditEntry{
+		ID:            uuidToString(r.ID),
+		EnvironmentID: uuidToString(r.EnvironmentID),
+		ResourceType:  r.ResourceType,
+		ResourceID:    r.ResourceID,
+		Action:        r.Action,
+		Version:       int(r.Version),
+		Snapshot:      snapshot,
+		ActorID:       uuidToStringPtr(r.ActorID),
+		ActorLabel:    r.ActorLabel,
+		CreatedAt:     timestamptzToTime(r.CreatedAt),
+	}, nil
+}
+
+// actorUUID returns the current actor's ID as a (possibly invalid/NULL) UUID,
+// read from the request context. Invalid when no actor is present (auth disabled).
+func actorUUID(ctx context.Context) pgtype.UUID {
+	actor := core.ActorFromContext(ctx)
+	if actor == nil || strings.TrimSpace(actor.ID) == "" {
+		return pgtype.UUID{}
+	}
+	u, err := stringToUUID(actor.ID)
+	if err != nil {
+		return pgtype.UUID{}
+	}
+	return u
+}
+
+// actorLabel returns the current actor's display label (e.g. email), captured at
+// write time so it survives later user deletion. Nil when no actor is present.
+func actorLabel(ctx context.Context) *string {
+	actor := core.ActorFromContext(ctx)
+	if actor == nil || actor.Label == "" {
+		return nil
+	}
+	label := actor.Label
+	return &label
 }
 
 func environmentRowToCore(r sqlcgen.Environment) *core.Environment {

@@ -31,7 +31,7 @@
 {#if selectedEnvironment && environments.length > 0}
 	<Select.Root type="single" value={selectedEnvironment.id} onValueChange={selectEnvironment}>
 		<SelectPrimitive.Trigger
-			class="group inline-flex h-8 items-center gap-2 rounded-sm border border-[rgb(var(--app-accent-rgb)/0.42)] bg-[rgb(var(--app-accent-rgb)/0.1)] pl-2 pr-1.5 text-left text-app-accent shadow-[0_0_0_1px_rgb(var(--app-accent-rgb)/0.08),0_0_22px_rgb(var(--app-accent-rgb)/0.08)] transition-colors hover:border-[rgb(var(--app-accent-rgb)/0.7)] hover:bg-[rgb(var(--app-accent-rgb)/0.15)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgb(var(--app-accent-rgb)/0.75)]"
+			class="group inline-flex h-8 min-w-44 items-center gap-2 rounded-sm border border-[rgb(var(--app-accent-rgb)/0.42)] bg-[rgb(var(--app-accent-rgb)/0.1)] pl-2 pr-1.5 text-left text-app-accent shadow-[0_0_0_1px_rgb(var(--app-accent-rgb)/0.08),0_0_22px_rgb(var(--app-accent-rgb)/0.08)] transition-colors hover:border-[rgb(var(--app-accent-rgb)/0.7)] hover:bg-[rgb(var(--app-accent-rgb)/0.15)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgb(var(--app-accent-rgb)/0.75)]"
 			title="Environment selector"
 		>
 			<Layers3 class="h-3.5 w-3.5 shrink-0" />
@@ -40,7 +40,7 @@
 			>
 				env
 			</span>
-			<span class="max-w-28 truncate font-mono text-xs text-foreground sm:max-w-36">
+			<span class="ml-auto max-w-28 truncate font-mono text-xs text-foreground sm:max-w-36">
 				{selectedEnvironment.key}
 			</span>
 			<ChevronDown
@@ -48,7 +48,7 @@
 			/>
 		</SelectPrimitive.Trigger>
 
-		<Select.Content align="end" class="w-[var(--bits-select-anchor-width)] border-[rgb(var(--app-accent-rgb)/0.34)]">
+		<Select.Content align="end" class="w-[var(--bits-select-anchor-width)] min-w-44 border-[rgb(var(--app-accent-rgb)/0.34)]">
 			<Select.Group>
 				<Select.GroupHeading
 					class="px-2 py-1.5 text-[0.62rem] uppercase tracking-[0.14em] text-[rgb(var(--app-accent-rgb)/0.72)]"
