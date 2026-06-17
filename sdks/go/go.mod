@@ -4,7 +4,7 @@ go 1.26.2
 
 require (
 	github.com/open-feature/go-sdk v1.17.2
-	github.com/picunada/flagcel/evalcore v0.0.0
+	github.com/picunada/flagcel/evalcore v0.1.0
 )
 
 require (

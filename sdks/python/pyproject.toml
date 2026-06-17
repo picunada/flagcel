@@ -1,12 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "flagcel-openfeature"
-version = "0.0.0"
+version = "0.1.0"
 description = "OpenFeature provider for Flagcel with local CEL evaluation"
+readme = "README.md"
+license = "Apache-2.0"
 requires-python = ">=3.11"
+authors = [
+  { name = "picunada" },
+]
+keywords = ["flagcel", "openfeature", "feature-flags", "feature-toggles", "cel"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries",
+]
 dependencies = [
   "cel-expr-python>=0.1.2,<0.2",
   "openfeature-sdk>=0.9,<1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/picunada/flagcel/tree/main/sdks/python#readme"
+Repository = "https://github.com/picunada/flagcel"
+Issues = "https://github.com/picunada/flagcel/issues"
 
 [project.optional-dependencies]
 test = [

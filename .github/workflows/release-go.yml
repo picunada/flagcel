@@ -1,0 +1,52 @@
+name: Release Go SDK
+
+# Go modules are distributed via git tags; the module proxy fetches them
+# lazily. This workflow validates the tagged module and warms proxy.golang.org
+# so the first `go get` is instant.
+#
+# Multi-module repo => prefixed tags:
+#   evalcore/v0.1.0   -> github.com/picunada/flagcel/evalcore
+#   sdks/go/v0.1.0    -> github.com/picunada/flagcel/sdks/go
+#
+# Tag `evalcore/*` BEFORE `sdks/go/*`, since sdks/go requires a published
+# evalcore version.
+on:
+  push:
+    tags:
+      - "evalcore/v*"
+      - "sdks/go/v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Resolve module path and version from tag
+        id: mod
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG##*/}"
+          SUBDIR="${TAG%/*}"
+          echo "subdir=$SUBDIR" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "module=github.com/picunada/flagcel/$SUBDIR" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test the module
+        working-directory: ${{ steps.mod.outputs.subdir }}
+        run: |
+          go build ./...
+          go test ./...
+
+      - name: Warm the module proxy
+        env:
+          GOPROXY: proxy.golang.org
+          GONOSUMCHECK: "0"
+        run: |
+          go list -m "${{ steps.mod.outputs.module }}@${{ steps.mod.outputs.version }}"

@@ -1,7 +1,26 @@
 {
   "name": "@flagcel/openfeature-server",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "OpenFeature server provider for Flagcel with server-side evaluation",
+  "keywords": [
+    "flagcel",
+    "openfeature",
+    "feature-flags",
+    "feature-toggles"
+  ],
+  "homepage": "https://github.com/picunada/flagcel/tree/main/sdks/js#readme",
+  "bugs": {
+    "url": "https://github.com/picunada/flagcel/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/picunada/flagcel.git",
+    "directory": "sdks/js"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
