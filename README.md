@@ -39,20 +39,20 @@ This starts Postgres and the Flagcel service on <http://localhost:8080>. The loc
 admin@localhost / secret
 ```
 
-See [Quickstart](docs/quickstart.md) for creating a flag, evaluating it, and using the local API.
+See [Quickstart](docs/src/quickstart.md) for creating a flag, evaluating it, and using the local API.
 
 ## Documentation
 
-- [Documentation index](docs/index.md)
-- [Quickstart](docs/quickstart.md)
-- [Concepts](docs/concepts.md)
-- [Configuration](docs/configuration.md)
-- [Authentication](docs/auth.md)
-- [API](docs/api.md)
-- [SDKs](docs/sdks.md)
-- [Web UI](docs/web-ui.md)
-- [Migrations](docs/migrations.md)
-- [Development](docs/development.md)
+- [Documentation index](docs/src/index.md)
+- [Quickstart](docs/src/quickstart.md)
+- [Concepts](docs/src/concepts.md)
+- [Configuration](docs/src/configuration.md)
+- [Authentication](docs/src/auth.md)
+- [API](docs/src/api.md)
+- [SDKs](docs/src/sdks.md)
+- [Web UI](docs/src/web-ui.md)
+- [Migrations](docs/src/migrations.md)
+- [Development](docs/src/development.md)
 - [Examples](examples/README.md)
 
 ## Repository Layout
@@ -63,7 +63,7 @@ See [Quickstart](docs/quickstart.md) for creating a flag, evaluating it, and usi
 - [`web`](web) - SvelteKit dashboard.
 - [`sdks`](sdks) - OpenFeature providers.
 - [`examples`](examples) - runnable SDK examples.
-- [`docs`](docs) - project documentation.
+- [`docs/src`](docs/src) - project documentation.
 
 ## Roadmap
 
@@ -80,7 +80,7 @@ go build ./...
 go test ./...
 ```
 
-Development setup details live in [Development](docs/development.md).
+Development setup details live in [Development](docs/src/development.md).
 
 ## License
 

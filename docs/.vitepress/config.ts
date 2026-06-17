@@ -296,10 +296,10 @@ export default defineConfig({
             provider: "local",
         },
         socialLinks: [{ icon: "github", link: repo }],
-        editLink: {
-            pattern: `${repo}/edit/main/docs/:path`,
-            text: "Edit this page on GitHub",
-        },
+    editLink: {
+      pattern: `${repo}/edit/main/docs/src/:path`,
+      text: "Edit this page on GitHub",
+    },
         footer: {
             message: "Released under the Apache 2.0 License.",
             copyright: "Copyright (c) Flagcel contributors",

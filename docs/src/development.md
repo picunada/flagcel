@@ -44,7 +44,7 @@ pnpm preview
 ```
 
 The GitHub Pages workflow deploys the generated site from
-`docs/.vitepress/dist` to `https://picunada.github.io/flagcel/`.
+`docs/src/.vitepress/dist` to `https://picunada.github.io/flagcel/`.
 
 To use a custom domain later, add `docs/public/CNAME` and change the VitePress
 `base` setting from `/flagcel/` to `/`.

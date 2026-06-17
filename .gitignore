@@ -49,6 +49,8 @@ web/build/*
 docs/node_modules/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
+docs/src/.vitepress/cache/
+docs/src/.vitepress/dist/
 
 # SDK package builds
 sdks/js/node_modules/
