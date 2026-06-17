@@ -1,6 +1,7 @@
 # API
 
-The full OpenAPI spec lives at [`../internal/api/http/docs/openapi.yaml`](../internal/api/http/docs/openapi.yaml).
+The full OpenAPI spec lives in the repository at
+[`internal/api/http/docs/openapi.yaml`](https://github.com/picunada/flagcel/blob/main/internal/api/http/docs/openapi.yaml).
 
 When the service is running, it also serves the spec and Swagger UI:
 
@@ -9,8 +10,8 @@ When the service is running, it also serves the spec and Swagger UI:
 
 Local URLs:
 
-- <http://localhost:8080/openapi.yaml>
-- <http://localhost:8080/docs>
+- `http://localhost:8080/openapi.yaml`
+- `http://localhost:8080/docs`
 
 See [Quickstart](quickstart.md) for curl examples.
 
@@ -73,3 +74,15 @@ Evaluation API keys are scoped to one environment. SDK and `/eval` callers do
 not pass an environment in the request; the bearer token selects it. Existing
 `/flags...` admin endpoints remain as compatibility aliases for the default
 `production` environment.
+
+## Admin Versus Evaluation APIs
+
+Dashboard and management requests use the admin session established through
+local auth or OIDC. Evaluation requests should use bearer API keys:
+
+```http
+Authorization: Bearer fc_your_api_key
+```
+
+Use [SDKs](sdks.md) for application integration instead of calling evaluation
+endpoints directly unless you are building a custom provider.

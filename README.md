@@ -43,8 +43,9 @@ See [Quickstart](docs/quickstart.md) for creating a flag, evaluating it, and usi
 
 ## Documentation
 
-- [Documentation index](docs/README.md)
+- [Documentation index](docs/index.md)
 - [Quickstart](docs/quickstart.md)
+- [Concepts](docs/concepts.md)
 - [Configuration](docs/configuration.md)
 - [Authentication](docs/auth.md)
 - [API](docs/api.md)

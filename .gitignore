@@ -45,6 +45,11 @@ web/.svelte-kit/
 web/build/*
 !web/build/.gitkeep
 
+# docs (VitePress)
+docs/node_modules/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
 # SDK package builds
 sdks/js/node_modules/
 sdks/js/dist/

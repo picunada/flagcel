@@ -26,4 +26,17 @@ All server config is provided through environment variables.
 | `AUTH_SESSION_TTL` | `24h` | Admin session lifetime |
 | `DEBUG_ADDR` | _empty_ | Optional pprof debug server address, for example `:16000` |
 
-See [Authentication](auth.md) for auth-specific behavior.
+## Required Production Settings
+
+At minimum, production deployments should set:
+
+- `DATABASE_URL`
+- `AUTH_SESSION_SECRET`
+- either OIDC settings or local bootstrap admin credentials
+
+Use `AUTH_COOKIE_SECURE=true` when Flagcel is served over HTTPS.
+
+## Authentication Settings
+
+See [Authentication](auth.md) for local admin auth, OIDC SSO, sessions, and
+evaluation API keys.

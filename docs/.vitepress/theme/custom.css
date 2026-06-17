@@ -1,0 +1,458 @@
+:root {
+    --flagcel-bg: #ffffff;
+    --flagcel-bg-alt: #f6f6f7;
+    --flagcel-panel: rgba(255, 255, 255, 0.86);
+    --flagcel-panel-solid: #ffffff;
+    --flagcel-foreground: #171717;
+    --flagcel-muted: #6f6f6f;
+    --flagcel-soft: rgba(23, 23, 23, 0.72);
+    --flagcel-border: rgba(15, 15, 15, 0.09);
+    --flagcel-border-strong: rgba(15, 15, 15, 0.2);
+    --flagcel-accent: #f97316;
+    --flagcel-accent-rgb: 249 115 22;
+    --flagcel-surface: #f6f6f7;
+    --flagcel-nav-bg: rgba(246, 246, 247, 0.94);
+    --flagcel-sidebar-bg: #f6f6f7;
+    --flagcel-nav-screen-bg: rgba(246, 246, 247, 0.98);
+    --flagcel-soft-bg: rgba(15, 15, 15, 0.04);
+    --flagcel-soft-bg-strong: rgba(15, 15, 15, 0.075);
+    --flagcel-code-inline-bg: rgba(15, 15, 15, 0.055);
+    --flagcel-code-block-bg: #f6f6f7;
+    --flagcel-table-head-bg: rgba(15, 15, 15, 0.035);
+    --flagcel-dropdown-bg: rgba(255, 255, 255, 0.94);
+    --flagcel-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+
+    --vp-c-bg: var(--flagcel-bg);
+    --vp-c-bg-alt: var(--flagcel-bg-alt);
+    --vp-c-bg-elv: var(--flagcel-surface);
+    --vp-c-bg-soft: var(--flagcel-soft-bg);
+    --vp-c-border: var(--flagcel-border);
+    --vp-c-divider: var(--flagcel-border);
+    --vp-c-gutter: var(--flagcel-border);
+    --vp-c-text-1: var(--flagcel-foreground);
+    --vp-c-text-2: var(--flagcel-soft);
+    --vp-c-text-3: var(--flagcel-muted);
+    --vp-c-brand-1: var(--flagcel-accent);
+    --vp-c-brand-2: #fb923c;
+    --vp-c-brand-3: #ea580c;
+    --vp-c-brand-soft: rgba(var(--flagcel-accent-rgb), 0.14);
+    --vp-c-default-soft: var(--flagcel-soft-bg);
+    --vp-c-default-1: var(--flagcel-soft);
+    --vp-c-default-2: rgba(23, 23, 23, 0.56);
+    --vp-c-default-3: rgba(23, 23, 23, 0.18);
+    --vp-c-code-bg: var(--flagcel-code-inline-bg);
+    --vp-c-code-block-bg: var(--flagcel-code-block-bg);
+    --vp-c-code-line-highlight-color: rgba(var(--flagcel-accent-rgb), 0.08);
+    --vp-c-code-line-number-color: rgba(23, 23, 23, 0.28);
+    --vp-c-tip-1: var(--flagcel-accent);
+    --vp-c-tip-2: #fb923c;
+    --vp-c-tip-3: #ea580c;
+    --vp-c-tip-soft: rgba(var(--flagcel-accent-rgb), 0.12);
+    --vp-font-family-base:
+        ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+        Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+    --vp-font-family-mono:
+        ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Monaco, Consolas,
+        monospace;
+    --vp-home-hero-name-color: var(--flagcel-foreground);
+    --vp-button-brand-bg: var(--flagcel-foreground);
+    --vp-button-brand-border: var(--flagcel-foreground);
+    --vp-button-brand-text: var(--flagcel-bg);
+    --vp-button-brand-hover-bg: var(--flagcel-accent);
+    --vp-button-brand-hover-border: var(--flagcel-accent);
+    --vp-button-brand-hover-text: var(--flagcel-bg);
+    --vp-button-brand-active-bg: var(--flagcel-accent);
+    --vp-button-brand-active-border: var(--flagcel-accent);
+    --vp-button-alt-bg: var(--flagcel-soft-bg);
+    --vp-button-alt-border: var(--flagcel-border);
+    --vp-button-alt-text: var(--flagcel-foreground);
+    --vp-button-alt-hover-bg: var(--flagcel-soft-bg-strong);
+    --vp-button-alt-hover-border: var(--flagcel-border-strong);
+    --vp-custom-block-tip-border: rgba(var(--flagcel-accent-rgb), 0.32);
+    --vp-custom-block-tip-bg: rgba(var(--flagcel-accent-rgb), 0.08);
+    --vp-custom-block-info-border: var(--flagcel-border);
+    --vp-custom-block-info-bg: var(--flagcel-soft-bg);
+    --vp-nav-height: 64px;
+    --vp-sidebar-width: 288px;
+    color-scheme: light;
+}
+
+.dark {
+    --flagcel-bg: #161618;
+    --flagcel-bg-alt: #1b1b1f;
+    --flagcel-panel: #1b1b1f;
+    --flagcel-panel-solid: #1b1b1f;
+    --flagcel-foreground: #ffffff;
+    --flagcel-muted: #8e8e8e;
+    --flagcel-soft: rgba(255, 255, 255, 0.78);
+    --flagcel-border: rgba(255, 255, 255, 0.08);
+    --flagcel-border-strong: rgba(255, 255, 255, 0.18);
+    --flagcel-accent: #ff9f43;
+    --flagcel-accent-rgb: 255 159 67;
+    --flagcel-surface: #1b1b1f;
+    --flagcel-nav-bg: rgba(27, 27, 31, 0.94);
+    --flagcel-sidebar-bg: #1b1b1f;
+    --flagcel-nav-screen-bg: rgba(27, 27, 31, 0.98);
+    --flagcel-soft-bg: rgba(255, 255, 255, 0.04);
+    --flagcel-soft-bg-strong: rgba(255, 255, 255, 0.075);
+    --flagcel-code-inline-bg: rgba(255, 255, 255, 0.045);
+    --flagcel-code-block-bg: #1b1b1f;
+    --flagcel-table-head-bg: rgba(255, 255, 255, 0.03);
+    --flagcel-dropdown-bg: rgba(27, 27, 31, 0.96);
+    --flagcel-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    --vp-c-default-2: rgba(255, 255, 255, 0.56);
+    --vp-c-default-3: rgba(255, 255, 255, 0.18);
+    --vp-c-code-line-number-color: rgba(255, 255, 255, 0.28);
+    color-scheme: dark;
+}
+
+::selection {
+    background: rgba(var(--flagcel-accent-rgb), 0.25);
+    color: var(--flagcel-foreground);
+}
+
+html,
+body {
+    background: var(--flagcel-bg);
+    font-feature-settings:
+        "tnum" 1,
+        "cv11" 1;
+}
+
+body {
+    color: var(--flagcel-foreground);
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+
+a {
+    text-underline-offset: 4px;
+}
+
+.VPNav {
+    background: var(--flagcel-nav-bg);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.VPNav:has(.VPNavBar.home.top) {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.VPNavBar {
+    border-bottom: 0;
+    background: transparent !important;
+}
+
+.VPNavBar.has-sidebar .content,
+.VPNavBar.has-sidebar .curtain {
+    background: transparent !important;
+}
+
+.VPNavBar .content,
+.VPNavBar .content-body {
+    background: transparent !important;
+}
+
+.VPNavBar .title {
+    border-bottom: 0;
+}
+
+.VPNavBarTitle .title {
+    font-family: var(--vp-font-family-mono);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.VPNavBarMenuLink {
+    font-weight: 500;
+    color: var(--flagcel-muted);
+    transition: color 180ms ease-out;
+}
+
+.VPNavBarMenuLink:hover,
+.VPNavBarMenuLink.active {
+    color: var(--flagcel-foreground);
+}
+
+.VPNavBarHamburger {
+    color: var(--flagcel-muted);
+}
+
+.VPNavBarHamburger:hover {
+    color: var(--flagcel-foreground);
+}
+
+.VPNavScreen {
+    background: var(--flagcel-nav-screen-bg);
+}
+
+.VPNavScreenMenuLink {
+    font-weight: 500;
+}
+
+.VPSidebar {
+    border-right: 1px solid var(--flagcel-border);
+    background: var(--flagcel-sidebar-bg) !important;
+}
+
+.VPSidebarItem.level-0 > .item > .text {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--flagcel-muted);
+}
+
+.VPSidebarItem.level-1 .text {
+    font-size: 13px;
+}
+
+.VPSidebarItem.level-1.is-active > .item .link > .text {
+    color: var(--flagcel-accent);
+}
+
+.VPLocalNavOutlineDropdown .items {
+    border-color: var(--flagcel-border);
+    background: var(--flagcel-dropdown-bg);
+    box-shadow: var(--flagcel-shadow);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+.VPLocalNavOutlineDropdown .header,
+.VPLocalNavOutlineDropdown .outline {
+    background: transparent;
+}
+
+.VPDoc .content {
+    max-width: 820px;
+}
+
+.VPDoc .content-container {
+    max-width: 820px;
+}
+
+.VPDoc h1,
+.VPDoc h2,
+.VPDoc h3,
+.VPHome h1,
+.VPHome h2,
+.VPHome h3 {
+    font-weight: 400;
+    letter-spacing: 0;
+}
+
+.VPDoc h1 {
+    font-size: 40px;
+    line-height: 1.1;
+}
+
+.VPDoc h2 {
+    border-top-color: var(--flagcel-border);
+}
+
+.VPDoc p,
+.VPDoc li {
+    color: var(--flagcel-soft);
+}
+
+.VPDoc strong {
+    color: var(--flagcel-foreground);
+}
+
+.VPDoc a,
+.VPDoc a > code {
+    color: var(--flagcel-accent);
+}
+
+.vp-doc table {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.vp-doc tr {
+    border-top: 1px solid var(--flagcel-border);
+}
+
+.vp-doc th,
+.vp-doc td {
+    border: 0;
+}
+
+.vp-doc th {
+    background: var(--flagcel-table-head-bg);
+    color: var(--flagcel-foreground);
+    font-family: var(--vp-font-family-mono);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.vp-doc td {
+    color: var(--flagcel-soft);
+}
+
+.vp-doc div[class*="language-"],
+.vp-doc :not(pre) > code,
+.vp-doc table,
+.custom-block {
+    border: 1px solid var(--flagcel-border);
+    border-radius: 4px;
+    background-color: var(--flagcel-soft-bg);
+}
+
+.vp-doc div[class*="language-"] {
+    border: 0;
+    background-color: var(--flagcel-code-block-bg);
+    box-shadow: none;
+}
+
+.vp-doc [class*="language-"] pre,
+.vp-doc [class*="language-"] code {
+    font-family: var(--vp-font-family-mono);
+}
+
+.vp-doc :not(pre) > code {
+    padding: 2px 5px;
+    color: var(--flagcel-foreground);
+}
+
+.VPHomeHero {
+    margin-bottom: 18px;
+}
+
+.VPHomeHero .container {
+    max-width: 1040px;
+}
+
+.VPHomeHero .main {
+    max-width: 760px;
+}
+
+.VPHomeHero .name {
+    font-size: clamp(42px, 7vw, 76px);
+    line-height: 0.95;
+}
+
+.VPHomeHero .text {
+    max-width: 720px;
+    color: var(--flagcel-foreground);
+    font-size: clamp(28px, 4vw, 48px);
+    line-height: 1.06;
+}
+
+.VPHomeHero .tagline {
+    max-width: 640px;
+    color: var(--flagcel-soft);
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.VPButton {
+    min-height: 38px;
+    border-radius: 4px !important;
+    font-weight: 500;
+    transition:
+        border-color 180ms ease-out,
+        background-color 180ms ease-out,
+        color 180ms ease-out,
+        transform 120ms ease-out;
+}
+
+.VPButton:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.VPFeatures .container {
+    max-width: 1040px;
+}
+
+.VPFeature {
+    border: 1px solid var(--flagcel-border);
+    border-radius: 4px;
+    background: var(--flagcel-panel);
+    box-shadow: var(--flagcel-shadow);
+    transition:
+        border-color 180ms ease-out,
+        background-color 180ms ease-out,
+        box-shadow 180ms ease-out;
+}
+
+.VPFeature:hover {
+    border-color: var(--flagcel-border-strong);
+    background: var(--flagcel-soft-bg);
+    box-shadow: var(--flagcel-shadow);
+}
+
+.VPFeature .title {
+    font-weight: 500;
+}
+
+.VPFeature .details {
+    color: var(--flagcel-soft);
+}
+
+.VPFooter {
+    border-top: 1px solid var(--flagcel-border);
+    background: transparent;
+    color: var(--flagcel-muted);
+}
+
+.VPDocFooter {
+    border-top-color: var(--flagcel-border);
+}
+
+.pager-link {
+    border-radius: 4px !important;
+    border-color: var(--flagcel-border) !important;
+    background: var(--flagcel-soft-bg);
+}
+
+.pager-link:hover {
+    border-color: var(--flagcel-border-strong) !important;
+}
+
+.DocSearch-Button {
+    border: 0 !important;
+    border-radius: 4px !important;
+    background: var(--flagcel-soft-bg) !important;
+    color: var(--flagcel-muted) !important;
+    cursor: pointer;
+    transition:
+        border-color 180ms ease-out,
+        background-color 180ms ease-out,
+        color 180ms ease-out;
+}
+
+.DocSearch-Button:hover {
+    border-color: var(--flagcel-border-strong) !important;
+    background: var(--flagcel-soft-bg-strong) !important;
+    color: var(--flagcel-foreground) !important;
+}
+
+.DocSearch-Button .DocSearch-Button-Placeholder {
+    color: var(--flagcel-soft);
+}
+
+.DocSearch-Button-Keys {
+    color: var(--flagcel-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
