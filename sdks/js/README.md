@@ -1,5 +1,7 @@
 # Flagcel OpenFeature Server Provider
 
+[![npm](https://img.shields.io/npm/v/@flagcel/openfeature-server.svg)](https://www.npmjs.com/package/@flagcel/openfeature-server)
+
 `@flagcel/openfeature-server` is a Node server provider for
 `@openfeature/server-sdk`. It resolves flags by calling the Flagcel server-side
 evaluation API.

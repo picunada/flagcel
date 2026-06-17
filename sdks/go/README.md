@@ -1,5 +1,7 @@
 # Flagcel Go SDK
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/picunada/flagcel/sdks/go.svg)](https://pkg.go.dev/github.com/picunada/flagcel/sdks/go)
+
 OpenFeature provider for Flagcel with local, native CEL evaluation. The provider polls Flagcel for `/eval/definitions`, compiles definitions with `evalcore`, and evaluates flags in-process.
 
 ## Install

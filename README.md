@@ -66,7 +66,7 @@ See [Quickstart](docs/quickstart.md) for creating a flag, evaluating it, and usi
 
 ## Roadmap
 
-- Harden the SDKs and publish versioned packages.
+- Stabilize the published SDKs toward a 1.0 release.
 - Add a Helm chart for Kubernetes installs.
 - Expand production deployment guidance.
 

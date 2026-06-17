@@ -1,5 +1,7 @@
 # Flagcel OpenFeature Provider for Python
 
+[![PyPI](https://img.shields.io/pypi/v/flagcel-openfeature.svg)](https://pypi.org/project/flagcel-openfeature/)
+
 OpenFeature provider for Flagcel with local CEL evaluation. The provider polls
 Flagcel for evaluation definitions, compiles rules with `cel-expr-python`, and
 evaluates flags in-process.

@@ -6,6 +6,8 @@ Runnable local examples for all three SDKs live in [`../examples`](../examples).
 
 ## Go
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/picunada/flagcel/sdks/go.svg)](https://pkg.go.dev/github.com/picunada/flagcel/sdks/go)
+
 The Go SDK is an [OpenFeature](https://openfeature.dev/) provider in [`../sdks/go`](../sdks/go). It polls `GET /api/v1/eval/definitions` with an evaluation API key, compiles definitions with native `cel-go` through `evalcore`, and evaluates flags locally.
 
 ```go
@@ -29,6 +31,8 @@ See [`../sdks/go/README.md`](../sdks/go/README.md) for installation, OpenFeature
 
 ## JS/TS
 
+[![npm](https://img.shields.io/npm/v/@flagcel/openfeature-server.svg)](https://www.npmjs.com/package/@flagcel/openfeature-server)
+
 The JS/TS SDK is an OpenFeature server provider in [`../sdks/js`](../sdks/js). It packages `@flagcel/openfeature-server` and resolves flags by calling the Flagcel evaluation API from Node server runtimes.
 
 ```ts
@@ -50,6 +54,8 @@ const enabled = await client.getBooleanValue("new-checkout", false, {
 See [`../sdks/js/README.md`](../sdks/js/README.md) for installation, runtime requirements, targeting context, and failure behavior.
 
 ## Python
+
+[![PyPI](https://img.shields.io/pypi/v/flagcel-openfeature.svg)](https://pypi.org/project/flagcel-openfeature/)
 
 The Python SDK is an OpenFeature provider in [`../sdks/python`](../sdks/python). It packages `flagcel-openfeature`, polls `GET /api/v1/eval/definitions` with an evaluation API key, compiles definitions with `cel-expr-python`, and evaluates flags locally.
 
