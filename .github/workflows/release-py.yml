@@ -1,11 +1,11 @@
 name: Release Python SDK
 
 # Publishes flagcel-openfeature to PyPI via trusted publishing (OIDC).
-# Trigger: push a tag like `py-v0.1.0` (must match sdks/python/pyproject.toml version).
+# Trigger: push a tag like `sdks/python/v0.1.0` (must match sdks/python/pyproject.toml version).
 on:
   push:
     tags:
-      - "py-v*"
+      - "sdks/python/v*"
 
 jobs:
   build:
@@ -23,9 +23,9 @@ jobs:
       - name: Verify tag matches project version
         run: |
           VER=$(python -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
-          TAG="${GITHUB_REF_NAME#py-v}"
+          TAG="${GITHUB_REF_NAME##*/}"; TAG="${TAG#v}"
           if [ "$VER" != "$TAG" ]; then
-            echo "::error::tag py-v$TAG does not match pyproject version $VER"
+            echo "::error::tag sdks/python/v$TAG does not match pyproject version $VER"
             exit 1
           fi
 
