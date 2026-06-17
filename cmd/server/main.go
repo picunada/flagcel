@@ -100,7 +100,7 @@ func runServer() {
 		WriteTimeout:    cfg.HTTP.WriteTimeout,
 		IdleTimeout:     cfg.HTTP.IdleTimeout,
 		ShutdownTimeout: cfg.HTTP.ShutdownTimeout,
-	}, flagSvc, ruleSvc, envSvc, ctxSvc, evalSvc, authSvc, logger)
+	}, flagSvc, ruleSvc, envSvc, ctxSvc, evalSvc, authSvc, store, logger)
 
 	if cfg.DebugAddr != "" {
 		dbg := debug.NewServer(cfg.DebugAddr, logger)

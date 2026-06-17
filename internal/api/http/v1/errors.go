@@ -84,6 +84,11 @@ var (
 		Code:    "AUTH_NOT_CONFIGURED",
 		Message: "Auth is not configured",
 	}
+	ErrNotReady = &APIError{
+		Status:  http.StatusServiceUnavailable,
+		Code:    "NOT_READY",
+		Message: "Service is not ready",
+	}
 	ErrInternal = &APIError{
 		Status:  http.StatusInternalServerError,
 		Code:    "INTERNAL_ERROR",

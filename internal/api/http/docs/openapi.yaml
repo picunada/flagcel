@@ -8,6 +8,7 @@ servers:
     description: Local dev
 
 tags:
+  - name: Health
   - name: Auth
   - name: Environments
   - name: Flags
@@ -17,6 +18,42 @@ tags:
   - name: API Keys
 
 paths:
+  /healthz:
+    get:
+      tags: [Health]
+      summary: Check application health
+      description: Returns a successful response when the HTTP application is running.
+      responses:
+        "200":
+          description: Application is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthEnvelope"
+
+  /readyz:
+    get:
+      tags: [Health]
+      summary: Check application readiness
+      description: Returns a successful response when the HTTP application can reach its datastore.
+      responses:
+        "200":
+          description: Application is ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthEnvelope"
+        "503":
+          description: Application is not ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+              example:
+                error:
+                  code: NOT_READY
+                  message: Service is not ready
+
   /auth/me:
     get:
       tags: [Auth]
@@ -852,6 +889,22 @@ components:
             data:
               $ref: "#/components/schemas/AuthMe"
 
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+
+    HealthEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/Health"
+
     Environment:
       type: object
       required: [id, key, name, created_at, updated_at]
@@ -1337,6 +1390,7 @@ components:
             - INVALID_REQUEST
             - BAD_REQUEST
             - AUTH_NOT_CONFIGURED
+            - NOT_READY
             - INVALID_CREDENTIALS
             - UNAUTHORIZED
             - FORBIDDEN

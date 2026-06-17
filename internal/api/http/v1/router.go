@@ -8,6 +8,7 @@ import (
 )
 
 type Handlers struct {
+	Health       *HealthHandler
 	Flags        *FlagsHandler
 	Rules        *RulesHandler
 	Environments *EnvironmentsHandler
@@ -33,6 +34,7 @@ func NewRouter(h *Handlers) http.Handler {
 	evalProtected := h.Auth.APIKeyMiddleware(eval)
 
 	v1 := http.NewServeMux()
+	h.Health.Register(v1)
 	h.Auth.RegisterAPI(v1)
 	v1.Handle("/eval", evalProtected)
 	v1.Handle("/eval/", evalProtected)
@@ -41,6 +43,7 @@ func NewRouter(h *Handlers) http.Handler {
 	}
 
 	root := http.NewServeMux()
+	h.Health.Register(root)
 	h.Auth.RegisterPublic(root)
 	root.Handle("/api/v1/", http.StripPrefix("/api/v1", v1))
 	docs.Register(root)

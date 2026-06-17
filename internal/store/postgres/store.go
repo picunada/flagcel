@@ -28,6 +28,10 @@ func NewStore(pool *pgxpool.Pool) *Store {
 	return &Store{pool: pool, q: sqlcgen.New(pool)}
 }
 
+func (s *Store) Ping(ctx context.Context) error {
+	return s.pool.Ping(ctx)
+}
+
 func (s *Store) Close(ctx context.Context) error {
 	done := make(chan struct{})
 	go func() {
