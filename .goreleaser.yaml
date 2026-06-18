@@ -16,6 +16,10 @@ project_name: flagcel
 
 before:
   hooks:
+    # internal/store/postgres/sqlcgen is generated (gitignored); regenerate it
+    # from the committed queries + migrations before building. Requires sqlc on
+    # PATH (the release workflow installs it).
+    - sqlc generate
     - make web
 
 builds:

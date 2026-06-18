@@ -10,3 +10,5 @@ LICENSE
 **/node_modules
 web/build
 web/.svelte-kit
+# Generated in the build stage by `sqlc generate`.
+internal/store/postgres/sqlcgen

@@ -21,6 +21,9 @@ RUN pnpm build
 FROM golang:1.26-alpine AS build
 WORKDIR /app
 RUN apk add --no-cache git
+# sqlc generates the DB access layer (internal/store/postgres/sqlcgen is
+# gitignored); install it to regenerate before building.
+RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1
 COPY go.mod go.sum ./
 # evalcore is a local-replace module; its go.mod must be present for the module
 # graph before `go mod download` runs (mirrors Dockerfile.dev).
@@ -29,6 +32,8 @@ RUN go mod download
 COPY . .
 # The build stage's dashboard output replaces any web/build copied from context.
 COPY --from=web /web/build ./web/build
+# Regenerate sqlcgen from the committed queries.sql + migrations.
+RUN sqlc generate
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /flagcel ./cmd/server
 
 # --- Stage 3: minimal runtime ----------------------------------------------
