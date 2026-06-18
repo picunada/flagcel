@@ -1,0 +1,24 @@
+apiVersion: v2
+name: flagcel
+description: Self-hosted feature flags with CEL-based targeting rules.
+type: application
+# Chart version. Bump on chart changes; the release tag charts/vX.Y.Z must match.
+version: 0.1.0
+# Default Flagcel server image tag the chart deploys.
+appVersion: "0.1.0"
+home: https://github.com/picunada/flagcel
+sources:
+  - https://github.com/picunada/flagcel
+keywords:
+  - feature-flags
+  - feature-toggles
+  - cel
+maintainers:
+  - name: picunada
+dependencies:
+  # Optional bundled database for demos/quickstart. Disabled by default;
+  # production installs should use an external Postgres (see values.yaml).
+  - name: postgresql
+    version: "16.x.x"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: postgresql.enabled

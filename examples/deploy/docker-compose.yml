@@ -1,0 +1,49 @@
+# Production-style Compose for Flagcel using a published image.
+#
+# Unlike the repo-root docker-compose.yml (which builds the dev image with
+# hot-reload from source), this pulls the released server image and runs it
+# against a Postgres container.
+#
+# Usage:
+#   AUTH_SESSION_SECRET=$(openssl rand -hex 32) \
+#   docker compose -f examples/deploy/docker-compose.yml up -d
+#
+# Pin a version by setting FLAGCEL_TAG (defaults to latest).
+services:
+  app:
+    image: ghcr.io/picunada/flagcel:${FLAGCEL_TAG:-latest}
+    # Docker Hub alternative: docker.io/picunada/flagcel:${FLAGCEL_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://flagcel:${POSTGRES_PASSWORD:-flagcel}@db:5432/flagcel?sslmode=disable
+      LOG_FORMAT: json
+      # Generate with `openssl rand -hex 32` and keep it stable across restarts.
+      AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET:?set AUTH_SESSION_SECRET}
+      # First-boot local admin (omit if you configure OIDC instead).
+      AUTH_BOOTSTRAP_ADMIN_EMAIL: ${AUTH_BOOTSTRAP_ADMIN_EMAIL:-admin@localhost}
+      AUTH_BOOTSTRAP_ADMIN_PASSWORD: ${AUTH_BOOTSTRAP_ADMIN_PASSWORD:-secret}
+      # Set true once Flagcel is served over HTTPS (e.g. behind a reverse proxy).
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: flagcel
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flagcel}
+      POSTGRES_DB: flagcel
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flagcel -d flagcel"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db-data:

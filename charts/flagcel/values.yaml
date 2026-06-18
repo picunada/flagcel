@@ -1,0 +1,111 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/picunada/flagcel
+  pullPolicy: IfNotPresent
+  # Overrides the image tag (defaults to .Chart.AppVersion).
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+# distroless/static runs as uid/gid 65532 (nonroot).
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: flagcel.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources: {}
+  # limits:
+  #   cpu: 500m
+  #   memory: 256Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# --- Flagcel server configuration ------------------------------------------
+config:
+  logLevel: info
+  logFormat: json
+  # Server applies pending DB migrations on boot. Disable to run them out of
+  # band with `flagcel migrate up` (see chart README).
+  migrateOnStartup: true
+
+# Database connection. Provide exactly one of:
+#   - database.url            (DSN written into a chart-managed Secret)
+#   - database.existingSecret (reference your own Secret)
+#   - postgresql.enabled=true (use the bundled subchart below)
+database:
+  # postgres://user:pass@host:5432/flagcel?sslmode=require
+  url: ""
+  existingSecret: ""
+  existingSecretKey: DATABASE_URL
+
+auth:
+  # Session signing secret. If empty (and no existingSecret), a random value is
+  # generated at install and kept stable across upgrades via a lookup.
+  sessionSecret: ""
+  existingSecret: ""
+  existingSecretKey: AUTH_SESSION_SECRET
+  # Set true behind HTTPS so session cookies get the Secure attribute.
+  cookieSecure: true
+  # Bootstrap a local admin on first boot. Leave empty when using OIDC only.
+  bootstrapAdminEmail: ""
+  bootstrapAdminPassword: ""
+  # Comma-separated emails granted admin via OIDC.
+  adminEmails: ""
+  oidc:
+    issuerUrl: ""
+    clientId: ""
+    clientSecret: ""
+    redirectUrl: ""
+
+# Extra raw env vars, e.g. HTTP_READ_TIMEOUT or values from your own secrets.
+#   - name: HTTP_READ_TIMEOUT
+#     value: "10s"
+extraEnv: []
+
+# Bundled PostgreSQL (Bitnami). Off by default — bring your own DB in prod.
+# When enabled, DATABASE_URL is derived from the values below.
+postgresql:
+  enabled: false
+  auth:
+    username: flagcel
+    password: flagcel
+    database: flagcel

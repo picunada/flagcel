@@ -1,0 +1,28 @@
+Flagcel has been deployed.
+
+{{- if .Values.ingress.enabled }}
+
+Reachable via your Ingress:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else if eq .Values.service.type "ClusterIP" }}
+
+Port-forward to reach the dashboard and API:
+
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "flagcel.fullname" . }} 8080:{{ .Values.service.port }}
+
+Then open http://localhost:8080
+{{- end }}
+
+{{- if and .Values.auth.bootstrapAdminEmail (not .Values.auth.oidc.issuerUrl) }}
+
+Bootstrap admin: {{ .Values.auth.bootstrapAdminEmail }}
+{{- end }}
+
+{{- if not .Values.config.migrateOnStartup }}
+
+NOTE: migrateOnStartup is disabled. Apply migrations manually, e.g.:
+
+  kubectl --namespace {{ .Release.Namespace }} exec deploy/{{ include "flagcel.fullname" . }} -- /flagcel migrate up
+{{- end }}
