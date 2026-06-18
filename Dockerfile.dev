@@ -6,6 +6,9 @@ RUN apk add --no-cache git \
     && go install github.com/air-verse/air@latest
 
 COPY go.mod go.sum ./
+# evalcore is a local-replace module; its go.mod must be present for the
+# module graph before `go mod download` runs.
+COPY evalcore/go.mod evalcore/go.sum ./evalcore/
 RUN go mod download
 
 COPY . .

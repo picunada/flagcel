@@ -278,6 +278,7 @@ export default defineConfig({
             {
                 text: "Operate",
                 items: [
+                    { text: "Deployment", link: "/deployment" },
                     { text: "Configuration", link: "/configuration" },
                     { text: "Authentication", link: "/auth" },
                     { text: "Migrations", link: "/migrations" },

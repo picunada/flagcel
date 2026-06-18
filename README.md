@@ -41,11 +41,37 @@ admin@localhost / secret
 
 See [Quickstart](docs/src/quickstart.md) for creating a flag, evaluating it, and using the local API.
 
+## Install / Deploy
+
+The `docker compose up` above builds the dev image from source. For real
+deployments, Flagcel publishes a self-contained server (the dashboard,
+migrations, and OpenAPI spec are embedded in the binary):
+
+- **Container image** (multi-arch, on every release):
+
+  ```sh
+  docker pull ghcr.io/picunada/flagcel:latest   # or docker.io/picunada/flagcel:latest
+  ```
+
+- **Docker Compose** (production-style, pulls the published image): [`examples/deploy/docker-compose.yml`](examples/deploy/docker-compose.yml).
+- **Helm** (OCI chart on GHCR):
+
+  ```sh
+  helm install flagcel oci://ghcr.io/picunada/charts/flagcel \
+    --set database.url="postgres://user:pass@host:5432/flagcel?sslmode=require"
+  ```
+
+- **Prebuilt binaries** with checksums on the [Releases](https://github.com/picunada/flagcel/releases) page.
+
+See [Deployment](docs/src/deployment.md) for full instructions and a production
+checklist.
+
 ## Documentation
 
 - [Documentation index](docs/src/index.md)
 - [Quickstart](docs/src/quickstart.md)
 - [Concepts](docs/src/concepts.md)
+- [Deployment](docs/src/deployment.md)
 - [Configuration](docs/src/configuration.md)
 - [Authentication](docs/src/auth.md)
 - [API](docs/src/api.md)
@@ -63,13 +89,13 @@ See [Quickstart](docs/src/quickstart.md) for creating a flag, evaluating it, and
 - [`web`](web) - SvelteKit dashboard.
 - [`sdks`](sdks) - OpenFeature providers.
 - [`examples`](examples) - runnable SDK examples.
+- [`charts/flagcel`](charts/flagcel) - Helm chart for Kubernetes installs.
 - [`docs/src`](docs/src) - project documentation.
 
 ## Roadmap
 
 - Stabilize the published SDKs toward a 1.0 release.
-- Add a Helm chart for Kubernetes installs.
-- Expand production deployment guidance.
+- Add release signing and SBOMs (cosign / syft) to published artifacts.
 
 ## Contributing
 

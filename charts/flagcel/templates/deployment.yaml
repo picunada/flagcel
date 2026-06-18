@@ -1,0 +1,132 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "flagcel.fullname" . }}
+  labels:
+    {{- include "flagcel.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "flagcel.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        # Roll pods when the chart-managed Secret changes.
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "flagcel.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "flagcel.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: flagcel
+          image: {{ include "flagcel.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "8080"
+            - name: LOG_LEVEL
+              value: {{ .Values.config.logLevel | quote }}
+            - name: LOG_FORMAT
+              value: {{ .Values.config.logFormat | quote }}
+            - name: MIGRATE_ON_STARTUP
+              value: {{ .Values.config.migrateOnStartup | quote }}
+            - name: AUTH_COOKIE_SECURE
+              value: {{ .Values.auth.cookieSecure | quote }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.database.existingSecret }}
+                  name: {{ .Values.database.existingSecret }}
+                  key: {{ .Values.database.existingSecretKey }}
+                  {{- else }}
+                  name: {{ include "flagcel.fullname" . }}
+                  key: DATABASE_URL
+                  {{- end }}
+            - name: AUTH_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.auth.existingSecret }}
+                  name: {{ .Values.auth.existingSecret }}
+                  key: {{ .Values.auth.existingSecretKey }}
+                  {{- else }}
+                  name: {{ include "flagcel.fullname" . }}
+                  key: AUTH_SESSION_SECRET
+                  {{- end }}
+            {{- if .Values.auth.bootstrapAdminEmail }}
+            - name: AUTH_BOOTSTRAP_ADMIN_EMAIL
+              value: {{ .Values.auth.bootstrapAdminEmail | quote }}
+            {{- end }}
+            {{- if .Values.auth.bootstrapAdminPassword }}
+            - name: AUTH_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "flagcel.fullname" . }}
+                  key: AUTH_BOOTSTRAP_ADMIN_PASSWORD
+            {{- end }}
+            {{- if .Values.auth.adminEmails }}
+            - name: AUTH_ADMIN_EMAILS
+              value: {{ .Values.auth.adminEmails | quote }}
+            {{- end }}
+            {{- if .Values.auth.oidc.issuerUrl }}
+            - name: AUTH_OIDC_ISSUER_URL
+              value: {{ .Values.auth.oidc.issuerUrl | quote }}
+            - name: AUTH_OIDC_CLIENT_ID
+              value: {{ .Values.auth.oidc.clientId | quote }}
+            - name: AUTH_OIDC_REDIRECT_URL
+              value: {{ .Values.auth.oidc.redirectUrl | quote }}
+            {{- end }}
+            {{- if .Values.auth.oidc.clientSecret }}
+            - name: AUTH_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "flagcel.fullname" . }}
+                  key: AUTH_OIDC_CLIENT_SECRET
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

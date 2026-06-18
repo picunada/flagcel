@@ -1,0 +1,10 @@
+# Slim image used by GoReleaser. It copies the already cross-compiled binary
+# (which embeds the dashboard, migrations, and OpenAPI spec) into a distroless
+# base, so no toolchain or rebuild is needed per architecture.
+#
+# For from-source builds, use the top-level Dockerfile instead.
+FROM gcr.io/distroless/static:nonroot
+COPY flagcel /flagcel
+EXPOSE 8080
+USER nonroot:nonroot
+ENTRYPOINT ["/flagcel"]

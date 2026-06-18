@@ -1,0 +1,102 @@
+# GoReleaser config for the Flagcel server.
+#
+# Triggered by a bare `v*` git tag (sub-modules use prefixed tags like
+# `sdks/go/v*`, so `v*` is unambiguously the server release). Produces:
+#   - cross-compiled binaries + checksums attached to a GitHub Release
+#   - multi-arch (amd64+arm64) container images on GHCR and Docker Hub
+#
+# The Go binary embeds the SvelteKit dashboard, so `make web` must run before the
+# builds. Run `pnpm --dir web install --frozen-lockfile` first (the release
+# workflow does this).
+#
+# Local dry run (no publish): goreleaser release --snapshot --clean
+version: 2
+
+project_name: flagcel
+
+before:
+  hooks:
+    - make web
+
+builds:
+  - id: flagcel
+    main: ./cmd/server
+    binary: flagcel
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: "checksums.txt"
+
+dockers:
+  - id: amd64
+    goos: linux
+    goarch: amd64
+    dockerfile: Dockerfile.release
+    use: buildx
+    image_templates:
+      - "ghcr.io/picunada/flagcel:{{ .Version }}-amd64"
+      - "docker.io/picunada/flagcel:{{ .Version }}-amd64"
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.source=https://github.com/picunada/flagcel"
+      - "--label=org.opencontainers.image.licenses=Apache-2.0"
+  - id: arm64
+    goos: linux
+    goarch: arm64
+    dockerfile: Dockerfile.release
+    use: buildx
+    image_templates:
+      - "ghcr.io/picunada/flagcel:{{ .Version }}-arm64"
+      - "docker.io/picunada/flagcel:{{ .Version }}-arm64"
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.source=https://github.com/picunada/flagcel"
+      - "--label=org.opencontainers.image.licenses=Apache-2.0"
+
+docker_manifests:
+  - name_template: "ghcr.io/picunada/flagcel:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/picunada/flagcel:{{ .Version }}-amd64"
+      - "ghcr.io/picunada/flagcel:{{ .Version }}-arm64"
+  - name_template: "docker.io/picunada/flagcel:{{ .Version }}"
+    image_templates:
+      - "docker.io/picunada/flagcel:{{ .Version }}-amd64"
+      - "docker.io/picunada/flagcel:{{ .Version }}-arm64"
+  # `latest` is only moved for stable releases, not pre-releases (e.g. -rc.1).
+  - name_template: "ghcr.io/picunada/flagcel:latest"
+    skip_push: auto
+    image_templates:
+      - "ghcr.io/picunada/flagcel:{{ .Version }}-amd64"
+      - "ghcr.io/picunada/flagcel:{{ .Version }}-arm64"
+  - name_template: "docker.io/picunada/flagcel:latest"
+    skip_push: auto
+    image_templates:
+      - "docker.io/picunada/flagcel:{{ .Version }}-amd64"
+      - "docker.io/picunada/flagcel:{{ .Version }}-arm64"
+
+release:
+  prerelease: auto

@@ -52,6 +52,10 @@ docs/.vitepress/dist/
 docs/src/.vitepress/cache/
 docs/src/.vitepress/dist/
 
+# Helm chart build artifacts (Chart.lock is committed; fetched deps are not)
+charts/flagcel/charts/
+dist/
+
 # SDK package builds
 sdks/js/node_modules/
 sdks/js/dist/

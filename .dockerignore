@@ -1,6 +1,12 @@
 .git
 .gitignore
 .env
+.env.*
 tmp
+bin
+dist
 *.md
 LICENSE
+**/node_modules
+web/build
+web/.svelte-kit
