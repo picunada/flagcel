@@ -5,6 +5,9 @@ hero:
   name: Flagcel
   text: Self-hosted feature flags with CEL targeting.
   tagline: Run the control plane in your own infrastructure, manage flags through a dashboard or API, and evaluate with OpenFeature SDK providers.
+  image:
+    src: /hero.svg
+    alt: Flagcel
   actions:
     - theme: brand
       text: Quickstart
