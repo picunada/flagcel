@@ -248,6 +248,7 @@ export default defineConfig({
         },
     },
     head: [
+        ["link", { rel: "icon", type: "image/svg+xml", href: "/flagcel/favicon.svg" }],
         ["meta", { name: "theme-color", content: "#0f0f0f" }],
         [
             "meta",
@@ -259,6 +260,7 @@ export default defineConfig({
         ],
     ],
     themeConfig: {
+        logo: "/logo.svg",
         siteTitle: "flagcel",
         nav: [
             { text: "Guide", link: "/quickstart" },
