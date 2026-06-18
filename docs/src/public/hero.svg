@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
 	<defs>
 		<linearGradient id="flagcel-card" x1="0" y1="0" x2="96" y2="96" gradientUnits="userSpaceOnUse">
-			<stop offset="0" stop-color="#ffb86b"/>
-			<stop offset="0.5" stop-color="#ff9f43"/>
+			<stop offset="0" stop-color="#ffa45c"/>
+			<stop offset="0.5" stop-color="#ff8a3d"/>
 			<stop offset="1" stop-color="#ea580c"/>
 		</linearGradient>
 	</defs>

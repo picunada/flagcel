@@ -54,7 +54,14 @@
     --vp-font-family-mono:
         ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Monaco, Consolas,
         monospace;
-    --vp-home-hero-name-color: var(--flagcel-foreground);
+    --vp-home-hero-name-color: transparent;
+    --vp-home-hero-name-background: linear-gradient(
+        135deg,
+        var(--flagcel-foreground) 0%,
+        var(--flagcel-accent) 100%
+    );
+    --flagcel-glass: rgba(255, 255, 255, 0.6);
+    --flagcel-glass-hover: rgba(255, 255, 255, 0.8);
     --vp-button-brand-bg: var(--flagcel-foreground);
     --vp-button-brand-border: var(--flagcel-foreground);
     --vp-button-brand-text: var(--flagcel-bg);
@@ -78,28 +85,30 @@
 }
 
 .dark {
-    --flagcel-bg: #161618;
-    --flagcel-bg-alt: #1b1b1f;
-    --flagcel-panel: #1b1b1f;
-    --flagcel-panel-solid: #1b1b1f;
+    --flagcel-bg: #131313;
+    --flagcel-bg-alt: #0e0e0e;
+    --flagcel-panel: #202020;
+    --flagcel-panel-solid: #202020;
     --flagcel-foreground: #ffffff;
     --flagcel-muted: #8e8e8e;
     --flagcel-soft: rgba(255, 255, 255, 0.78);
     --flagcel-border: rgba(255, 255, 255, 0.08);
-    --flagcel-border-strong: rgba(255, 255, 255, 0.18);
-    --flagcel-accent: #ff9f43;
-    --flagcel-accent-rgb: 255 159 67;
-    --flagcel-surface: #1b1b1f;
-    --flagcel-nav-bg: rgba(27, 27, 31, 0.94);
-    --flagcel-sidebar-bg: #1b1b1f;
-    --flagcel-nav-screen-bg: rgba(27, 27, 31, 0.98);
+    --flagcel-border-strong: rgba(255, 255, 255, 0.15);
+    --flagcel-accent: #ff8a3d;
+    --flagcel-accent-rgb: 255 138 61;
+    --flagcel-surface: #202020;
+    --flagcel-nav-bg: rgba(19, 19, 19, 0.94);
+    --flagcel-sidebar-bg: #131313;
+    --flagcel-nav-screen-bg: rgba(19, 19, 19, 0.98);
     --flagcel-soft-bg: rgba(255, 255, 255, 0.04);
     --flagcel-soft-bg-strong: rgba(255, 255, 255, 0.075);
     --flagcel-code-inline-bg: rgba(255, 255, 255, 0.045);
-    --flagcel-code-block-bg: #1b1b1f;
+    --flagcel-code-block-bg: #1c1b1b;
     --flagcel-table-head-bg: rgba(255, 255, 255, 0.03);
-    --flagcel-dropdown-bg: rgba(27, 27, 31, 0.96);
+    --flagcel-dropdown-bg: rgba(32, 32, 32, 0.96);
     --flagcel-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    --flagcel-glass: rgba(32, 32, 32, 0.6);
+    --flagcel-glass-hover: rgba(32, 32, 32, 0.8);
     --vp-c-default-2: rgba(255, 255, 255, 0.56);
     --vp-c-default-3: rgba(255, 255, 255, 0.18);
     --vp-c-code-line-number-color: rgba(255, 255, 255, 0.28);
@@ -274,6 +283,7 @@ a {
     display: table;
     width: 100%;
     border-collapse: collapse;
+    overflow: hidden;
     font-size: 13px;
 }
 
@@ -300,17 +310,22 @@ a {
     color: var(--flagcel-soft);
 }
 
-.vp-doc div[class*="language-"],
-.vp-doc :not(pre) > code,
 .vp-doc table,
 .custom-block {
     border: 1px solid var(--flagcel-border);
-    border-radius: 4px;
+    border-radius: 12px;
+    background-color: var(--flagcel-soft-bg);
+}
+
+.vp-doc :not(pre) > code {
+    border: 1px solid var(--flagcel-border);
+    border-radius: 6px;
     background-color: var(--flagcel-soft-bg);
 }
 
 .vp-doc div[class*="language-"] {
     border: 0;
+    border-radius: 0;
     background-color: var(--flagcel-code-block-bg);
     box-shadow: none;
 }
@@ -413,7 +428,8 @@ a {
 
 .VPHomeHero .name {
     font-size: clamp(42px, 7vw, 76px);
-    line-height: 0.95;
+    line-height: 1.1;
+    padding-bottom: 0.08em;
 }
 
 .VPHomeHero .text {
@@ -432,7 +448,7 @@ a {
 
 .VPButton {
     min-height: 38px;
-    border-radius: 4px !important;
+    border-radius: 8px !important;
     font-weight: 500;
     transition:
         border-color 180ms ease-out,
@@ -451,19 +467,23 @@ a {
 
 .VPFeature {
     border: 1px solid var(--flagcel-border);
-    border-radius: 4px;
-    background: var(--flagcel-panel);
+    border-radius: 16px;
+    background: var(--flagcel-glass);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     box-shadow: var(--flagcel-shadow);
     transition:
-        border-color 180ms ease-out,
-        background-color 180ms ease-out,
-        box-shadow 180ms ease-out;
+        border-color 300ms ease,
+        background-color 300ms ease,
+        box-shadow 300ms ease,
+        transform 300ms ease;
 }
 
 .VPFeature:hover {
     border-color: var(--flagcel-border-strong);
-    background: var(--flagcel-soft-bg);
+    background: var(--flagcel-glass-hover);
     box-shadow: var(--flagcel-shadow);
+    transform: translateY(-2px);
 }
 
 .VPFeature .title {
@@ -485,7 +505,7 @@ a {
 }
 
 .pager-link {
-    border-radius: 4px !important;
+    border-radius: 12px !important;
     border-color: var(--flagcel-border) !important;
     background: var(--flagcel-soft-bg);
 }
@@ -496,7 +516,7 @@ a {
 
 .DocSearch-Button {
     border: 0 !important;
-    border-radius: 4px !important;
+    border-radius: 8px !important;
     background: var(--flagcel-soft-bg) !important;
     color: var(--flagcel-muted) !important;
     cursor: pointer;
