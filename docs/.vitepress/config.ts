@@ -241,6 +241,9 @@ export default defineConfig({
     appearance: "dark",
     lastUpdated: true,
     markdown: {
+        headers: {
+            level: [2, 3],
+        },
         lineNumbers: false,
         theme: {
             light: flagcelLightCodeTheme,
@@ -298,6 +301,10 @@ export default defineConfig({
         ],
         search: {
             provider: "local",
+        },
+        outline: {
+            level: [2, 3],
+            label: "On this page",
         },
         socialLinks: [{ icon: "github", link: repo }],
         editLink: {

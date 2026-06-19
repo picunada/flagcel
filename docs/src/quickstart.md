@@ -1,7 +1,14 @@
+<div class="fc-breadcrumb"><span>Guide</span><span>/</span><strong>Quickstart</strong></div>
+
 # Quickstart
 
-This guide starts Flagcel locally, creates a boolean flag, and evaluates it
-through the HTTP API.
+<p class="fc-lead">Start Flagcel locally, create a boolean flag, and evaluate it through the HTTP API.</p>
+
+<div class="fc-tags">
+  <span>≈ 5 min</span>
+  <span>Docker</span>
+  <span>Postgres 14+</span>
+</div>
 
 ## Prerequisites
 
@@ -10,6 +17,8 @@ through the HTTP API.
 - `jq` is optional, but useful for API work.
 
 ## Run The Service
+
+<div class="fc-process-block" aria-hidden="true"></div>
 
 ```sh
 docker compose up
@@ -24,6 +33,10 @@ The Docker quickstart bootstraps a local admin account:
 ```text
 admin@localhost / secret
 ```
+
+::: tip Local development
+Run `flagcel dev` to spin up an ephemeral Postgres and seed a demo project.
+:::
 
 ## Create A Flag
 
@@ -75,7 +88,25 @@ For runnable SDK examples, see the
 
 ## Next Steps
 
-- Read [Concepts](concepts.md) to understand rules, CEL, and rollout bucketing.
-- Review [Authentication](auth.md) before exposing a deployment beyond local
-  development.
-- Use [SDKs](sdks.md) to evaluate flags from application code.
+<div class="fc-nextgrid">
+  <a class="fc-ncard" href="concepts">
+    <div class="nk">Concepts</div>
+    <div class="nh">CEL targeting</div>
+    <div class="nd">Understand rules, evaluation context, and rollout bucketing.</div>
+  </a>
+  <a class="fc-ncard" href="auth">
+    <div class="nk">Operate</div>
+    <div class="nh">Authentication</div>
+    <div class="nd">Prepare local auth or OIDC before exposing a deployment.</div>
+  </a>
+  <a class="fc-ncard" href="sdks">
+    <div class="nk">SDKs</div>
+    <div class="nh">Evaluate from your app</div>
+    <div class="nd">Use OpenFeature providers from Go, TypeScript, and Python.</div>
+  </a>
+  <a class="fc-ncard" href="api">
+    <div class="nk">Reference</div>
+    <div class="nh">HTTP API</div>
+    <div class="nd">Review endpoints for flags, environments, contexts, and eval.</div>
+  </a>
+</div>
