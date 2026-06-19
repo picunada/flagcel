@@ -8,7 +8,7 @@
     --flagcel-foreground: #f4f3f1;
     --flagcel-soft: #b6b5bd;
     --flagcel-muted: #76767f;
-    --flagcel-border: rgba(255, 255, 255, 0.07);
+    --flagcel-border: rgba(255, 255, 255, 0.04);
     --flagcel-border-strong: rgba(255, 255, 255, 0.11);
     --flagcel-accent: #f97316;
     --flagcel-accent-2: #fdba74;
@@ -97,11 +97,19 @@ body {
 
 .Layout {
     --flagcel-grid-offset: 0px;
+    --flagcel-grid-fade-right-start: 100%;
+    --flagcel-grid-fade-right-end: 100%;
     background-image:
         linear-gradient(
             to bottom,
-            rgb(11 11 13 / 0) var(--vp-nav-height),
+            var(--flagcel-bg) var(--vp-nav-height),
+            rgb(11 11 13 / 0) calc(var(--vp-nav-height) + 6px),
             var(--flagcel-bg) 760px
+        ),
+        linear-gradient(
+            to right,
+            rgb(11 11 13 / 0) var(--flagcel-grid-fade-right-start),
+            var(--flagcel-bg) var(--flagcel-grid-fade-right-end)
         ),
         linear-gradient(
             to right,
@@ -115,17 +123,21 @@ body {
         );
     background-position:
         0 0,
+        0 0,
         var(--flagcel-grid-offset) var(--vp-nav-height),
         var(--flagcel-grid-offset) var(--vp-nav-height);
     background-size:
         100% 100%,
+        100% 100%,
         54px 54px,
         54px 54px;
-    background-repeat: no-repeat, repeat, repeat;
+    background-repeat: no-repeat, no-repeat, repeat, repeat;
 }
 
 .Layout:has(.VPContent.has-sidebar) {
     --flagcel-grid-offset: var(--vp-sidebar-width);
+    --flagcel-grid-fade-right-start: 66%;
+    --flagcel-grid-fade-right-end: 76%;
 }
 
 a {
@@ -157,6 +169,12 @@ a {
     background: transparent !important;
 }
 
+/* navbar draws its own divider-line across the content area, doubling up
+   with the .VPNav border-bottom — hide it and keep only the header border */
+.VPNavBar .divider-line {
+    background-color: transparent;
+}
+
 .VPNavBar .container {
     max-width: none;
     padding: 0 30px;
@@ -167,6 +185,9 @@ a {
 }
 
 .VPNavBarTitle .title {
+    /* default is width:100%, which sprawls the home link across the navbar
+       and under the fixed search bar — keep it to the brand's own width */
+    width: auto;
     font-family: var(--vp-font-family-mono);
     font-size: 13px;
     font-weight: 700;
@@ -203,7 +224,7 @@ a {
     content: "";
     position: absolute;
     right: 0;
-    bottom: -17px;
+    bottom: -2px;
     left: 0;
     height: 2px;
     background: var(--flagcel-accent);
@@ -294,6 +315,11 @@ a {
     max-width: none !important;
 }
 
+.VPSidebar .nav .group + .group {
+    border-top: 0;
+    padding-top: 0;
+}
+
 .VPSidebarItem.level-0 {
     width: 100%;
     max-width: none !important;
@@ -365,6 +391,12 @@ a {
     border-left: 0;
 }
 
+.VPDocAsideOutline .outline-marker {
+    width: 2px;
+    border-radius: 0;
+    background-color: var(--flagcel-accent);
+}
+
 .VPDocAsideOutline .outline-title {
     font-family: var(--vp-font-family-mono);
     font-size: 11px;
@@ -384,6 +416,10 @@ a {
 .VPDocAsideOutline .outline-link:hover,
 .VPDocAsideOutline .outline-link.active {
     color: var(--flagcel-accent-2);
+}
+
+.VPDocAsideOutline .outline-link.active {
+    font-weight: 500;
 }
 
 .VPLocalNav {
@@ -426,18 +462,24 @@ a {
 
 .VPDoc h2 {
     margin-top: 48px;
-    border-top-color: var(--flagcel-border);
-    padding-top: 34px;
-    font-size: 24px;
+    border-top: 0;
+    padding-top: 0;
+    font-size: 23px;
+    line-height: 1.25;
+    letter-spacing: -0.005em;
 }
 
 .vp-doc h2 .header-anchor {
-    top: 34px;
+    top: 0;
 }
 
 .VPDoc h3 {
     margin-top: 28px;
     font-size: 18px;
+}
+
+.vp-doc h1 .header-anchor {
+    display: none;
 }
 
 .vp-doc h2 .header-anchor,
@@ -507,7 +549,7 @@ a {
     border: 1px solid rgba(255, 255, 255, 0.11);
     border-radius: 999px;
     padding: 0 14px;
-    background: rgba(255, 255, 255, 0.018);
+    background: var(--flagcel-bg-alt);
     color: #c9c6cf;
     font-family: var(--vp-font-family-mono);
     font-size: 11px;
@@ -565,8 +607,22 @@ a {
 }
 
 .custom-block.tip {
+    position: relative;
     border-color: rgba(62, 207, 142, 0.45);
+    padding-left: 53px;
     background: rgba(12, 40, 30, 0.42);
+}
+
+.custom-block.tip::before {
+    content: "";
+    position: absolute;
+    top: 22px;
+    left: 22px;
+    width: 10px;
+    height: 10px;
+    border: 1.5px solid var(--flagcel-green);
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 2.5px rgba(12, 40, 30, 0.9);
 }
 
 .custom-block.tip .custom-block-title {
@@ -584,7 +640,7 @@ a {
     border-radius: 5px;
     padding: 2px 5px;
     background-color: rgba(255, 255, 255, 0.055);
-    color: var(--flagcel-foreground);
+    color: var(--flagcel-accent-2);
     font-family: var(--vp-font-family-mono);
     font-size: 0.88em;
 }
@@ -592,20 +648,25 @@ a {
 .vp-doc div[class*="language-"] {
     border: 1px solid var(--flagcel-border);
     border-radius: 8px;
-    background-color: var(--flagcel-surface);
+    background-color: #0e0e11;
     box-shadow: none;
 }
 
 .vp-doc div[class*="language-"] > span.lang {
-    top: 13px;
-    right: 46px;
+    top: 0;
+    right: 58px;
     left: auto;
+    z-index: 1;
     color: var(--flagcel-muted);
     font-family: var(--vp-font-family-mono);
     font-size: 11px;
     font-weight: 600;
+    line-height: 40px;
     letter-spacing: 0.16em;
+    opacity: 1 !important;
+    pointer-events: none;
     text-transform: uppercase;
+    transition: none;
 }
 
 .vp-doc [class*="language-"] pre,
@@ -626,17 +687,8 @@ a {
     height: 40px;
     border-bottom: 1px solid var(--flagcel-border);
     border-radius: 8px 8px 0 0;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--flagcel-bg-alt);
     pointer-events: none;
-}
-
-.fc-process-block {
-    display: none;
-}
-
-.vp-doc .fc-process-block + div[class*="language-"] > span.lang {
-    right: auto;
-    left: 72px;
 }
 
 .vp-doc .fc-process-block + div[class*="language-"]::after {
@@ -652,6 +704,25 @@ a {
         17px 0 0 #eab308,
         34px 0 0 #22c55e;
     pointer-events: none;
+}
+
+.vp-doc div[class*="language-"] .copy {
+    top: 0;
+    right: 4px;
+    left: auto;
+    z-index: 2;
+    border-color: transparent;
+    background-color: transparent;
+    opacity: 1;
+}
+
+.vp-doc div[class*="language-"] .copy:hover {
+    border-color: transparent;
+    background-color: rgba(255, 255, 255, 0.035);
+}
+
+.fc-process-block {
+    display: none;
 }
 
 .fc-nextgrid {
@@ -863,7 +934,7 @@ a {
     }
 
     .VPNavBar.has-sidebar .title {
-        width: var(--vp-sidebar-width) !important;
+        width: auto !important;
         padding-right: 30px !important;
         padding-left: 30px !important;
     }
@@ -997,4 +1068,55 @@ a {
         scroll-behavior: auto !important;
         transition-duration: 0.01ms !important;
     }
+}
+
+/* ---- home page (layout: page) overrides ---- */
+.Layout.fc-home-page {
+    background-image:
+        linear-gradient(
+            to bottom,
+            rgb(11 11 13 / 0) var(--vp-nav-height),
+            var(--flagcel-bg) 760px
+        ),
+        linear-gradient(
+            to right,
+            var(--flagcel-bg) 0%,
+            rgb(11 11 13 / 0) 12%,
+            rgb(11 11 13 / 0) 88%,
+            var(--flagcel-bg) 100%
+        ),
+        linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.04) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.04) 1px,
+            transparent 1px
+        );
+    background-position:
+        0 0,
+        0 0,
+        center var(--vp-nav-height),
+        center var(--vp-nav-height);
+    background-size:
+        100% 100%,
+        100% 100%,
+        54px 54px,
+        54px 54px;
+    background-repeat: no-repeat, no-repeat, repeat, repeat;
+}
+
+/* divider under the nav reads as a doubled line over the grid — let the
+   faded grid line at nav height be the only separator */
+.fc-home-page .VPNav {
+    border-bottom-color: transparent;
+}
+
+/* the layout is capped at 1440px, so the footer border stops short of the
+   page edges — stretch it to the full viewport width */
+.fc-home-page .VPFooter {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
 }

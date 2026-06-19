@@ -2,7 +2,7 @@
 
 # Quickstart
 
-<p class="fc-lead">Start Flagcel locally, create a boolean flag, and evaluate it through the HTTP API.</p>
+<p class="fc-lead">Get a Flagcel control plane running and evaluate your first CEL-targeted flag in under five minutes. You'll need Docker and a Postgres database.</p>
 
 <div class="fc-tags">
   <span>≈ 5 min</span>
@@ -10,83 +10,82 @@
   <span>Postgres 14+</span>
 </div>
 
-## Prerequisites
+## Install
 
-- Docker and Docker Compose.
-- `curl`.
-- `jq` is optional, but useful for API work.
-
-## Run The Service
+The production binary ships everything — dashboard, API, and embedded migrations — in a single image.
 
 <div class="fc-process-block" aria-hidden="true"></div>
 
-```sh
-docker compose up
+```bash
+# pull and run the control plane
+$ docker run --rm -p 8080:8080 \
+    -e DATABASE_URL="postgres://user:pass@db.example.com:5432/flagcel?sslmode=require" \
+    -e AUTH_SESSION_SECRET="replace-with-at-least-32-random-bytes" \
+    -e AUTH_BOOTSTRAP_ADMIN_EMAIL="admin@example.com" \
+    -e AUTH_BOOTSTRAP_ADMIN_PASSWORD="change-me" \
+    ghcr.io/picunada/flagcel:latest
+
+# control plane up on :8080 — migrations run on boot
+→ dashboard  http://localhost:8080
+→ api        http://localhost:8080/api/v1
+→ docs       http://localhost:8080/docs
 ```
 
-This starts Postgres and the Flagcel service with hot reload on port `8080`.
-The dashboard is available at `http://localhost:8080`, and live API docs are
-served at `http://localhost:8080/docs`.
+## Run the control plane
 
-The Docker quickstart bootstraps a local admin account:
-
-```text
-admin@localhost / secret
-```
+Point `DATABASE_URL` at your database. On boot, Flagcel applies any pending migrations, then serves the dashboard and versioned API on the same port.
 
 ::: tip Local development
-Run `flagcel dev` to spin up an ephemeral Postgres and seed a demo project.
+Clone the repository and run `docker compose up` to start Flagcel with Postgres and a seeded local admin account — no external database required. Sign in at `http://localhost:8080` with `admin@localhost` / `secret`.
 :::
 
-## Create A Flag
+## Create your first flag
 
-```sh
-# Sign in and keep the admin session cookie
-curl -c cookies.txt -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@localhost","password":"secret"}'
+Open the dashboard, choose **New flag**, and create a boolean flag with these values:
 
-# Create a boolean flag with one rule
-curl -X POST http://localhost:8080/api/v1/flags \
-  -b cookies.txt \
-  -H "Content-Type: application/json" \
-  -d '{
-    "key": "new-checkout",
-    "description": "Checkout rollout",
-    "type": "boolean",
-    "enabled": true,
-    "default_value": false,
-    "rules": [
-      {
-        "description": "10% rollout for US users",
-        "expression": "user.country == \"US\"",
-        "rollout": { "percentage": 10, "bucket_by": "user.id" },
-        "value": true
-      }
-    ]
-  }'
+- Key: `checkout-v2`
+- Default value: `false`
+- Rule value: `true`
+- Rule expression:
 
-# Read it back
-curl -b cookies.txt http://localhost:8080/api/v1/flags/new-checkout
+```text [CEL]
+user.email.endsWith("@flagcel.io") ||
+  (geo.region == "EU" && user.id % 10 == 0)
 ```
 
-## Evaluate A Flag
+Targeting uses the [Common Expression Language](concepts.md) — the same expression language used by Kubernetes and Envoy. This rule enables the flag for internal users and ten percent of EU traffic when `user.id` is numeric.
 
-Evaluation clients should use bearer API keys created from the dashboard's
-`keys` page. Each key is scoped to one environment, and that key selects the
-environment for `/eval` requests.
+## Evaluate from your app
 
-```sh
-curl -X POST http://localhost:8080/api/v1/eval/new-checkout \
-  -H "Authorization: Bearer fc_example_secret" \
-  -H "Content-Type: application/json" \
-  -d '{"context":{"user":{"id":"u_123","country":"US"}}}'
+Create an evaluation key from the dashboard's **API keys** page. Keys are scoped per environment, so production traffic never sees staging rules.
+
+Install the server-side OpenFeature provider:
+
+```bash
+npm install @openfeature/server-sdk @flagcel/openfeature-server
 ```
 
-For runnable SDK examples, see the
-[examples directory](https://github.com/picunada/flagcel/tree/main/examples).
+Then configure it with the API URL and evaluation key:
 
-## Next Steps
+```ts [server.ts]
+import { OpenFeature } from "@openfeature/server-sdk";
+import { FlagcelProvider } from "@flagcel/openfeature-server";
+
+await OpenFeature.setProviderAndWait(new FlagcelProvider({
+  endpoint: "http://localhost:8080/api/v1",
+  apiKey: process.env.FLAGCEL_API_KEY,
+}));
+
+const client = OpenFeature.getClient("checkout-service");
+
+const enabled = await client.getBooleanValue("checkout-v2", false, {
+  targetingKey: String(user.id),
+  user: { id: user.id, email: user.email },
+  geo: { region: geo.region },
+});
+```
+
+## Next steps
 
 <div class="fc-nextgrid">
   <a class="fc-ncard" href="concepts">

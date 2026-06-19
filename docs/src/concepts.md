@@ -40,7 +40,7 @@ rules.
 Flagcel uses CEL, the Common Expression Language, for targeting. Expressions
 read fields from the evaluation context sent by the SDK or API client.
 
-```text
+```cel
 user.country == "US" && request.path.startsWith("/checkout")
 ```
 
