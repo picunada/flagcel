@@ -6,13 +6,13 @@
 		variants: {
 			variant: {
 				default:
-					'border border-[rgba(255,255,255,0.16)] bg-transparent text-foreground hover:border-[rgba(255,255,255,0.36)] hover:bg-[rgba(255,255,255,0.04)]',
+					'border border-border-control bg-transparent text-foreground hover:border-border-hover hover:bg-surface-hover',
 				solid:
 					'bg-foreground text-primary-foreground hover:bg-foreground/90',
 				ghost:
-					'text-muted-foreground hover:text-foreground hover:bg-[rgba(255,255,255,0.04)]',
+					'text-muted-foreground hover:text-foreground hover:bg-surface-hover',
 				destructive:
-					'border border-[rgba(255,107,107,0.3)] bg-transparent text-destructive hover:border-destructive hover:bg-[rgba(255,107,107,0.06)]'
+					'border border-destructive-border bg-transparent text-destructive hover:border-destructive hover:bg-destructive-surface'
 			},
 			size: {
 				default: 'h-9 px-4',

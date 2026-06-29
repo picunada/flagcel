@@ -239,7 +239,7 @@
 				rows="3"
 				required
 				placeholder={'user.country == "US" && user.plan == "pro"'}
-				class="flex w-full rounded-sm border border-input bg-transparent px-3 py-2 font-mono text-sm transition-colors placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:border-[rgba(255,255,255,0.36)] disabled:cursor-not-allowed disabled:opacity-50"
+				class="flex w-full rounded-sm border border-input bg-transparent px-3 py-2 font-mono text-sm transition-colors placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:border-border-hover disabled:cursor-not-allowed disabled:opacity-50"
 			></textarea>
 			{#if acOpen && suggestions.length > 0}
 				<div
@@ -260,7 +260,7 @@
 							class={cn(
 								'flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left font-mono text-xs transition-colors',
 								i === acIndex
-									? 'bg-[rgba(255,255,255,0.06)] text-foreground'
+									? 'bg-surface-active text-foreground'
 									: 'text-muted-foreground hover:text-foreground'
 							)}
 						>
@@ -344,7 +344,7 @@
 					data-1p-ignore
 					data-lpignore="true"
 					data-form-type="other"
-					class="flex h-9 w-full rounded-sm border border-input bg-transparent px-3 py-1 text-sm transition-all duration-200 ease-out placeholder:text-muted-foreground placeholder:lowercase focus-visible:border-[rgba(255,255,255,0.36)] focus-visible:bg-[rgba(255,255,255,0.025)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					class="flex h-9 w-full rounded-sm border border-input bg-transparent px-3 py-1 text-sm transition-all duration-200 ease-out placeholder:text-muted-foreground placeholder:lowercase focus-visible:border-border-hover focus-visible:bg-surface-subtle focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				/>
 				{#if bucketAcOpen && bucketSuggestions.length > 0}
 					<div
@@ -365,7 +365,7 @@
 								class={cn(
 									'flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left font-mono text-xs transition-colors',
 									i === bucketAcIndex
-										? 'bg-[rgba(255,255,255,0.06)] text-foreground'
+										? 'bg-surface-active text-foreground'
 										: 'text-muted-foreground hover:text-foreground'
 								)}
 							>

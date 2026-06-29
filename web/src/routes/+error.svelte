@@ -39,7 +39,7 @@
         >
             {isBackendError ? "Flagcel cannot reach the backend." : "Flagcel hit an error."}
         </h1>
-        <p class="mt-4 text-sm leading-6 text-[rgba(255,255,255,0.78)]">
+        <p class="mt-4 text-sm leading-6 text-foreground-soft">
             {message}
         </p>
         {#if isBackendError}

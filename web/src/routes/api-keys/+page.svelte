@@ -99,7 +99,7 @@
         </div>
         {#if created}
             <div
-                class="space-y-3 rounded-sm border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.035)] p-4"
+                class="space-y-3 rounded-sm border border-border-soft bg-surface-muted p-4"
             >
                 <div class="flex items-center justify-between gap-3">
                     <p class="text-xs uppercase tracking-[0.14em] text-muted-foreground">
@@ -114,7 +114,7 @@
                     </Button>
                 </div>
                 <code
-                    class="block overflow-x-auto whitespace-nowrap rounded-sm bg-black/30 p-3 font-mono text-xs text-[rgba(255,255,255,0.86)]"
+                    class="block overflow-x-auto whitespace-nowrap rounded-sm bg-surface-code p-3 font-mono text-xs text-foreground-strong"
                 >
                     {created.token}
                 </code>

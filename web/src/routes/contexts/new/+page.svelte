@@ -36,7 +36,7 @@
 		<h1 class="text-3xl font-normal tracking-tight sm:text-4xl">
 			Define a context
 		</h1>
-		<p class="max-w-lg text-sm text-[rgba(255,255,255,0.7)]">
+		<p class="max-w-lg text-sm text-foreground-softer">
 			Each field is a dotted path your CEL rules can reference.
 		</p>
 	</header>

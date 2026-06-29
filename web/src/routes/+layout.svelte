@@ -23,7 +23,8 @@
     );
 
     const prefersReducedMotion =
-        browser && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        browser &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     // Suppress intro animations on the very first paint (mirrors the `no-intro`
     // class); everything mounted after is allowed to transition.
@@ -52,15 +53,28 @@
     }
 
     const environmentQuery = $derived(
-        selectedEnvironment ? `?environment=${encodeURIComponent(selectedEnvironment.id)}` : "",
+        selectedEnvironment
+            ? `?environment=${encodeURIComponent(selectedEnvironment.id)}`
+            : "",
     );
 
     const nav = $derived([
         { href: `/${environmentQuery}`, match: "/", label: "flags" },
         { href: "/contexts", match: "/contexts", label: "contexts" },
         { href: "/environments", match: "/environments", label: "envs" },
-        { href: `/api-keys${environmentQuery}`, match: "/api-keys", label: "keys", authEnabled: true },
-        { href: "/docs", match: "/docs", label: "api", external: true, icon: "↗" },
+        {
+            href: `/api-keys${environmentQuery}`,
+            match: "/api-keys",
+            label: "keys",
+            authEnabled: true,
+        },
+        {
+            href: "/docs",
+            match: "/docs",
+            label: "api",
+            external: true,
+            icon: "↗",
+        },
     ]);
 
     function isActiveNavItem(match: string) {
@@ -132,7 +146,7 @@
                         transition:collapseX
                     >
                         <span
-                            class="h-3 w-px bg-[rgba(255,255,255,0.18)]"
+                            class="h-3 w-px bg-border-divider"
                             aria-hidden="true"
                         ></span>
                         <nav
@@ -140,7 +154,8 @@
                         >
                             {#each nav as item (item.href)}
                                 {@const active =
-                                    !item.external && isActiveNavItem(item.match)}
+                                    !item.external &&
+                                    isActiveNavItem(item.match)}
                                 {#if !item.authEnabled || auth?.auth_enabled}
                                     <a
                                         href={item.href}
@@ -170,10 +185,13 @@
                         transition:collapseX
                     >
                         <span
-                            class="h-3 w-px bg-[rgba(255,255,255,0.18)]"
+                            class="h-3 w-px bg-border-divider"
                             aria-hidden="true"
                         ></span>
-                        <EnvironmentSelector {environments} {selectedEnvironment} />
+                        <EnvironmentSelector
+                            {environments}
+                            {selectedEnvironment}
+                        />
                     </div>
                 {/if}
                 {#if page.url.pathname !== "/login" && auth?.authenticated}
@@ -182,7 +200,7 @@
                         transition:collapseX
                     >
                         <span
-                            class="h-3 w-px bg-[rgba(255,255,255,0.18)]"
+                            class="h-3 w-px bg-border-divider"
                             aria-hidden="true"
                         ></span>
                         <Button
@@ -199,16 +217,16 @@
             </div>
         </header>
 
-        <main
-            class="mx-auto w-full max-w-5xl flex-1 px-6 pb-16 pt-32 sm:pt-36"
-        >
+        <main class="mx-auto w-full max-w-7xl flex-1 px-6 pb-16 pt-32 sm:pt-36">
             <div class="min-w-0">
                 {#if backendUnavailable}
                     <section
                         class="mx-auto max-w-xl space-y-5 text-center"
                         aria-labelledby="backend-unavailable-title"
                     >
-                        <div class="glass-panel motion-panel rounded-sm p-6 sm:p-8">
+                        <div
+                            class="glass-panel motion-panel rounded-sm p-6 sm:p-8"
+                        >
                             <p
                                 class="mb-3 text-xs uppercase tracking-[0.18em] text-muted-foreground"
                             >
@@ -221,14 +239,15 @@
                                 Flagcel cannot reach the backend.
                             </h1>
                             <p
-                                class="mx-auto mt-4 max-w-md text-sm leading-6 text-[rgba(255,255,255,0.78)]"
+                                class="mx-auto mt-4 max-w-md text-sm leading-6 text-foreground-soft"
                             >
                                 {backendMessage}
                             </p>
                             <p
                                 class="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground"
                             >
-                                Start or restart the backend server, then retry this page.
+                                Start or restart the backend server, then retry
+                                this page.
                             </p>
                             <div class="mt-6 flex justify-center">
                                 <Button onclick={retry}>Retry</Button>

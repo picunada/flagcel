@@ -20,7 +20,7 @@
 	{label}
 	data-slot="select-item"
 	class={cn(
-		'flex min-h-8 w-full cursor-pointer select-none items-center justify-between gap-2 rounded-[2px] px-2 py-1.5 text-left text-xs text-muted-foreground outline-none transition-colors data-[highlighted]:bg-[rgb(var(--app-accent-rgb)/0.12)] data-[highlighted]:text-foreground data-[selected]:bg-[rgb(var(--app-accent-rgb)/0.18)] data-[selected]:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+		'flex min-h-8 w-full cursor-pointer select-none items-center justify-between gap-2 rounded-[2px] px-2 py-1.5 text-left text-xs text-muted-foreground outline-none transition-colors data-[highlighted]:bg-app-accent-surface-highlight data-[highlighted]:text-foreground data-[selected]:bg-app-accent-surface-selected data-[selected]:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
 		className
 	)}
 	{...restProps}

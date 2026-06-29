@@ -13,7 +13,7 @@
         cn(
             "glass-panel rounded-sm transition-all duration-200 ease-out",
             hoverable &&
-                "hover:border-[rgba(255,255,255,0.36)] hover:bg-[rgba(255,255,255,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)]",
+                "hover:border-border-hover hover:bg-surface-hover hover:shadow-card-hover",
             className,
         ),
     );
@@ -23,7 +23,7 @@
     <BorderGlow
         class={cardClass}
         borderRadius={4}
-        backgroundColor="rgba(15, 15, 15, 0.9)"
+        backgroundColor="var(--color-card)"
         edgeSensitivity={26}
         glowColor="var(--app-accent-hsl)"
         glowRadius={22}
@@ -31,7 +31,7 @@
         coneSpread={5}
         colors={[
             "rgb(var(--app-accent-rgb) / 0.75)",
-            "rgba(255,255,255,0.72)",
+            "var(--color-foreground-soft)",
             "rgb(var(--app-accent-rgb) / 0.45)",
         ]}
         fillOpacity={0}

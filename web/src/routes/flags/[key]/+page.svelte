@@ -11,21 +11,15 @@
 		type EvalTrace,
 		type AuditEntry
 	} from '$lib/api';
-	import { describeChanges, actionBadgeVariant } from '$lib/history';
+	import { describeChanges } from '$lib/history';
 	import { cn } from '$lib/utils';
+	import FlagHistoryList from '$lib/components/flags/flag-history-list.svelte';
+	import FlagPlaygroundPanels from '$lib/components/flags/flag-playground-panels.svelte';
+	import FlagRulesPanel from '$lib/components/flags/flag-rules-panel.svelte';
+	import FlagSettingsCard from '$lib/components/flags/flag-settings-card.svelte';
 	import Button from '$lib/components/ui/button.svelte';
-	import Card from '$lib/components/ui/card.svelte';
-	import Badge from '$lib/components/ui/badge.svelte';
-	import BoolToggle from '$lib/components/ui/bool-toggle.svelte';
 	import DestructiveDialog from '$lib/components/ui/destructive-dialog.svelte';
-	import SectionHeader from '$lib/components/ui/section-header.svelte';
-	import RuleEditor from '$lib/components/rule-editor.svelte';
-	import ContextPicker from '$lib/components/context-picker.svelte';
-	import ValueEditor from '$lib/components/value-editor.svelte';
-	import EvalPlayground from '$lib/components/eval-playground.svelte';
-	import { formatFlagValue } from '$lib/values';
-	import { fly, slide } from 'svelte/transition';
-	import { Trash2, Plus, Pencil, ArrowUp, ArrowDown, FlaskConical, X, ChevronDown, History } from 'lucide-svelte';
+	import { Trash2, Plus, FlaskConical, History } from 'lucide-svelte';
 	import type { PageProps } from './$types';
 
 	type Rule = Flag['rules'][number];
@@ -366,11 +360,25 @@
 		await patch({ default_value: value });
 	}
 
+	function cancelCreate() {
+		creating = false;
+		createError = null;
+	}
+
+	function cancelEdit() {
+		editingRuleId = null;
+		editError = null;
+	}
+
+	function markPlaygroundDirty() {
+		playgroundDirty = true;
+	}
+
 </script>
 
 <div class="space-y-10">
 	<a
-		href="/?environment={encodeURIComponent(selectedEnvironment.id)}"
+		href={`/?environment=${encodeURIComponent(selectedEnvironment.id)}`}
 		class="inline-flex items-center gap-1.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
 	>
 		← all flags
@@ -398,71 +406,15 @@
 		</Button>
 	</header>
 
-		<Card class="motion-panel divide-y divide-border/60">
-			<div class="flex items-center justify-between gap-4 p-5">
-				<div class="space-y-1">
-					<p class="text-sm">type</p>
-					<p class="text-xs text-muted-foreground">value shape returned by evaluation</p>
-				</div>
-				<Badge variant="muted">{flag.type}</Badge>
-			</div>
-			<div class="flex items-center justify-between gap-4 p-5">
-				<div class="space-y-1">
-					<p class="text-sm">enabled</p>
-					<p class="text-xs text-muted-foreground">
-						when off, the default value is returned for every request
-					</p>
-				</div>
-				<BoolToggle
-					value={flag.enabled}
-					disabled={saving}
-					onchange={(v) => patch({ enabled: v })}
-				/>
-			</div>
-			<div class="flex flex-wrap items-start justify-between gap-4 p-5">
-				<div class="space-y-1">
-					<p class="text-sm">default value</p>
-					<p class="text-xs text-muted-foreground">returned when no rule matches</p>
-				</div>
-				<div class="min-w-48 max-w-full flex-1 sm:flex-none sm:basis-80">
-					<ValueEditor
-						type={flag.type}
-						value={flag.default_value}
-						id="default-value"
-						align="end"
-						disabled={saving}
-						onchange={updateDefaultValue}
-					/>
-				</div>
-			</div>
-			<div class="flex flex-wrap items-center justify-between gap-4 p-5">
-				<div class="space-y-1">
-					<p class="text-sm">context</p>
-					<p class="text-xs text-muted-foreground">
-						selects the evaluation shape used for autocomplete in rules
-					</p>
-				</div>
-				<div class="min-w-48">
-					<ContextPicker
-						value={flag.context_id ?? null}
-						disabled={saving}
-						onchange={(v) => patch({ context_id: v })}
-					/>
-				</div>
-			</div>
-			<div
-				class="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 p-5 text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground"
-			>
-				<span>
-					created {formatTimestamp(flag.created_at)}{#if createdBy}
-						· <span class="font-mono lowercase text-foreground">{createdBy}</span>{/if}
-				</span>
-				<span>
-					updated {formatTimestamp(flag.updated_at)}{#if updatedBy}
-						· <span class="font-mono lowercase text-foreground">{updatedBy}</span>{/if}
-				</span>
-			</div>
-		</Card>
+		<FlagSettingsCard
+			{flag}
+			{saving}
+			{createdBy}
+			{updatedBy}
+			{formatTimestamp}
+			{patch}
+			{updateDefaultValue}
+		/>
 
 		{#if error}
 			<p class="text-xs text-destructive">{error}</p>
@@ -518,260 +470,40 @@
 			</div>
 
 		{#if selectedTab === 'rules'}
-			<p class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
-				evaluated top-to-bottom
-			</p>
+			<FlagRulesPanel
+				{flag}
+				{context}
+				{creating}
+				{editingRuleId}
+				{ruleSubmitting}
+				{createError}
+				{editError}
+				{pendingRuleId}
+				{createRule}
+				{updateRule}
+				{move}
+				{startEdit}
+				{requestDeleteRule}
+				{cancelCreate}
+				{cancelEdit}
+			/>
 
-			{#if flag.rules.length === 0 && !creating}
-				<Card class="motion-panel p-8 text-center">
-					<p
-						class="text-xs uppercase tracking-[0.14em] text-muted-foreground"
-					>
-						[ no rules ]
-					</p>
-					<p class="mt-3 text-sm text-[rgba(255,255,255,0.7)]">
-						Requests fall through to the default value.
-					</p>
-				</Card>
-			{:else}
-				<div class="motion-list space-y-2">
-					{#each flag.rules as rule, i (rule.id)}
-						<Card class="p-5">
-							{#if editingRuleId === rule.id}
-								<div class="motion-panel space-y-4">
-									<p
-										class="text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
-									>
-										[ editing rule #{String(i + 1).padStart(2, '0')} ]
-									</p>
-									<RuleEditor
-										{rule}
-										{context}
-										valueType={flag.type}
-										submitting={ruleSubmitting}
-										error={editError}
-										submitLabel="save changes"
-										onsave={(data) => updateRule(rule.id, data)}
-										oncancel={() => {
-											editingRuleId = null;
-											editError = null;
-										}}
-									/>
-								</div>
-							{:else}
-								<div class="flex items-start gap-4">
-									<div class="flex flex-col items-center gap-1">
-										<button
-											type="button"
-											aria-label="move up"
-											disabled={i === 0 || pendingRuleId !== null}
-											onclick={() => move(i, -1)}
-											class="text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
-										>
-											<ArrowUp class="h-3.5 w-3.5" />
-										</button>
-										<div
-											class="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground"
-										>
-											#{String(i + 1).padStart(2, '0')}
-										</div>
-										<button
-											type="button"
-											aria-label="move down"
-											disabled={i === flag.rules.length - 1 ||
-												pendingRuleId !== null}
-											onclick={() => move(i, 1)}
-											class="text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
-										>
-											<ArrowDown class="h-3.5 w-3.5" />
-										</button>
-									</div>
-									<div class="min-w-0 flex-1 space-y-3">
-										<pre
-											class="overflow-x-auto border-l-2 border-success/40 bg-[rgba(255,255,255,0.02)] py-2 pl-3 font-mono text-sm text-foreground">{rule.expression}</pre>
-										<div
-											class="flex flex-wrap items-center gap-4 text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground"
-										>
-											<span>
-												value
-												<span class="font-mono text-foreground">{formatFlagValue(rule.value)}</span>
-											</span>
-											<span>
-												rollout
-												<span class="text-foreground">{rule.rollout.percentage}%</span>
-											</span>
-											{#if rule.rollout.bucket_by}
-												<span>
-													bucket by
-													<span class="font-mono text-foreground">{rule.rollout.bucket_by}</span>
-												</span>
-											{/if}
-										</div>
-									</div>
-									<div class="flex shrink-0 items-center gap-1">
-										<Button
-											size="sm"
-											variant="ghost"
-											onclick={() => startEdit(rule.id)}
-										>
-											<Pencil class="h-3 w-3" /> edit
-										</Button>
-										<Button
-											size="sm"
-											variant="destructive"
-											disabled={pendingRuleId === rule.id}
-											onclick={() => requestDeleteRule(rule)}
-										>
-											<Trash2 class="h-3 w-3" />
-										</Button>
-									</div>
-								</div>
-							{/if}
-						</Card>
-					{/each}
-				</div>
-			{/if}
-
-			{#if creating}
-				<Card class="motion-panel space-y-4 p-5">
-					<p
-						class="text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
-					>
-						[ new rule ]
-					</p>
-					<RuleEditor
-						{context}
-						valueType={flag.type}
-						submitting={ruleSubmitting}
-						error={createError}
-						submitLabel="add rule"
-						onsave={createRule}
-						oncancel={() => {
-							creating = false;
-							createError = null;
-						}}
-					/>
-				</Card>
-		{/if}
-
-		<!-- mobile: collapsed playground below the rules -->
-		<div class="lg:hidden">
-			<Card class="motion-panel overflow-hidden">
-				<button
-					type="button"
-					onclick={() => (mobileOpen = !mobileOpen)}
-					aria-expanded={mobileOpen}
-					class="flex w-full items-center justify-between gap-3 p-5 text-left transition-colors hover:bg-[rgba(255,255,255,0.02)]"
-				>
-					<span class="font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground">
-						[ evaluation playground ]
-					</span>
-					<ChevronDown
-						class="h-4 w-4 text-muted-foreground transition-transform duration-200 {mobileOpen
-							? 'rotate-180'
-							: ''}"
-					/>
-				</button>
-				{#if mobileOpen}
-					<div transition:slide={{ duration: 200 }} class="border-t border-border/60 p-5">
-						<EvalPlayground
-							inputId="playground-context-mobile"
-							bind:contextJson={playgroundContext}
-							result={playgroundResult}
-							error={playgroundError}
-							running={playgroundRunning}
-							onevaluate={evaluatePlayground}
-							onreset={resetPlayground}
-							oninput={() => (playgroundDirty = true)}
-						/>
-					</div>
-				{/if}
-			</Card>
-		</div>
+			<FlagPlaygroundPanels
+				bind:drawerOpen
+				bind:mobileOpen
+				bind:playgroundContext
+				{playgroundResult}
+				{playgroundError}
+				{playgroundRunning}
+				{evaluatePlayground}
+				{resetPlayground}
+				markDirty={markPlaygroundDirty}
+			/>
 		{:else}
-			{#if historyView.length === 0}
-				<Card class="motion-panel p-8 text-center">
-					<p class="text-xs uppercase tracking-[0.14em] text-muted-foreground">[ no history ]</p>
-					<p class="mt-3 text-sm text-[rgba(255,255,255,0.7)]">
-						Changes to this flag and its rules will appear here.
-					</p>
-				</Card>
-			{:else}
-				<div class="motion-list space-y-2">
-					{#each historyView as { entry, changes } (entry.version)}
-						<Card class="p-5">
-							<div class="flex flex-wrap items-start justify-between gap-3">
-								<div class="flex items-center gap-3">
-									<span
-										class="font-mono text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground"
-									>
-										v{entry.version}
-									</span>
-									<Badge variant={actionBadgeVariant(entry.action)} dot>{entry.action}</Badge>
-								</div>
-								<div
-									class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground"
-								>
-									<span class="font-mono text-foreground">{entry.actor_label ?? 'system'}</span>
-									<span>{formatTimestamp(entry.created_at)}</span>
-								</div>
-							</div>
-							<ul class="mt-3 space-y-1">
-								{#each changes as change}
-									<li class="flex gap-2 text-sm text-[rgba(255,255,255,0.78)]">
-										<span class="select-none text-muted-foreground">·</span>
-										<span class="font-mono text-xs leading-relaxed">{change}</span>
-									</li>
-								{/each}
-							</ul>
-						</Card>
-					{/each}
-				</div>
-			{/if}
+			<FlagHistoryList {historyView} {formatTimestamp} />
 		{/if}
 	</section>
 </div>
-
-<!-- desktop: sticky side drawer -->
-{#if drawerOpen}
-	<aside
-		transition:fly={{ x: 24, duration: 200 }}
-		class="glass-panel fixed inset-y-0 right-0 z-40 hidden w-[26rem] max-w-[calc(100vw-1.5rem)] flex-col border-l border-[rgba(255,255,255,0.12)] shadow-[0_0_60px_rgba(0,0,0,0.45)] lg:flex"
-		aria-label="evaluation playground"
-	>
-		<div class="flex items-center justify-between gap-3 border-b border-border/60 px-5 pb-4 pt-28">
-			<p class="font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground">
-				[ evaluation playground ]
-			</p>
-			<button
-				type="button"
-				aria-label="close playground"
-				onclick={() => (drawerOpen = false)}
-				class="motion-press rounded-sm p-1 text-muted-foreground transition-colors hover:bg-[rgba(255,255,255,0.04)] hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-			>
-				<X class="h-4 w-4" />
-			</button>
-		</div>
-		<div class="flex-1 overflow-y-auto p-5">
-			<EvalPlayground
-				inputId="playground-context-desktop"
-				bind:contextJson={playgroundContext}
-				result={playgroundResult}
-				error={playgroundError}
-				running={playgroundRunning}
-				onevaluate={evaluatePlayground}
-				onreset={resetPlayground}
-				oninput={() => (playgroundDirty = true)}
-			/>
-		</div>
-	</aside>
-{/if}
-
-<svelte:window
-	onkeydown={(e) => {
-		if (e.key === 'Escape' && drawerOpen) drawerOpen = false;
-	}}
-/>
 
 <DestructiveDialog
 	bind:open={deleteFlagOpen}

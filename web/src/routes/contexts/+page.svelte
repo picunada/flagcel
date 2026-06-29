@@ -29,7 +29,7 @@
 		<h1 class="text-balance text-3xl font-normal leading-tight sm:text-4xl">
 			Describe what your<br />rules can reach.
 		</h1>
-		<p class="max-w-xl text-sm text-[rgba(255,255,255,0.78)] sm:text-base">
+		<p class="max-w-xl text-sm text-foreground-soft sm:text-base">
 			Name the fields each flag's expressions can use. Selected at flag level — drives
 			autocomplete in the rule editor.
 		</p>
@@ -52,7 +52,7 @@
 			<p class="text-xs uppercase tracking-[0.14em] text-muted-foreground">
 				[ no contexts yet ]
 			</p>
-			<p class="max-w-sm text-sm text-[rgba(255,255,255,0.7)]">
+			<p class="max-w-sm text-sm text-foreground-softer">
 				Define one to enable autocomplete on rules.
 			</p>
 			<Button href="/contexts/new" class="mt-2">
@@ -66,7 +66,7 @@
 					<Card hoverable class="flex h-full flex-col gap-3 p-5">
 						<p class="truncate text-base font-medium">{ctx.name}</p>
 						{#if ctx.description}
-							<p class="line-clamp-2 text-sm text-[rgba(255,255,255,0.7)]">
+							<p class="line-clamp-2 text-sm text-foreground-softer">
 								{ctx.description}
 							</p>
 						{/if}
@@ -79,7 +79,7 @@
 							<div class="space-y-1">
 								{#each ctx.fields.slice(0, 3) as f (f.path)}
 									<p
-										class="truncate border-l-2 border-[rgba(255,255,255,0.08)] pl-2.5 font-mono text-xs text-muted-foreground"
+										class="truncate border-l-2 border-border-muted pl-2.5 font-mono text-xs text-muted-foreground"
 									>
 										{f.path}
 										<span class="text-muted-foreground/60">· {f.type}</span>

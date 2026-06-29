@@ -31,12 +31,12 @@
 {#if selectedEnvironment && environments.length > 0}
 	<Select.Root type="single" value={selectedEnvironment.id} onValueChange={selectEnvironment}>
 		<SelectPrimitive.Trigger
-			class="group inline-flex h-8 min-w-44 items-center gap-2 rounded-sm border border-[rgb(var(--app-accent-rgb)/0.42)] bg-[rgb(var(--app-accent-rgb)/0.1)] pl-2 pr-1.5 text-left text-app-accent shadow-[0_0_0_1px_rgb(var(--app-accent-rgb)/0.08),0_0_22px_rgb(var(--app-accent-rgb)/0.08)] transition-colors hover:border-[rgb(var(--app-accent-rgb)/0.7)] hover:bg-[rgb(var(--app-accent-rgb)/0.15)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgb(var(--app-accent-rgb)/0.75)]"
+			class="group inline-flex h-8 min-w-44 items-center gap-2 rounded-sm border border-app-accent-border bg-app-accent-surface pl-2 pr-1.5 text-left text-app-accent shadow-app-accent transition-colors hover:border-app-accent-border-strong hover:bg-app-accent-surface-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-app-accent-ring-strong"
 			title="Environment selector"
 		>
 			<Layers3 class="h-3.5 w-3.5 shrink-0" />
 			<span
-				class="hidden text-[0.62rem] uppercase tracking-[0.14em] text-[rgb(var(--app-accent-rgb)/0.72)] sm:inline"
+				class="hidden text-[0.62rem] uppercase tracking-[0.14em] text-app-accent-muted sm:inline"
 			>
 				env
 			</span>
@@ -48,10 +48,10 @@
 			/>
 		</SelectPrimitive.Trigger>
 
-		<Select.Content align="end" class="w-[var(--bits-select-anchor-width)] min-w-44 border-[rgb(var(--app-accent-rgb)/0.34)]">
+		<Select.Content align="end" class="w-[var(--bits-select-anchor-width)] min-w-44 border-app-accent-border-soft">
 			<Select.Group>
 				<Select.GroupHeading
-					class="px-2 py-1.5 text-[0.62rem] uppercase tracking-[0.14em] text-[rgb(var(--app-accent-rgb)/0.72)]"
+					class="px-2 py-1.5 text-[0.62rem] uppercase tracking-[0.14em] text-app-accent-muted"
 				>
 					environment
 				</Select.GroupHeading>
@@ -64,7 +64,7 @@
 			</Select.Group>
 			<a
 				href="/environments"
-				class="mt-1 flex items-center gap-2 rounded-[2px] border-t border-[rgb(var(--app-accent-rgb)/0.2)] px-2 py-2 text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-app-accent"
+				class="mt-1 flex items-center gap-2 rounded-[2px] border-t border-app-accent-border-muted px-2 py-2 text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-app-accent"
 			>
 				<Settings2 class="h-3.5 w-3.5 shrink-0" />
 				manage environments

@@ -95,7 +95,7 @@
 			rows="5"
 			spellcheck="false"
 			{disabled}
-			class="min-h-28 w-full resize-y rounded-sm border border-input bg-transparent px-3 py-2 font-mono text-sm leading-5 transition-colors placeholder:text-muted-foreground/60 focus-visible:border-[rgba(255,255,255,0.36)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+			class="min-h-28 w-full resize-y rounded-sm border border-input bg-transparent px-3 py-2 font-mono text-sm leading-5 transition-colors placeholder:text-muted-foreground/60 focus-visible:border-border-hover focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 		></textarea>
 		{#if error}
 			<p class="text-[0.65rem] text-destructive">{error}</p>

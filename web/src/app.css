@@ -41,16 +41,59 @@
 
     --color-app-accent: #ff9f43;
     --color-app-accent-foreground: #0f0f0f;
+    --color-app-accent-muted: rgb(var(--app-accent-rgb) / 0.72);
+    --color-app-accent-border-muted: rgb(var(--app-accent-rgb) / 0.2);
+    --color-app-accent-border-soft: rgb(var(--app-accent-rgb) / 0.32);
+    --color-app-accent-border: rgb(var(--app-accent-rgb) / 0.42);
+    --color-app-accent-border-hover: rgb(var(--app-accent-rgb) / 0.48);
+    --color-app-accent-border-strong: rgb(var(--app-accent-rgb) / 0.7);
+    --color-app-accent-ring: rgb(var(--app-accent-rgb) / 0.42);
+    --color-app-accent-ring-strong: rgb(var(--app-accent-rgb) / 0.75);
+    --color-app-accent-surface-faint: rgb(var(--app-accent-rgb) / 0.06);
+    --color-app-accent-surface: rgb(var(--app-accent-rgb) / 0.1);
+    --color-app-accent-surface-hover: rgb(var(--app-accent-rgb) / 0.15);
+    --color-app-accent-surface-highlight: rgb(var(--app-accent-rgb) / 0.12);
+    --color-app-accent-surface-selected: rgb(var(--app-accent-rgb) / 0.18);
     --color-success: var(--color-app-accent);
     --color-success-foreground: var(--color-app-accent-foreground);
 
     --app-accent-rgb: 255 159 67;
     --app-accent-hsl: 33 100 63;
 
-    --color-border: rgba(255, 255, 255, 0.12);
-    --color-border-strong: rgba(255, 255, 255, 0.36);
-    --color-input: rgba(255, 255, 255, 0.12);
+    --color-foreground-soft: rgba(255, 255, 255, 0.78);
+    --color-foreground-softer: rgba(255, 255, 255, 0.7);
+    --color-foreground-strong: rgba(255, 255, 255, 0.86);
+
+    --color-surface-faint: rgba(255, 255, 255, 0.02);
+    --color-surface-subtle: rgba(255, 255, 255, 0.025);
+    --color-surface-muted: rgba(255, 255, 255, 0.035);
+    --color-surface-hover: rgba(255, 255, 255, 0.04);
+    --color-surface-active: rgba(255, 255, 255, 0.06);
+    --color-surface-selected: rgba(255, 255, 255, 0.1);
+    --color-surface-code: rgba(0, 0, 0, 0.3);
+    --color-popover-solid: rgba(15, 15, 15, 0.98);
+
+    --color-rollout-stack-track-front: #1d1d1d;
+    --color-rollout-stack-layer-1: #1a1a1a;
+    --color-rollout-stack-layer-2: #171717;
+    --color-rollout-stack-layer-3: #141414;
+    --color-rollout-stack-fill-front: #ff9f43;
+    --color-rollout-stack-fill-1: #4a4a4a;
+    --color-rollout-stack-fill-2: #343434;
+    --color-rollout-stack-fill-3: #242424;
+
+    --color-border: rgba(255, 255, 255, 0.05);
+    --color-border-muted: rgba(255, 255, 255, 0.05);
+    --color-border-soft: rgba(255, 255, 255, 0.05);
+    --color-border-control: rgba(255, 255, 255, 0.05);
+    --color-border-divider: rgba(255, 255, 255, 0.05);
+    --color-border-strong: rgba(255, 255, 255, 0.12);
+    --color-border-hover: var(--color-border-strong);
+    --color-input: rgba(255, 255, 255, 0.06);
     --color-ring: rgba(255, 255, 255, 0.4);
+
+    --color-destructive-border: rgba(255, 107, 107, 0.3);
+    --color-destructive-surface: rgba(255, 107, 107, 0.06);
 }
 
 @layer base {
@@ -104,17 +147,56 @@
 
 @utility glass-panel {
     background: rgba(15, 15, 15, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(18px) saturate(140%);
     -webkit-backdrop-filter: blur(18px) saturate(140%);
 }
 
 @utility glass-pill {
     background: rgba(20, 20, 24, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+@utility shadow-card-hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+}
+
+@utility shadow-popover {
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.42);
+}
+
+@utility shadow-drawer {
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.45);
+}
+
+@utility shadow-app-accent {
+    box-shadow:
+        0 0 0 1px rgb(var(--app-accent-rgb) / 0.08),
+        0 0 22px rgb(var(--app-accent-rgb) / 0.08);
+}
+
+@utility progress-stack-fade {
+    isolation: isolate;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(
+        to bottom,
+        #000 0%,
+        #000 64%,
+        rgba(0, 0, 0, 0.58) 82%,
+        rgba(0, 0, 0, 0.18) 94%,
+        transparent 100%
+    );
+    mask-image: linear-gradient(
+        to bottom,
+        #000 0%,
+        #000 64%,
+        rgba(0, 0, 0, 0.58) 82%,
+        rgba(0, 0, 0, 0.18) 94%,
+        transparent 100%
+    );
 }
 
 @layer utilities {
@@ -129,6 +211,40 @@
     .motion-pop {
         transform-origin: top center;
         animation: motion-pop-in 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .motion-tooltip {
+        transform-origin: var(--bits-tooltip-content-transform-origin, center);
+        will-change: opacity, transform;
+    }
+
+    .motion-tooltip[data-state="delayed-open"],
+    .motion-tooltip[data-state="instant-open"] {
+        animation: motion-tooltip-in 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .motion-tooltip[data-ending-style] {
+        animation: motion-tooltip-out 110ms cubic-bezier(0.7, 0, 0.84, 0) both;
+    }
+
+    .motion-tooltip[data-side="top"] {
+        --tooltip-slide-x: 0;
+        --tooltip-slide-y: 4px;
+    }
+
+    .motion-tooltip[data-side="bottom"] {
+        --tooltip-slide-x: 0;
+        --tooltip-slide-y: -4px;
+    }
+
+    .motion-tooltip[data-side="left"] {
+        --tooltip-slide-x: 4px;
+        --tooltip-slide-y: 0;
+    }
+
+    .motion-tooltip[data-side="right"] {
+        --tooltip-slide-x: -4px;
+        --tooltip-slide-y: 0;
     }
 
     .motion-list > * {
@@ -190,6 +306,38 @@
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes motion-tooltip-in {
+    from {
+        opacity: 0;
+        transform: translate3d(
+                var(--tooltip-slide-x, 0),
+                var(--tooltip-slide-y, 0),
+                0
+            )
+            scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+@keyframes motion-tooltip-out {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(
+                var(--tooltip-slide-x, 0),
+                var(--tooltip-slide-y, 0),
+                0
+            )
+            scale(0.96);
     }
 }
 

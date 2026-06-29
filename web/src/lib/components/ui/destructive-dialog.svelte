@@ -90,7 +90,7 @@
 			<form onsubmit={handleSubmit}>
 				<div class="flex items-start gap-4">
 					<div
-						class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-[rgba(255,107,107,0.3)] bg-[rgba(255,107,107,0.06)] text-destructive"
+						class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-destructive-border bg-destructive-surface text-destructive"
 					>
 						<AlertTriangle class="h-4 w-4" />
 					</div>
@@ -104,7 +104,7 @@
 					</div>
 					<button
 						type="button"
-						class="motion-press rounded-sm p-1 text-muted-foreground transition-colors hover:bg-[rgba(255,255,255,0.04)] hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
+						class="motion-press rounded-sm p-1 text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
 						aria-label="cancel"
 						disabled={submitting}
 						onclick={close}
@@ -115,7 +115,7 @@
 
 				{#if details}
 					<pre
-						class="mt-4 max-h-36 overflow-auto whitespace-pre-wrap break-words border-l-2 border-destructive/40 bg-[rgba(255,255,255,0.02)] py-2 pl-3 font-mono text-xs text-[rgba(255,255,255,0.82)]">{details}</pre>
+						class="mt-4 max-h-36 overflow-auto whitespace-pre-wrap break-words border-l-2 border-destructive/40 bg-surface-faint py-2 pl-3 font-mono text-xs text-foreground-strong">{details}</pre>
 				{/if}
 
 				{#if confirmationValue}
@@ -129,7 +129,7 @@
 							disabled={submitting}
 							autocomplete="off"
 							spellcheck={false}
-							class="flex h-9 w-full rounded-sm border border-input bg-transparent px-3 py-1 font-mono text-sm transition-all duration-200 ease-out placeholder:text-muted-foreground focus-visible:border-[rgba(255,255,255,0.36)] focus-visible:bg-[rgba(255,255,255,0.025)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+							class="flex h-9 w-full rounded-sm border border-input bg-transparent px-3 py-1 font-mono text-sm transition-all duration-200 ease-out placeholder:text-muted-foreground focus-visible:border-border-hover focus-visible:bg-surface-subtle focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 						/>
 					</label>
 				{/if}

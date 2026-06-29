@@ -20,7 +20,7 @@
 		{align}
 		data-slot="select-content"
 		class={cn(
-			'motion-pop z-50 max-h-72 min-w-[var(--bits-select-anchor-width)] overflow-hidden rounded-sm border border-[rgb(var(--app-accent-rgb)/0.32)] bg-[rgba(15,15,15,0.98)] shadow-[0_18px_50px_rgba(0,0,0,0.42)] backdrop-blur-xl',
+			'motion-pop z-50 max-h-72 min-w-[var(--bits-select-anchor-width)] overflow-hidden rounded-sm border border-app-accent-border-soft bg-popover-solid shadow-popover backdrop-blur-xl',
 			className
 		)}
 		{...restProps}

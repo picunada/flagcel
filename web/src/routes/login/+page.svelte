@@ -43,7 +43,7 @@
 
     <Card class="motion-panel space-y-5 p-6 text-center">
         {#if data.auth?.mode === "oidc"}
-            <p class="text-sm text-[rgba(255,255,255,0.74)]">
+            <p class="text-sm text-foreground-soft">
                 Use your configured SSO provider to access flags, contexts, and API keys.
             </p>
             <Button variant="solid" class="w-full" onclick={login}>

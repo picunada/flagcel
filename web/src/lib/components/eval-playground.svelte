@@ -75,7 +75,7 @@
 			{oninput}
 			rows="10"
 			spellcheck="false"
-			class="min-h-[15rem] w-full resize-y rounded-sm border border-input bg-[rgba(255,255,255,0.02)] px-3 py-2 font-mono text-sm leading-6 text-foreground transition-colors placeholder:text-muted-foreground/60 focus-visible:border-[rgba(255,255,255,0.36)] focus-visible:outline-none"
+			class="min-h-[15rem] w-full resize-y rounded-sm border border-input bg-surface-faint px-3 py-2 font-mono text-sm leading-6 text-foreground transition-colors placeholder:text-muted-foreground/60 focus-visible:border-border-hover focus-visible:outline-none"
 		></textarea>
 	</div>
 
@@ -85,7 +85,7 @@
 		</p>
 
 		{#if error}
-			<div class="rounded-sm border border-destructive/30 bg-[rgba(255,107,107,0.05)] p-3">
+			<div class="rounded-sm border border-destructive/30 bg-destructive-surface p-3">
 				<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-destructive">
 					error
 				</p>
@@ -93,7 +93,7 @@
 			</div>
 		{:else if result}
 			<div class="grid grid-cols-2 gap-2">
-				<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
+				<div class="rounded-sm border border-border/70 bg-surface-faint p-3">
 					<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
 						value
 					</p>
@@ -111,7 +111,7 @@
 						</p>
 					</div>
 				</div>
-				<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
+				<div class="rounded-sm border border-border/70 bg-surface-faint p-3">
 					<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
 						path
 					</p>
@@ -122,7 +122,7 @@
 			</div>
 
 			{#if result.error}
-				<div class="rounded-sm border border-destructive/30 bg-[rgba(255,107,107,0.05)] p-3">
+				<div class="rounded-sm border border-destructive/30 bg-destructive-surface p-3">
 					<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-destructive">
 						cel error
 					</p>
@@ -132,7 +132,7 @@
 				</div>
 			{/if}
 
-			<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
+			<div class="rounded-sm border border-border/70 bg-surface-faint p-3">
 				<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
 					matched rule
 				</p>
@@ -151,7 +151,7 @@
 			</div>
 
 			{#if result.bucket}
-				<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
+				<div class="rounded-sm border border-border/70 bg-surface-faint p-3">
 					<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
 						bucket
 					</p>
@@ -180,7 +180,7 @@
 			{/if}
 
 			{#if result.rule_results.length > 0}
-				<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-3">
+				<div class="rounded-sm border border-border/70 bg-surface-faint p-3">
 					<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
 						rule trace
 					</p>
@@ -217,7 +217,7 @@
 				</div>
 			{/if}
 		{:else}
-			<div class="rounded-sm border border-border/70 bg-[rgba(255,255,255,0.02)] p-6 text-center">
+			<div class="rounded-sm border border-border/70 bg-surface-faint p-6 text-center">
 				<p class="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
 					[ not evaluated ]
 				</p>

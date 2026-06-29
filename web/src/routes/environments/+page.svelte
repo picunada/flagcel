@@ -127,7 +127,7 @@
         <h1 class="text-3xl font-normal leading-tight sm:text-4xl">
             Environments
         </h1>
-        <p class="max-w-xl text-sm text-[rgba(255,255,255,0.78)] sm:text-base">
+        <p class="max-w-xl text-sm text-foreground-soft sm:text-base">
             Each environment holds its own flags, rules, and API keys. Switch the active
             environment from the selector in the header.
         </p>
@@ -211,7 +211,7 @@
                                             <Badge variant="muted">default · locked</Badge>
                                         {/if}
                                     </div>
-                                    <p class="text-sm text-[rgba(255,255,255,0.78)]">{env.name}</p>
+                                    <p class="text-sm text-foreground-soft">{env.name}</p>
                                     {#if env.description}
                                         <p class="text-sm text-muted-foreground">{env.description}</p>
                                     {/if}

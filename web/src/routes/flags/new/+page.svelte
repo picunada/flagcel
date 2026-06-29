@@ -73,7 +73,7 @@
 		<h1 class="text-3xl font-normal tracking-tight sm:text-4xl">
 			Define a flag
 		</h1>
-		<p class="max-w-lg text-sm text-[rgba(255,255,255,0.7)]">
+		<p class="max-w-lg text-sm text-foreground-softer">
 			Pick a unique key. Add targeting rules after creation.
 		</p>
 	</header>
