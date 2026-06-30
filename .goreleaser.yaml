@@ -53,12 +53,13 @@ dockers:
   - id: amd64
     goos: linux
     goarch: amd64
-    dockerfile: Dockerfile.release
+    dockerfile: Dockerfile
     use: buildx
     image_templates:
       - "ghcr.io/picunada/flagcel:{{ .Version }}-amd64"
       - "docker.io/picunada/flagcel:{{ .Version }}-amd64"
     build_flag_templates:
+      - "--target=release"
       - "--platform=linux/amd64"
       - "--label=org.opencontainers.image.title={{ .ProjectName }}"
       - "--label=org.opencontainers.image.version={{ .Version }}"
@@ -68,12 +69,13 @@ dockers:
   - id: arm64
     goos: linux
     goarch: arm64
-    dockerfile: Dockerfile.release
+    dockerfile: Dockerfile
     use: buildx
     image_templates:
       - "ghcr.io/picunada/flagcel:{{ .Version }}-arm64"
       - "docker.io/picunada/flagcel:{{ .Version }}-arm64"
     build_flag_templates:
+      - "--target=release"
       - "--platform=linux/arm64"
       - "--label=org.opencontainers.image.title={{ .ProjectName }}"
       - "--label=org.opencontainers.image.version={{ .Version }}"

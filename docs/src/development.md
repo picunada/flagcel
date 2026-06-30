@@ -17,7 +17,7 @@ AUTH_SESSION_SECRET=flagcel-dev-session-secret-change-me \
 go run ./cmd/server
 ```
 
-The `Dockerfile.dev` uses [air](https://github.com/air-verse/air) to rebuild on file change.
+The `Dockerfile` `dev` target uses [air](https://github.com/air-verse/air) to rebuild on file change.
 
 ## Common Commands
 
