@@ -12,6 +12,7 @@ const unauthenticatedAuth: AuthMe = {
 };
 
 export const load: LayoutLoad = async ({ url, fetch }) => {
+    const route = { currentPathname: url.pathname, currentSearch: url.search };
 	let auth: AuthMe;
 	const api = createApi(fetch);
 	try {
@@ -19,10 +20,14 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
     } catch (e) {
         if (e instanceof APIError && e.status === 401) {
             if (url.pathname !== "/login") throw redirect(307, "/login");
-            return { auth: { auth_enabled: true, authenticated: false } satisfies AuthMe };
+            return {
+                ...route,
+                auth: { auth_enabled: true, authenticated: false } satisfies AuthMe,
+            };
         }
         if (e instanceof APIError && (e.status === 0 || e.status >= 500)) {
             return {
+                ...route,
                 auth: unauthenticatedAuth,
                 backendUnavailable: true,
                 backendMessage: e.message,
@@ -39,7 +44,7 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
     }
 
 	if (!auth.authenticated || url.pathname === "/login") {
-		return { auth };
+		return { ...route, auth };
 	}
 
 	const environments = await api.listEnvironments();
@@ -48,5 +53,5 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
 		environments.find((env) => env.key === "production") ??
 		environments[0];
 
-	return { auth, environments, selectedEnvironment };
+	return { ...route, auth, environments, selectedEnvironment };
 };

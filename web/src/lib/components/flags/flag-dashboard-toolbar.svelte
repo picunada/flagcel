@@ -65,14 +65,14 @@
             </label>
 
             <div
-                class="flex h-9 shrink-0 rounded-sm border border-border p-0.5"
+                class="ios-corners-sm flex h-9 shrink-0 border border-border p-0.5"
                 aria-label="Status filter"
             >
                 <button
                     type="button"
                     aria-pressed={statusFilter === "all"}
                     class={cn(
-                        "h-full rounded-[2px] px-3 text-[0.65rem] uppercase tracking-[0.12em] transition-colors",
+                        "ios-corners-xs h-full px-3 text-[0.65rem] uppercase tracking-[0.12em] transition-colors",
                         statusFilter === "all"
                             ? "bg-surface-selected text-foreground"
                             : "text-muted-foreground hover:text-foreground",
@@ -85,7 +85,7 @@
                     type="button"
                     aria-pressed={statusFilter === "on"}
                     class={cn(
-                        "h-full rounded-[2px] px-3 text-[0.65rem] uppercase tracking-[0.12em] transition-colors",
+                        "ios-corners-xs h-full px-3 text-[0.65rem] uppercase tracking-[0.12em] transition-colors",
                         statusFilter === "on"
                             ? "bg-surface-selected text-foreground"
                             : "text-muted-foreground hover:text-foreground",
@@ -98,7 +98,7 @@
                     type="button"
                     aria-pressed={statusFilter === "off"}
                     class={cn(
-                        "h-full rounded-[2px] px-3 text-[0.65rem] uppercase tracking-[0.12em] transition-colors",
+                        "ios-corners-xs h-full px-3 text-[0.65rem] uppercase tracking-[0.12em] transition-colors",
                         statusFilter === "off"
                             ? "bg-surface-selected text-foreground"
                             : "text-muted-foreground hover:text-foreground",
@@ -141,7 +141,7 @@
             </div>
             <div class="ml-auto flex items-center gap-2">
                 <div
-                    class="flex h-9 rounded-sm border border-border p-0.5"
+                    class="ios-corners-sm flex h-9 border border-border p-0.5"
                     aria-label="View mode"
                 >
                     <button
@@ -150,7 +150,7 @@
                         aria-label="Table view"
                         aria-pressed={viewMode === "table"}
                         class={cn(
-                            "inline-flex h-full w-8 items-center justify-center rounded-[2px] transition-colors",
+                            "ios-corners-xs inline-flex h-full w-8 items-center justify-center transition-colors",
                             viewMode === "table"
                                 ? "bg-surface-selected text-foreground"
                                 : "text-muted-foreground hover:text-foreground",
@@ -165,7 +165,7 @@
                         aria-label="Card view"
                         aria-pressed={viewMode === "cards"}
                         class={cn(
-                            "inline-flex h-full w-8 items-center justify-center rounded-[2px] transition-colors",
+                            "ios-corners-xs inline-flex h-full w-8 items-center justify-center transition-colors",
                             viewMode === "cards"
                                 ? "bg-surface-selected text-foreground"
                                 : "text-muted-foreground hover:text-foreground",

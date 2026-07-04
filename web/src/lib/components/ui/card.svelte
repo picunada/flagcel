@@ -11,7 +11,7 @@
 
     const cardClass = $derived(
         cn(
-            "glass-panel rounded-sm transition-all duration-200 ease-out",
+            "glass-panel ios-corners transition-all duration-200 ease-out",
             hoverable &&
                 "hover:border-border-hover hover:bg-surface-hover hover:shadow-card-hover",
             className,
@@ -22,10 +22,10 @@
 {#if hoverable}
     <BorderGlow
         class={cardClass}
-        borderRadius={4}
+        borderRadius={24}
         backgroundColor="var(--color-card)"
         edgeSensitivity={26}
-        glowColor="var(--app-accent-hsl)"
+        glowColor="var(--color-app-accent)"
         glowRadius={22}
         glowIntensity={0.45}
         coneSpread={5}

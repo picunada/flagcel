@@ -20,7 +20,7 @@
 		{align}
 		data-slot="select-content"
 		class={cn(
-			'motion-pop z-50 max-h-72 min-w-[var(--bits-select-anchor-width)] overflow-hidden rounded-sm border border-app-accent-border-soft bg-popover-solid shadow-popover backdrop-blur-xl',
+			'ios-corners-md motion-pop z-50 max-h-72 min-w-[var(--bits-select-anchor-width)] overflow-hidden border border-app-accent-border-soft bg-popover-solid shadow-popover backdrop-blur-xl',
 			className
 		)}
 		{...restProps}

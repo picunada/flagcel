@@ -1,0 +1,48 @@
+@layer base {
+    * {
+        border-color: var(--color-border);
+        box-sizing: border-box;
+    }
+    html,
+    body {
+        height: 100%;
+    }
+    html {
+        font-family: var(--font-sans);
+        font-weight: 400;
+    }
+    body {
+        background: var(--color-background);
+        color: var(--color-foreground);
+        font-feature-settings:
+            "tnum" 1,
+            "cv11" 1;
+    }
+    ::-webkit-scrollbar {
+        display: none;
+    }
+    ::selection {
+        background: rgb(var(--app-accent-rgb) / 0.25);
+        color: #ffffff;
+    }
+    select {
+        color-scheme: dark;
+        accent-color: var(--color-app-accent);
+    }
+    select:focus-visible {
+        border-color: rgb(var(--app-accent-rgb) / 0.64);
+        box-shadow: 0 0 0 1px rgb(var(--app-accent-rgb) / 0.42);
+    }
+    select option {
+        background: #141414;
+        color: #ffffff;
+    }
+    select option:checked {
+        background: rgb(var(--app-accent-rgb) / 0.28);
+        color: #ffffff;
+    }
+    select option:hover {
+        background: rgb(var(--app-accent-rgb) / 0.18);
+        color: #ffffff;
+    }
+}

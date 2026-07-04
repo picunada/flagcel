@@ -2,6 +2,7 @@
 	import { tick } from 'svelte';
 	import { AlertTriangle, X } from 'lucide-svelte';
 	import Button from '$lib/components/ui/button.svelte';
+	import Input from '$lib/components/ui/input.svelte';
 
 	type Props = {
 		open?: boolean;
@@ -31,7 +32,7 @@
 
 	let typed = $state('');
 	let dialogEl: HTMLElement | undefined = $state();
-	let inputEl: HTMLInputElement | undefined = $state();
+	let inputEl: HTMLInputElement | null = $state(null);
 
 	const requiresTypedConfirmation = $derived(Boolean(confirmationValue));
 	const canConfirm = $derived(
@@ -123,13 +124,13 @@
 						<span class="block text-xs text-muted-foreground">
 							Type <code class="font-mono text-foreground">{confirmationValue}</code> to confirm.
 						</span>
-						<input
-							bind:this={inputEl}
+						<Input
+							bind:ref={inputEl}
 							bind:value={typed}
 							disabled={submitting}
 							autocomplete="off"
 							spellcheck={false}
-							class="flex h-9 w-full rounded-sm border border-input bg-transparent px-3 py-1 font-mono text-sm transition-all duration-200 ease-out placeholder:text-muted-foreground focus-visible:border-border-hover focus-visible:bg-surface-subtle focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+							class="font-mono"
 						/>
 					</label>
 				{/if}

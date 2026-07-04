@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/button.svelte';
 	import Badge from '$lib/components/ui/badge.svelte';
+	import FieldLabel from '$lib/components/ui/field-label.svelte';
+	import Textarea from '$lib/components/ui/textarea.svelte';
 	import { Play, RotateCcw } from 'lucide-svelte';
 	import { formatFlagValue, valueBadgeVariant } from '$lib/values';
 	import type { EvalTrace } from '$lib/api';
@@ -48,12 +50,7 @@
 <div class="space-y-4">
 	<div class="space-y-2">
 		<div class="flex items-center justify-between gap-2">
-			<label
-				for={inputId}
-				class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
-			>
-				context json
-			</label>
+			<FieldLabel for={inputId} class="font-mono">context json</FieldLabel>
 			<div class="flex items-center gap-2">
 				<Button size="sm" variant="ghost" type="button" onclick={onreset} disabled={running}>
 					<RotateCcw class="h-3 w-3" /> reset
@@ -69,20 +66,18 @@
 				</Button>
 			</div>
 		</div>
-		<textarea
+		<Textarea
 			id={inputId}
 			bind:value={contextJson}
 			{oninput}
-			rows="10"
+			rows={10}
 			spellcheck="false"
-			class="min-h-[15rem] w-full resize-y rounded-sm border border-input bg-surface-faint px-3 py-2 font-mono text-sm leading-6 text-foreground transition-colors placeholder:text-muted-foreground/60 focus-visible:border-border-hover focus-visible:outline-none"
-		></textarea>
+			class="min-h-[15rem] resize-y bg-surface-faint font-mono leading-6 text-foreground"
+		></Textarea>
 	</div>
 
 	<div class="space-y-3">
-		<p class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
-			result
-		</p>
+		<FieldLabel class="font-mono">result</FieldLabel>
 
 		{#if error}
 			<div class="rounded-sm border border-destructive/30 bg-destructive-surface p-3">

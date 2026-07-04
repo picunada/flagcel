@@ -14,16 +14,12 @@
     import FlagListEmptyState from "$lib/components/flags/flag-list-empty-state.svelte";
     import FlagTable from "$lib/components/flags/flag-table.svelte";
     import { formatFlagValue } from "$lib/values";
+    import PageHeader from "$lib/components/ui/page-header.svelte";
     import type { PageProps } from "./$types";
 
     type StatusFilter = "all" | "on" | "off";
     type SortKey =
-        | "recent"
-        | "rules"
-        | "default"
-        | "status"
-        | "key"
-        | "context";
+        "recent" | "rules" | "default" | "status" | "key" | "context";
     type ViewMode = "table" | "cards";
 
     const contextFilterBaseOptions = [
@@ -232,19 +228,6 @@
 </script>
 
 <section class="space-y-8">
-    <header class="space-y-3">
-        <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            feature flags · cel-based targeting
-        </p>
-        <h1 class="text-balance text-3xl font-normal leading-tight sm:text-4xl">
-            Roll out features<br />on your own terms.
-        </h1>
-        <p class="max-w-xl text-sm text-foreground-soft sm:text-base">
-            Targeting rules written as CEL expressions, evaluated server-side,
-            persisted in Postgres. No SaaS, no DSL to learn.
-        </p>
-    </header>
-
     <Card class="motion-panel overflow-hidden">
         <FlagDashboardToolbar
             bind:query

@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { APIError, type ContextSchema } from '$lib/api';
 	import { invalidateAll } from '$app/navigation';
+	import ContextCardGrid from '$lib/components/contexts/context-card-grid.svelte';
 	import Button from '$lib/components/ui/button.svelte';
 	import Card from '$lib/components/ui/card.svelte';
+	import EmptyState from '$lib/components/ui/empty-state.svelte';
+	import PageHeader from '$lib/components/ui/page-header.svelte';
 	import SectionHeader from '$lib/components/ui/section-header.svelte';
 	import { Plus } from 'lucide-svelte';
 	import type { PageProps } from './$types';
@@ -22,18 +25,11 @@
 </script>
 
 <section class="space-y-12">
-	<header class="space-y-3">
-		<p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-			evaluation contexts · field shapes
-		</p>
-		<h1 class="text-balance text-3xl font-normal leading-tight sm:text-4xl">
-			Describe what your<br />rules can reach.
-		</h1>
-		<p class="max-w-xl text-sm text-foreground-soft sm:text-base">
-			Name the fields each flag's expressions can use. Selected at flag level — drives
-			autocomplete in the rule editor.
-		</p>
-	</header>
+	<PageHeader
+		eyebrow="evaluation contexts · field shapes"
+		title="Describe what your rules can reach."
+		description="Name the fields each flag's expressions can use. Selected at flag level — drives autocomplete in the rule editor."
+	/>
 
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 		<SectionHeader>contexts · {contexts.length}</SectionHeader>
@@ -48,55 +44,16 @@
 			<Button class="mt-4" onclick={refresh}>retry</Button>
 		</Card>
 	{:else if contexts.length === 0}
-		<Card class="motion-panel flex flex-col items-center gap-4 p-12 text-center">
-			<p class="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-				[ no contexts yet ]
-			</p>
-			<p class="max-w-sm text-sm text-foreground-softer">
-				Define one to enable autocomplete on rules.
-			</p>
-			<Button href="/contexts/new" class="mt-2">
+		<EmptyState
+			title="[ no contexts yet ]"
+			description="Define one to enable autocomplete on rules."
+			class="p-12"
+		>
+			<Button href="/contexts/new">
 				<Plus class="h-3.5 w-3.5" /> new context
 			</Button>
-		</Card>
+		</EmptyState>
 	{:else}
-		<div class="motion-list grid gap-3 sm:grid-cols-2">
-			{#each contexts as ctx (ctx.id)}
-				<a href="/contexts/{encodeURIComponent(ctx.id)}" class="group block">
-					<Card hoverable class="flex h-full flex-col gap-3 p-5">
-						<p class="truncate text-base font-medium">{ctx.name}</p>
-						{#if ctx.description}
-							<p class="line-clamp-2 text-sm text-foreground-softer">
-								{ctx.description}
-							</p>
-						{/if}
-						<p
-							class="mt-auto text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground"
-						>
-							{ctx.fields.length} field{ctx.fields.length === 1 ? '' : 's'}
-						</p>
-						{#if ctx.fields.length > 0}
-							<div class="space-y-1">
-								{#each ctx.fields.slice(0, 3) as f (f.path)}
-									<p
-										class="truncate border-l-2 border-border-muted pl-2.5 font-mono text-xs text-muted-foreground"
-									>
-										{f.path}
-										<span class="text-muted-foreground/60">· {f.type}</span>
-									</p>
-								{/each}
-								{#if ctx.fields.length > 3}
-									<p
-										class="pl-2.5 text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground"
-									>
-										+{ctx.fields.length - 3} more
-									</p>
-								{/if}
-							</div>
-						{/if}
-					</Card>
-				</a>
-			{/each}
-		</div>
+		<ContextCardGrid {contexts} />
 	{/if}
 </section>

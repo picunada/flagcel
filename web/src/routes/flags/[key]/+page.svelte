@@ -12,13 +12,15 @@
 		type AuditEntry
 	} from '$lib/api';
 	import { describeChanges } from '$lib/history';
-	import { cn } from '$lib/utils';
+	import BackLink from '$lib/components/ui/back-link.svelte';
 	import FlagHistoryList from '$lib/components/flags/flag-history-list.svelte';
 	import FlagPlaygroundPanels from '$lib/components/flags/flag-playground-panels.svelte';
 	import FlagRulesPanel from '$lib/components/flags/flag-rules-panel.svelte';
 	import FlagSettingsCard from '$lib/components/flags/flag-settings-card.svelte';
 	import Button from '$lib/components/ui/button.svelte';
 	import DestructiveDialog from '$lib/components/ui/destructive-dialog.svelte';
+	import PageHeader from '$lib/components/ui/page-header.svelte';
+	import Tabs from '$lib/components/ui/tabs.svelte';
 	import { Trash2, Plus, FlaskConical, History } from 'lucide-svelte';
 	import type { PageProps } from './$types';
 
@@ -377,24 +379,13 @@
 </script>
 
 <div class="space-y-10">
-	<a
+	<BackLink
 		href={`/?environment=${encodeURIComponent(selectedEnvironment.id)}`}
-		class="inline-flex items-center gap-1.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-	>
-		← all flags
-	</a>
+		label="all flags"
+	/>
 
-	<header class="flex flex-wrap items-start justify-between gap-4">
-		<div class="space-y-3">
-			<p
-				class="text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground"
-			>
-				[ flag ]
-			</p>
-			<h1 class="font-mono text-3xl font-normal tracking-tight sm:text-4xl">
-				{flag.key}
-			</h1>
-		</div>
+	<PageHeader eyebrow="[ flag ]" title={flag.key} titleClass="font-mono tracking-tight">
+		{#snippet actions()}
 		<Button
 			variant="destructive"
 			onclick={() => {
@@ -404,7 +395,8 @@
 		>
 			<Trash2 class="h-3.5 w-3.5" /> delete
 		</Button>
-	</header>
+		{/snippet}
+	</PageHeader>
 
 		<FlagSettingsCard
 			{flag}
@@ -422,33 +414,18 @@
 
 		<section class="space-y-4">
 			<div class="flex flex-wrap items-center justify-between gap-3 border-b border-border/60">
-				<div class="flex items-center gap-5">
-					<button
-						type="button"
-						onclick={() => (selectedTab = 'rules')}
-						class={cn(
-							'-mb-px border-b-2 pb-2 text-[0.7rem] uppercase tracking-[0.18em] transition-colors',
-							selectedTab === 'rules'
-								? 'border-success text-foreground'
-								: 'border-transparent text-muted-foreground hover:text-foreground'
-						)}
-					>
-						rules
-					</button>
-					<button
-						type="button"
-						onclick={() => (selectedTab = 'history')}
-						class={cn(
-							'-mb-px inline-flex items-center gap-1.5 border-b-2 pb-2 text-[0.7rem] uppercase tracking-[0.18em] transition-colors',
-							selectedTab === 'history'
-								? 'border-success text-foreground'
-								: 'border-transparent text-muted-foreground hover:text-foreground'
-						)}
-					>
-						<History class="h-3 w-3" /> history
-						{#if history.length > 0}<span class="text-muted-foreground">({history.length})</span>{/if}
-					</button>
-				</div>
+				<Tabs
+					bind:value={selectedTab}
+					items={[
+						{ value: 'rules', label: 'rules' },
+						{
+							value: 'history',
+							label: 'history',
+							icon: History,
+							count: history.length
+						}
+					]}
+				/>
 				{#if selectedTab === 'rules'}
 					<div class="flex items-center gap-2 pb-2">
 						<Button

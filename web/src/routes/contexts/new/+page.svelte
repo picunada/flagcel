@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { api, APIError, type CreateContextRequest } from '$lib/api';
+	import BackLink from '$lib/components/ui/back-link.svelte';
 	import Card from '$lib/components/ui/card.svelte';
 	import ContextEditor from '$lib/components/context-editor.svelte';
+	import PageHeader from '$lib/components/ui/page-header.svelte';
 
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
@@ -22,24 +24,13 @@
 </script>
 
 <div class="space-y-10">
-	<a
-		href="/contexts"
-		class="inline-flex items-center gap-1.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-	>
-		← all contexts
-	</a>
+	<BackLink href="/contexts" label="all contexts" />
 
-	<header class="space-y-3">
-		<p class="text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
-			[ new context ]
-		</p>
-		<h1 class="text-3xl font-normal tracking-tight sm:text-4xl">
-			Define a context
-		</h1>
-		<p class="max-w-lg text-sm text-foreground-softer">
-			Each field is a dotted path your CEL rules can reference.
-		</p>
-	</header>
+	<PageHeader
+		eyebrow="[ new context ]"
+		title="Define a context"
+		description="Each field is a dotted path your CEL rules can reference."
+	/>
 
 	<Card class="p-8">
 		<ContextEditor
