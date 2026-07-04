@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { api, APIError, type Environment, type FlagValue, type ValueType } from '$lib/api';
+	import BackLink from '$lib/components/ui/back-link.svelte';
 	import Button from '$lib/components/ui/button.svelte';
 	import Card from '$lib/components/ui/card.svelte';
+	import FieldLabel from '$lib/components/ui/field-label.svelte';
 	import Input from '$lib/components/ui/input.svelte';
+	import PageHeader from '$lib/components/ui/page-header.svelte';
 	import ThemedSelect from '$lib/components/ui/themed-select.svelte';
 	import BoolToggle from '$lib/components/ui/bool-toggle.svelte';
 	import ContextPicker from '$lib/components/context-picker.svelte';
@@ -59,34 +62,21 @@
 </script>
 
 <div class="space-y-10">
-	<a
+	<BackLink
 		href="/?environment={encodeURIComponent(selectedEnvironment.id)}"
-		class="inline-flex items-center gap-1.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-	>
-		← all flags
-	</a>
+		label="all flags"
+	/>
 
-	<header class="space-y-3">
-		<p class="text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
-			[ new flag ]
-		</p>
-		<h1 class="text-3xl font-normal tracking-tight sm:text-4xl">
-			Define a flag
-		</h1>
-		<p class="max-w-lg text-sm text-foreground-softer">
-			Pick a unique key. Add targeting rules after creation.
-		</p>
-	</header>
+	<PageHeader
+		eyebrow="[ new flag ]"
+		title="Define a flag"
+		description="Pick a unique key. Add targeting rules after creation."
+	/>
 
 	<Card class="p-8">
 		<form onsubmit={submit} class="space-y-6">
 			<div class="space-y-2">
-				<label
-					for="key"
-					class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
-				>
-					key
-				</label>
+				<FieldLabel for="key">key</FieldLabel>
 				<Input
 					id="key"
 					bind:value={key}
@@ -101,12 +91,7 @@
 			</div>
 
 			<div class="space-y-2">
-				<label
-					for="context"
-					class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
-				>
-					context · optional
-				</label>
+				<FieldLabel for="context">context · optional</FieldLabel>
 				<ContextPicker
 					value={contextId}
 					onchange={(v) => (contextId = v)}
@@ -114,12 +99,7 @@
 			</div>
 
 			<div class="space-y-2">
-				<label
-					for="type"
-					class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
-				>
-					type
-				</label>
+				<FieldLabel for="type">type</FieldLabel>
 				<ThemedSelect value={type} options={typeOptions} onchange={(v) => setType(v as ValueType)} buttonClass="text-sm" />
 			</div>
 

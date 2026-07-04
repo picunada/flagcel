@@ -2,10 +2,12 @@
 	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { api, APIError, type ContextSchema, type CreateContextRequest } from '$lib/api';
+	import BackLink from '$lib/components/ui/back-link.svelte';
 	import Button from '$lib/components/ui/button.svelte';
 	import Card from '$lib/components/ui/card.svelte';
 	import DestructiveDialog from '$lib/components/ui/destructive-dialog.svelte';
 	import ContextEditor from '$lib/components/context-editor.svelte';
+	import PageHeader from '$lib/components/ui/page-header.svelte';
 	import { Trash2 } from 'lucide-svelte';
 	import type { PageProps } from './$types';
 
@@ -49,24 +51,10 @@
 </script>
 
 <div class="space-y-10">
-	<a
-		href="/contexts"
-		class="inline-flex items-center gap-1.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-	>
-		← all contexts
-	</a>
+	<BackLink href="/contexts" label="all contexts" />
 
-	<header class="flex flex-wrap items-start justify-between gap-4">
-		<div class="space-y-3">
-			<p
-				class="text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground"
-			>
-				[ context ]
-			</p>
-			<h1 class="text-3xl font-normal tracking-tight sm:text-4xl">
-				{schema.name}
-			</h1>
-		</div>
+	<PageHeader eyebrow="[ context ]" title={schema.name}>
+		{#snippet actions()}
 		<Button
 			variant="destructive"
 			onclick={() => {
@@ -76,7 +64,8 @@
 		>
 			<Trash2 class="h-3.5 w-3.5" /> delete
 		</Button>
-	</header>
+		{/snippet}
+	</PageHeader>
 
 	<Card class="motion-panel p-8">
 		<ContextEditor

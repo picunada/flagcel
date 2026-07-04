@@ -1,17 +1,10 @@
 <script module lang="ts">
-	function parseHSL(hslStr: string): { h: number; s: number; l: number } {
-		const match = hslStr.match(/([\d.]+)\s*([\d.]+)%?\s*([\d.]+)%?/);
-		if (!match) return { h: 40, s: 80, l: 80 };
-		return { h: parseFloat(match[1]), s: parseFloat(match[2]), l: parseFloat(match[3]) };
+	function alphaColor(color: string, alphaPercent: number): string {
+		const alpha = Math.min(Math.max(alphaPercent, 0), 100);
+		return `color-mix(in oklab, ${color} ${alpha}%, transparent)`;
 	}
 
 	export function buildBoxShadow(glowColor: string, intensity: number, includeInset = true): string {
-		const base = glowColor.includes('var(')
-			? glowColor
-			: (() => {
-					const { h, s, l } = parseHSL(glowColor);
-					return `${h}deg ${s}% ${l}%`;
-				})();
 		const layers: [number, number, number, number, number, boolean][] = [
 			[0, 0, 0, 1, 100, true],
 			[0, 0, 1, 0, 60, true],
@@ -32,7 +25,10 @@
 			.filter(([, , , , , inset]) => includeInset || !inset)
 			.map(([x, y, blur, spread, alpha, inset]) => {
 				const a = Math.min(alpha * intensity, 100);
-				return `${inset ? 'inset ' : ''}${x}px ${y}px ${blur}px ${spread}px hsl(${base} / ${a}%)`;
+				return `${inset ? 'inset ' : ''}${x}px ${y}px ${blur}px ${spread}px ${alphaColor(
+					glowColor,
+					a
+				)}`;
 			})
 			.join(', ');
 	}
@@ -84,14 +80,18 @@
 		children,
 		class: className = '',
 		edgeSensitivity = 30,
-		glowColor = '40 80 80',
+		glowColor = 'var(--color-app-accent)',
 		backgroundColor = '#14110e',
 		borderRadius = 28,
 		glowRadius = 40,
 		glowIntensity = 1.0,
 		coneSpread = 25,
 		animated = false,
-		colors = ['#ff8a4c', '#ffc18a', '#ff6b2c'],
+		colors = [
+			'rgb(var(--app-accent-rgb) / 0.75)',
+			'var(--color-foreground-soft)',
+			'rgb(var(--app-accent-rgb) / 0.45)'
+		],
 		fillOpacity = 0.5,
 		directional = true,
 		insetGlow = true,
@@ -259,15 +259,15 @@
 >
 	<div
 		class="absolute inset-0 -z-[1]"
-		style="border-radius:inherit; border:1px solid {colors[0]}; opacity:{borderOpacity}; -webkit-mask-image:{borderMask}; mask-image:{borderMask}; box-shadow:0 0 12px color-mix(in_oklab, {colors[0]} 70%, transparent); transition:{transitionStr};"
+		style="border-radius:inherit; corner-shape:inherit; border:1px solid {colors[0]}; opacity:{borderOpacity}; -webkit-mask-image:{borderMask}; mask-image:{borderMask}; box-shadow:0 0 12px color-mix(in oklab, {colors[0]} 70%, transparent); transition:{transitionStr};"
 	></div>
 	<div
 		class="absolute inset-0 -z-[1]"
-		style="border-radius:inherit; opacity:{borderOpacity}; -webkit-mask-image:{borderMask}; mask-image:{borderMask}; box-shadow:{edgeFillBoxShadow}; transition:{transitionStr};"
+		style="border-radius:inherit; corner-shape:inherit; opacity:{borderOpacity}; -webkit-mask-image:{borderMask}; mask-image:{borderMask}; box-shadow:{edgeFillBoxShadow}; transition:{transitionStr};"
 	></div>
 	<div
 		class="absolute inset-0 -z-[1]"
-		style="border-radius:inherit; border:1px solid transparent; background:{fillBg.join(
+		style="border-radius:inherit; corner-shape:inherit; border:1px solid transparent; background:{fillBg.join(
 			', '
 		)}; -webkit-mask-image:{fillMask}; mask-image:{fillMask}; -webkit-mask-composite:source-out, source-over, source-over, source-over, source-over, source-over; mask-composite:subtract, add, add, add, add, add; opacity:{borderOpacity *
 			fillOpacity}; mix-blend-mode:soft-light; transition:{transitionStr};"
@@ -275,11 +275,11 @@
 
 	<span
 		class="pointer-events-none absolute z-[1]"
-		style="border-radius:inherit; inset:{-glowRadius}px; -webkit-mask-image:{outerMask}; mask-image:{outerMask}; opacity:{glowOpacity}; mix-blend-mode:plus-lighter; transition:{transitionStr};"
+		style="border-radius:inherit; corner-shape:inherit; inset:{-glowRadius}px; -webkit-mask-image:{outerMask}; mask-image:{outerMask}; opacity:{glowOpacity}; mix-blend-mode:plus-lighter; transition:{transitionStr};"
 	>
 		<span
 			class="absolute"
-			style="border-radius:inherit; inset:{glowRadius}px; box-shadow:{buildBoxShadow(
+			style="border-radius:inherit; corner-shape:inherit; inset:{glowRadius}px; box-shadow:{buildBoxShadow(
 				glowColor,
 				glowIntensity,
 				insetGlow

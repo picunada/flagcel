@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import Button from '$lib/components/ui/button.svelte';
+	import FieldLabel from '$lib/components/ui/field-label.svelte';
 	import Input from '$lib/components/ui/input.svelte';
 	import ThemedSelect from '$lib/components/ui/themed-select.svelte';
 	import { cn } from '$lib/utils';
@@ -84,21 +85,11 @@
 <form onsubmit={submit} class={cn('space-y-6', className)}>
 	<div class="grid gap-4 sm:grid-cols-2">
 		<div class="space-y-2">
-			<label
-				for="ctx-name"
-				class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
-			>
-				name
-			</label>
+			<FieldLabel for="ctx-name">name</FieldLabel>
 			<Input id="ctx-name" bind:value={name} required placeholder="web-user" />
 		</div>
 		<div class="space-y-2">
-			<label
-				for="ctx-desc"
-				class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
-			>
-				description · optional
-			</label>
+			<FieldLabel for="ctx-desc">description · optional</FieldLabel>
 			<Input
 				id="ctx-desc"
 				bind:value={description}
@@ -109,11 +100,7 @@
 
 	<div class="space-y-3">
 		<div class="flex items-center justify-between">
-			<p
-				class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
-			>
-				fields · dotted paths
-			</p>
+			<FieldLabel>fields · dotted paths</FieldLabel>
 			<Button size="sm" variant="ghost" type="button" onclick={addField}>
 				<Plus class="h-3 w-3" /> add field
 			</Button>

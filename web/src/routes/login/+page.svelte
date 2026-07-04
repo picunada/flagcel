@@ -4,6 +4,7 @@
     import Button from "$lib/components/ui/button.svelte";
     import Card from "$lib/components/ui/card.svelte";
     import Input from "$lib/components/ui/input.svelte";
+    import PageHeader from "$lib/components/ui/page-header.svelte";
     import { LogIn } from "lucide-svelte";
     import type { PageProps } from "./$types";
 
@@ -34,12 +35,11 @@
 </script>
 
 <section class="mx-auto max-w-md space-y-6">
-    <header class="space-y-3 text-center">
-        <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            flagcel admin
-        </p>
-        <h1 class="text-3xl font-normal leading-tight">Sign in</h1>
-    </header>
+    <PageHeader
+        eyebrow="flagcel admin"
+        title="Sign in"
+        class="items-center text-center sm:items-center sm:justify-center"
+    />
 
     <Card class="motion-panel space-y-5 p-6 text-center">
         {#if data.auth?.mode === "oidc"}

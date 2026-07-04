@@ -16,7 +16,7 @@
 	bind:ref
 	data-slot="select-trigger"
 	class={cn(
-		'group inline-flex h-9 w-full items-center justify-between gap-2 rounded-sm border border-input bg-transparent px-2.5 text-left text-xs text-foreground outline-none transition-colors hover:border-app-accent-border-hover hover:bg-app-accent-surface-faint focus-visible:border-app-accent-ring focus-visible:ring-1 focus-visible:ring-app-accent-ring disabled:cursor-not-allowed disabled:opacity-50',
+		'ios-corners-sm group inline-flex h-9 w-full items-center justify-between gap-2 border border-input bg-transparent px-2.5 text-left text-xs text-foreground outline-none transition-colors hover:border-app-accent-border-hover hover:bg-app-accent-surface-faint focus-visible:border-app-accent-ring focus-visible:ring-1 focus-visible:ring-app-accent-ring disabled:cursor-not-allowed disabled:opacity-50',
 		className
 	)}
 	{...restProps}

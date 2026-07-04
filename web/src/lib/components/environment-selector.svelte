@@ -1,21 +1,30 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { page } from '$app/state';
 	import type { Environment } from '$lib/api';
 	import * as Select from '$lib/components/ui/select';
 	import { Select as SelectPrimitive } from 'bits-ui';
 	import { ChevronDown, Layers3, Settings2 } from 'lucide-svelte';
+	import { cn } from '$lib/utils';
 
 	type Props = {
 		environments?: Environment[];
 		selectedEnvironment?: Environment;
+		pathname: string;
+		currentSearch: string;
+		class?: string;
 	};
 
-	let { environments = [], selectedEnvironment }: Props = $props();
+	let {
+		environments = [],
+		selectedEnvironment,
+		pathname,
+		currentSearch,
+		class: className
+	}: Props = $props();
 
 	function targetHref(id: string) {
-		const next = new URL(page.url);
-		const path = next.pathname;
+		const next = new URL(`${pathname}${currentSearch}`, 'http://flagcel.local');
+		const path = pathname;
 		if (!(path === '/' || path.startsWith('/flags') || path.startsWith('/api-keys'))) {
 			next.pathname = '/';
 		}
@@ -31,7 +40,10 @@
 {#if selectedEnvironment && environments.length > 0}
 	<Select.Root type="single" value={selectedEnvironment.id} onValueChange={selectEnvironment}>
 		<SelectPrimitive.Trigger
-			class="group inline-flex h-8 min-w-44 items-center gap-2 rounded-sm border border-app-accent-border bg-app-accent-surface pl-2 pr-1.5 text-left text-app-accent shadow-app-accent transition-colors hover:border-app-accent-border-strong hover:bg-app-accent-surface-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-app-accent-ring-strong"
+			class={cn(
+				'ios-corners-sm group inline-flex h-8 min-w-44 items-center gap-2 border border-app-accent-border bg-app-accent-surface pl-2 pr-1.5 text-left text-app-accent shadow-app-accent transition-colors hover:border-app-accent-border-strong hover:bg-app-accent-surface-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-app-accent-ring-strong',
+				className
+			)}
 			title="Environment selector"
 		>
 			<Layers3 class="h-3.5 w-3.5 shrink-0" />
@@ -40,7 +52,7 @@
 			>
 				env
 			</span>
-			<span class="ml-auto max-w-28 truncate font-mono text-xs text-foreground sm:max-w-36">
+			<span class="ml-auto min-w-0 flex-1 truncate text-right font-mono text-xs text-foreground">
 				{selectedEnvironment.key}
 			</span>
 			<ChevronDown
@@ -64,7 +76,7 @@
 			</Select.Group>
 			<a
 				href="/environments"
-				class="mt-1 flex items-center gap-2 rounded-[2px] border-t border-app-accent-border-muted px-2 py-2 text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-app-accent"
+				class="mt-1 flex items-center gap-2 border-t border-app-accent-border-muted px-2 py-2 text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-app-accent"
 			>
 				<Settings2 class="h-3.5 w-3.5 shrink-0" />
 				manage environments

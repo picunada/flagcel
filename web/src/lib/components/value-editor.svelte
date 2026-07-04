@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import BoolToggle from '$lib/components/ui/bool-toggle.svelte';
 	import Input from '$lib/components/ui/input.svelte';
+	import Textarea from '$lib/components/ui/textarea.svelte';
 	import type { FlagValue, ValueType } from '$lib/api';
 	import { formatFlagValue } from '$lib/values';
 
@@ -88,15 +89,15 @@
 	</div>
 {:else if type === 'json'}
 	<div class="min-w-0 space-y-1.5">
-		<textarea
+		<Textarea
 			{id}
 			bind:value={text}
 			oninput={handleTextInput}
-			rows="5"
+			rows={5}
 			spellcheck="false"
 			{disabled}
-			class="min-h-28 w-full resize-y rounded-sm border border-input bg-transparent px-3 py-2 font-mono text-sm leading-5 transition-colors placeholder:text-muted-foreground/60 focus-visible:border-border-hover focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-		></textarea>
+			class="min-h-28 resize-y font-mono leading-5"
+		></Textarea>
 		{#if error}
 			<p class="text-[0.65rem] text-destructive">{error}</p>
 		{/if}

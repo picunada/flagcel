@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack, tick } from 'svelte';
 	import Button from '$lib/components/ui/button.svelte';
+	import FieldLabel from '$lib/components/ui/field-label.svelte';
 	import Input from '$lib/components/ui/input.svelte';
 	import ValueEditor from '$lib/components/value-editor.svelte';
 	import { cn } from '$lib/utils';
@@ -217,15 +218,12 @@
 
 <form onsubmit={submit} class={cn('space-y-5', className)}>
 	<div class="space-y-2">
-		<label
-			for="expression"
-			class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
-		>
+		<FieldLabel for="expression">
 			expression · cel
 			{#if context}
 				<span class="text-muted-foreground/70">· {context.name}</span>
 			{/if}
-		</label>
+		</FieldLabel>
 		<div class="relative">
 			<textarea
 				id="expression"
@@ -239,7 +237,7 @@
 				rows="3"
 				required
 				placeholder={'user.country == "US" && user.plan == "pro"'}
-				class="flex w-full rounded-sm border border-input bg-transparent px-3 py-2 font-mono text-sm transition-colors placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:border-border-hover disabled:cursor-not-allowed disabled:opacity-50"
+				class="ios-corners-sm flex w-full border border-input bg-transparent px-3 py-2 font-mono text-sm transition-colors placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:border-border-hover disabled:cursor-not-allowed disabled:opacity-50"
 			></textarea>
 			{#if acOpen && suggestions.length > 0}
 				<div
@@ -285,12 +283,7 @@
 	</div>
 
 	<div class="space-y-2">
-		<label
-			for="rule-value"
-			class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
-		>
-			value · {valueType}
-		</label>
+		<FieldLabel for="rule-value">value · {valueType}</FieldLabel>
 		<ValueEditor
 			id="rule-value"
 			type={valueType}
@@ -303,12 +296,7 @@
 
 	<div class="grid gap-4 sm:grid-cols-2">
 		<div class="space-y-2">
-			<label
-				for="percentage"
-				class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
-			>
-				rollout %
-			</label>
+			<FieldLabel for="percentage">rollout %</FieldLabel>
 			<Input
 				id="percentage"
 				type="number"
@@ -321,12 +309,7 @@
 		</div>
 
 		<div class="space-y-2">
-			<label
-				for="bucket-by"
-				class="text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground"
-			>
-				bucket by · optional
-			</label>
+			<FieldLabel for="bucket-by">bucket by · optional</FieldLabel>
 			<div class="relative">
 				<input
 					id="bucket-by"
@@ -344,7 +327,7 @@
 					data-1p-ignore
 					data-lpignore="true"
 					data-form-type="other"
-					class="flex h-9 w-full rounded-sm border border-input bg-transparent px-3 py-1 text-sm transition-all duration-200 ease-out placeholder:text-muted-foreground placeholder:lowercase focus-visible:border-border-hover focus-visible:bg-surface-subtle focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					class="ios-corners-sm flex h-9 w-full border border-input bg-transparent px-3 py-1 text-sm transition-all duration-200 ease-out placeholder:text-muted-foreground placeholder:lowercase focus-visible:border-border-hover focus-visible:bg-surface-subtle focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				/>
 				{#if bucketAcOpen && bucketSuggestions.length > 0}
 					<div

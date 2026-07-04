@@ -1,11 +1,10 @@
 <script lang="ts">
-    import { page } from "$app/state";
     import Button from "$lib/components/ui/button.svelte";
     import "../app.css";
 
-    const status = $derived(page.status);
+    let { status, error }: { status: number; error: App.Error } = $props();
     const message = $derived(
-        page.error?.message ||
+        error?.message ||
             "Something went wrong while loading Flagcel.",
     );
     const isBackendError = $derived(
