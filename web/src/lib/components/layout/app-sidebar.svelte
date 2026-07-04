@@ -119,7 +119,7 @@
 </script>
 
 {#snippet sidebarContent()}
-    <div class="flex min-h-full flex-col bg-sidebar">
+    <div class="flex h-full min-h-0 flex-col overflow-y-auto bg-sidebar">
         <div class="space-y-7 px-5 pb-5 pt-5">
             <div class="flex items-center gap-3">
                 <a
@@ -287,7 +287,7 @@
 </div>
 
 <aside
-    class="hidden w-72 shrink-0 lg:block"
+    class="hidden h-full w-72 shrink-0 overflow-hidden lg:block"
     aria-label="Application navigation"
 >
     {@render sidebarContent()}

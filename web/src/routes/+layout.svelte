@@ -35,9 +35,9 @@
             : "page-wrapper relative flex min-h-screen flex-col"}
     >
         {#if appShell}
-            <div class="bg-sidebar p-2">
+            <div class="h-dvh bg-sidebar p-2">
                 <div
-                    class="mx-auto flex min-h-[calc(100dvh-1rem)] w-full flex-col lg:flex-row"
+                    class="mx-auto flex h-full min-h-0 w-full flex-col lg:flex-row"
                 >
                     <AppSidebar
                         {auth}
@@ -47,9 +47,9 @@
                         {currentSearch}
                     />
 
-                    <main class="app-frame min-w-0 flex-1 bg-background">
+                    <main class="app-frame min-h-0 min-w-0 flex-1 bg-background">
                         <div
-                            class="mx-auto w-full px-5 py-8 sm:px-7 lg:px-8 lg:py-10"
+                            class="h-full overflow-y-auto px-5 py-8 sm:px-7 lg:px-8 lg:py-10"
                         >
                             <div class="min-w-0">
                                 {@render children()}
