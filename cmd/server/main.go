@@ -73,6 +73,7 @@ func runServer() {
 	eng := evalcore.NewEngine(celEnv)
 
 	evalSvc := service.NewEvalService(store, eng)
+	evalSvc.SetUsageRecorder(store)
 	flagSvc := service.NewFlagService(store, evalSvc.InvalidateFlag)
 	ruleSvc := service.NewRuleService(store, evalSvc.InvalidateFlag)
 	envSvc := service.NewEnvironmentService(store)
@@ -100,7 +101,7 @@ func runServer() {
 		WriteTimeout:    cfg.HTTP.WriteTimeout,
 		IdleTimeout:     cfg.HTTP.IdleTimeout,
 		ShutdownTimeout: cfg.HTTP.ShutdownTimeout,
-	}, flagSvc, ruleSvc, envSvc, ctxSvc, evalSvc, authSvc, store, logger)
+	}, flagSvc, ruleSvc, envSvc, ctxSvc, evalSvc, authSvc, store, store, logger)
 
 	if cfg.DebugAddr != "" {
 		dbg := debug.NewServer(cfg.DebugAddr, logger)

@@ -22,7 +22,7 @@ wheels = [
 
 [[package]]
 name = "flagcel-openfeature"
-version = "0.0.0"
+version = "0.1.1"
 source = { editable = "../../sdks/python" }
 dependencies = [
     { name = "cel-expr-python" },

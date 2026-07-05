@@ -9,7 +9,8 @@
 		type CreateRuleRequest,
 		type ContextSchema,
 		type EvalTrace,
-		type AuditEntry
+		type AuditEntry,
+		type FlagUsage
 	} from '$lib/api';
 	import { describeChanges } from '$lib/history';
 	import BackLink from '$lib/components/ui/back-link.svelte';
@@ -17,11 +18,12 @@
 	import FlagPlaygroundPanels from '$lib/components/flags/flag-playground-panels.svelte';
 	import FlagRulesPanel from '$lib/components/flags/flag-rules-panel.svelte';
 	import FlagSettingsCard from '$lib/components/flags/flag-settings-card.svelte';
+	import FlagUsagePanel from '$lib/components/flags/flag-usage-panel.svelte';
 	import Button from '$lib/components/ui/button.svelte';
 	import DestructiveDialog from '$lib/components/ui/destructive-dialog.svelte';
 	import PageHeader from '$lib/components/ui/page-header.svelte';
 	import Tabs from '$lib/components/ui/tabs.svelte';
-	import { Trash2, Plus, FlaskConical, History } from 'lucide-svelte';
+	import { Trash2, Plus, FlaskConical, History, Activity } from 'lucide-svelte';
 	import type { PageProps } from './$types';
 
 	type Rule = Flag['rules'][number];
@@ -32,7 +34,8 @@
 	let selectedEnvironment = $state(untrack(() => data.selectedEnvironment));
 	let context = $state<ContextSchema | null>(untrack(() => data.context));
 	let history = $state<AuditEntry[]>(untrack(() => data.history ?? []));
-	let selectedTab = $state<'rules' | 'history'>('rules');
+	let usage = $state<FlagUsage>(untrack(() => data.usage ?? { buckets: [], events: [] }));
+	let selectedTab = $state<'rules' | 'usage' | 'history'>('rules');
 	let error = $state<string | null>(null);
 	let saving = $state(false);
 
@@ -62,6 +65,7 @@
 		selectedEnvironment = data.selectedEnvironment;
 		context = data.context;
 		history = data.history ?? [];
+		usage = data.usage ?? { buckets: [], events: [] };
 		if (!playgroundDirty) {
 			playgroundContext = sampleContext(data.context);
 		}
@@ -423,7 +427,8 @@
 							label: 'history',
 							icon: History,
 							count: history.length
-						}
+						},
+						{ value: 'usage', label: 'usage', icon: Activity }
 					]}
 				/>
 				{#if selectedTab === 'rules'}
@@ -476,8 +481,10 @@
 				{resetPlayground}
 				markDirty={markPlaygroundDirty}
 			/>
-		{:else}
+		{:else if selectedTab === 'history'}
 			<FlagHistoryList {historyView} {formatTimestamp} />
+		{:else}
+			<FlagUsagePanel {usage} {formatTimestamp} />
 		{/if}
 	</section>
 </div>

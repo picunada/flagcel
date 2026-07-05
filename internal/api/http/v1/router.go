@@ -16,6 +16,7 @@ type Handlers struct {
 	Eval         *EvalHandler
 	Auth         *AuthHandler
 	APIKeys      *APIKeysHandler
+	Usage        *UsageHandler
 }
 
 func NewRouter(h *Handlers) http.Handler {
@@ -26,9 +27,11 @@ func NewRouter(h *Handlers) http.Handler {
 	h.Contexts.Register(admin)
 	h.APIKeys.Register(admin)
 	h.Eval.RegisterAdmin(admin)
+	h.Usage.Register(admin)
 
 	eval := http.NewServeMux()
 	h.Eval.Register(eval)
+	h.Usage.RegisterEval(eval)
 
 	adminProtected := h.Auth.AdminMiddleware(admin)
 	evalProtected := h.Auth.APIKeyMiddleware(eval)

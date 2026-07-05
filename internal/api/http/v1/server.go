@@ -25,7 +25,7 @@ type Server struct {
 	logger *slog.Logger
 }
 
-func NewServer(cfg Config, flagSvc *service.FlagService, ruleSvc *service.RuleService, envSvc *service.EnvironmentService, ctxSvc *service.ContextService, evalSvc *service.EvalService, authSvc *service.AuthService, readiness ReadinessChecker, logger *slog.Logger) *Server {
+func NewServer(cfg Config, flagSvc *service.FlagService, ruleSvc *service.RuleService, envSvc *service.EnvironmentService, ctxSvc *service.ContextService, evalSvc *service.EvalService, authSvc *service.AuthService, usageStore UsageStore, readiness ReadinessChecker, logger *slog.Logger) *Server {
 	handlers := &Handlers{
 		Health:       NewHealthHandler(readiness),
 		Flags:        NewFlagsHandler(flagSvc, envSvc),
@@ -35,6 +35,7 @@ func NewServer(cfg Config, flagSvc *service.FlagService, ruleSvc *service.RuleSe
 		Eval:         NewEvalHandler(evalSvc),
 		Auth:         NewAuthHandler(authSvc),
 		APIKeys:      NewAPIKeysHandler(authSvc),
+		Usage:        NewUsageHandler(usageStore),
 	}
 
 	router := NewRouter(handlers)

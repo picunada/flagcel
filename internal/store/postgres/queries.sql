@@ -223,3 +223,67 @@ UPDATE api_keys
 SET last_used_at = NOW(),
     updated_at = NOW()
 WHERE id = $1;
+
+-- name: UpsertFlagUsageBucket :exec
+INSERT INTO flag_usage_buckets (
+    environment_id,
+    flag_key,
+    bucket_start,
+    value_type,
+    value_key,
+    value,
+    reason,
+    matched_rule_id,
+    api_key_id,
+    source,
+    count,
+    updated_at
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+ON CONFLICT (
+    environment_id,
+    flag_key,
+    bucket_start,
+    value_key,
+    reason,
+    matched_rule_id,
+    api_key_id,
+    source
+) DO UPDATE SET
+    count = flag_usage_buckets.count + EXCLUDED.count,
+    value = EXCLUDED.value,
+    value_type = EXCLUDED.value_type,
+    updated_at = NOW();
+
+-- name: InsertFlagEvaluationEvent :exec
+INSERT INTO flag_evaluation_events (
+    id,
+    environment_id,
+    flag_key,
+    observed_at,
+    value_type,
+    value,
+    reason,
+    matched_rule_id,
+    api_key_id,
+    source,
+    latency_ms,
+    context
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
+
+-- name: ListFlagUsageBuckets :many
+SELECT environment_id, flag_key, bucket_start, value_type, value, reason, matched_rule_id, api_key_id, source, count
+FROM flag_usage_buckets
+WHERE environment_id = $1
+  AND flag_key = $2
+  AND bucket_start >= $3
+ORDER BY bucket_start DESC, reason, matched_rule_id, value_key;
+
+-- name: ListFlagEvaluationEvents :many
+SELECT id, environment_id, flag_key, observed_at, value_type, value, reason, matched_rule_id, api_key_id, source, latency_ms, context
+FROM flag_evaluation_events
+WHERE environment_id = $1
+  AND flag_key = $2
+ORDER BY observed_at DESC
+LIMIT $3;

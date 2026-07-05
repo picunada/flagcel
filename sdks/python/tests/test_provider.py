@@ -60,7 +60,8 @@ def test_provider_fetches_definitions_and_evaluates_locally() -> None:
         "flagcelReason": "matched_rule",
         "valueType": "string",
     }
-    assert calls == [
+    definition_calls = [call for call in calls if call[0].endswith("/eval/definitions")]
+    assert definition_calls == [
         (
             "https://flagcel.test/api/v1/eval/definitions",
             {"Accept": "application/json", "Authorization": "Bearer secret"},

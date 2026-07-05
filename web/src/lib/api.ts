@@ -44,6 +44,35 @@ export type AuditEntry = {
     created_at: string;
 };
 
+export type FlagUsage = {
+    buckets: FlagUsageBucket[];
+    events: FlagUsageEvent[];
+};
+
+export type FlagUsageBucket = {
+    bucket_start: string;
+    value_type: ValueType;
+    value: FlagValue;
+    reason: string;
+    matched_rule_id?: string | null;
+    api_key_id?: string | null;
+    source?: string;
+    count: number;
+};
+
+export type FlagUsageEvent = {
+    id: string;
+    observed_at: string;
+    value_type: ValueType;
+    value: FlagValue;
+    reason: string;
+    matched_rule_id?: string | null;
+    api_key_id?: string | null;
+    source?: string;
+    latency_ms: number;
+    context?: Record<string, unknown>;
+};
+
 export type Environment = {
     id: string;
     key: string;
@@ -361,6 +390,8 @@ export function createApi(fetchFn: Fetch = fetch) {
             request<Flag>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}`)),
         getFlagAudit: (environmentId: string, key: string) =>
             request<AuditEntry[]>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}/audit`)),
+        getFlagUsage: (environmentId: string, key: string) =>
+            request<FlagUsage>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}/usage`)),
         createFlag: (environmentId: string, body: CreateFlagRequest) =>
             request<Flag>(environmentPath(environmentId, "/flags"), {
                 method: "POST",

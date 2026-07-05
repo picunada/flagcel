@@ -34,6 +34,24 @@ func TestGetDefinitionsHonorsIfNoneMatch(t *testing.T) {
 	}
 }
 
+func TestUsageSourceFromRequestUsesAPIKeyAndUserAgent(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/eval/checkout-copy", nil)
+	req.Header.Set("User-Agent", "flagcel-js/0.1")
+	req = req.WithContext(context.WithValue(req.Context(), apiKeyContextKey{}, &core.APIKey{
+		ID:            "api-key-1",
+		EnvironmentID: "env-test",
+	}))
+
+	source := usageSourceFromRequest(req)
+
+	if source.APIKeyID != "api-key-1" {
+		t.Fatalf("api key id = %q, want api-key-1", source.APIKeyID)
+	}
+	if source.Source != "flagcel-js/0.1" {
+		t.Fatalf("source = %q, want flagcel-js/0.1", source.Source)
+	}
+}
+
 func TestETagMatches(t *testing.T) {
 	for _, tc := range []struct {
 		name   string

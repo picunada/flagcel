@@ -921,6 +921,171 @@ func (s *Store) TouchAPIKey(ctx context.Context, id string) error {
 	return s.q.TouchAPIKey(ctx, keyID)
 }
 
+func (s *Store) RecordFlagUsage(ctx context.Context, event core.FlagUsageEvent) error {
+	envID, err := stringToUUID(event.EnvironmentID)
+	if err != nil {
+		return core.ErrEnvironmentNotFound
+	}
+	value, err := marshalJSONValue(event.Value)
+	if err != nil {
+		return err
+	}
+	contextValue, err := marshalUsageContext(event.Context)
+	if err != nil {
+		return err
+	}
+	observedAt := event.ObservedAt
+	if observedAt.IsZero() {
+		observedAt = time.Now()
+	}
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return err
+	}
+	apiKeyID := stringFromPtr(event.APIKeyID)
+	matchedRuleID := stringFromPtr(event.MatchedRuleID)
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+	qtx := s.q.WithTx(tx)
+
+	if err := qtx.UpsertFlagUsageBucket(ctx, sqlcgen.UpsertFlagUsageBucketParams{
+		EnvironmentID: envID,
+		FlagKey:       event.FlagKey,
+		BucketStart:   timeToTimestamptz(observedAt.Truncate(time.Hour)),
+		ValueType:     string(event.ValueType),
+		ValueKey:      string(value),
+		Value:         value,
+		Reason:        event.Reason,
+		MatchedRuleID: matchedRuleID,
+		ApiKeyID:      apiKeyID,
+		Source:        event.Source,
+		Count:         1,
+	}); err != nil {
+		return err
+	}
+
+	if err := qtx.InsertFlagEvaluationEvent(ctx, sqlcgen.InsertFlagEvaluationEventParams{
+		ID:            pgtype.UUID{Bytes: id, Valid: true},
+		EnvironmentID: envID,
+		FlagKey:       event.FlagKey,
+		ObservedAt:    timeToTimestamptz(observedAt),
+		ValueType:     string(event.ValueType),
+		Value:         value,
+		Reason:        event.Reason,
+		MatchedRuleID: matchedRuleID,
+		ApiKeyID:      apiKeyID,
+		Source:        event.Source,
+		LatencyMs:     float64(event.Latency.Microseconds()) / 1000,
+		Context:       contextValue,
+	}); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (s *Store) ListFlagUsageBuckets(ctx context.Context, query core.FlagUsageQuery) ([]*core.FlagUsageBucket, error) {
+	envID, err := stringToUUID(query.EnvironmentID)
+	if err != nil {
+		return nil, core.ErrEnvironmentNotFound
+	}
+	rows, err := s.q.ListFlagUsageBuckets(ctx, sqlcgen.ListFlagUsageBucketsParams{
+		EnvironmentID: envID,
+		FlagKey:       query.FlagKey,
+		BucketStart:   timeToTimestamptz(query.Since),
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*core.FlagUsageBucket, 0, len(rows))
+	for _, row := range rows {
+		bucket, err := usageBucketRowToCore(row)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, bucket)
+	}
+	return out, nil
+}
+
+func (s *Store) ListFlagEvaluationEvents(ctx context.Context, query core.FlagUsageQuery) ([]*core.FlagUsageEvent, error) {
+	envID, err := stringToUUID(query.EnvironmentID)
+	if err != nil {
+		return nil, core.ErrEnvironmentNotFound
+	}
+	limit := query.Limit
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	rows, err := s.q.ListFlagEvaluationEvents(ctx, sqlcgen.ListFlagEvaluationEventsParams{
+		EnvironmentID: envID,
+		FlagKey:       query.FlagKey,
+		Limit:         limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*core.FlagUsageEvent, 0, len(rows))
+	for _, row := range rows {
+		event, err := usageEventRowToCore(row)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, event)
+	}
+	return out, nil
+}
+
+func usageBucketRowToCore(r sqlcgen.ListFlagUsageBucketsRow) (*core.FlagUsageBucket, error) {
+	value, err := unmarshalJSONValue(r.Value)
+	if err != nil {
+		return nil, fmt.Errorf("decode usage bucket value: %w", err)
+	}
+	return &core.FlagUsageBucket{
+		EnvironmentID: uuidToString(r.EnvironmentID),
+		FlagKey:       r.FlagKey,
+		BucketStart:   timestamptzToTime(r.BucketStart),
+		ValueType:     core.ValueType(r.ValueType),
+		Value:         value,
+		Reason:        r.Reason,
+		MatchedRuleID: stringToPtr(r.MatchedRuleID),
+		APIKeyID:      stringToPtr(r.ApiKeyID),
+		Source:        r.Source,
+		Count:         r.Count,
+	}, nil
+}
+
+func usageEventRowToCore(r sqlcgen.FlagEvaluationEvent) (*core.FlagUsageEvent, error) {
+	value, err := unmarshalJSONValue(r.Value)
+	if err != nil {
+		return nil, fmt.Errorf("decode usage event value: %w", err)
+	}
+	usageContext, err := unmarshalUsageContext(r.Context)
+	if err != nil {
+		return nil, fmt.Errorf("decode usage event context: %w", err)
+	}
+	return &core.FlagUsageEvent{
+		ID:            uuidToString(r.ID),
+		EnvironmentID: uuidToString(r.EnvironmentID),
+		FlagKey:       r.FlagKey,
+		ObservedAt:    timestamptzToTime(r.ObservedAt),
+		ValueType:     core.ValueType(r.ValueType),
+		Value:         value,
+		Reason:        r.Reason,
+		MatchedRuleID: stringToPtr(r.MatchedRuleID),
+		APIKeyID:      stringToPtr(r.ApiKeyID),
+		Source:        r.Source,
+		Latency:       time.Duration(r.LatencyMs * float64(time.Millisecond)),
+		Context:       usageContext,
+	}, nil
+}
+
 func ruleRowToCore(r sqlcgen.Rule) (core.Rule, error) {
 	value, err := unmarshalJSONValue(r.Value)
 	if err != nil {
@@ -1072,6 +1237,33 @@ func marshalJSONValue(value any) ([]byte, error) {
 	return b, nil
 }
 
+func marshalUsageContext(value map[string]any) ([]byte, error) {
+	if value == nil {
+		value = map[string]any{}
+	}
+	b, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("encode usage context: %w", err)
+	}
+	return b, nil
+}
+
+func unmarshalUsageContext(raw []byte) (map[string]any, error) {
+	if len(raw) == 0 {
+		return map[string]any{}, nil
+	}
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	var value map[string]any
+	if err := dec.Decode(&value); err != nil {
+		return nil, err
+	}
+	if value == nil {
+		value = map[string]any{}
+	}
+	return value, nil
+}
+
 func unmarshalJSONValue(raw []byte) (any, error) {
 	if len(raw) == 0 {
 		return nil, nil
@@ -1099,6 +1291,20 @@ func uuidToStringPtr(u pgtype.UUID) *string {
 	}
 	s := uuidToString(u)
 	return &s
+}
+
+func stringToPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func stringFromPtr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func stringToUUID(s string) (pgtype.UUID, error) {

@@ -20,6 +20,9 @@ export const load: PageLoad = ({ params, url, fetch }) => {
         const history = await api
             .getFlagAudit(selectedEnvironment.id, params.key)
             .catch(() => []);
-        return { environments, selectedEnvironment, flag, context, history };
+        const usage = await api
+            .getFlagUsage(selectedEnvironment.id, params.key)
+            .catch(() => ({ buckets: [], events: [] }));
+        return { environments, selectedEnvironment, flag, context, history, usage };
     }, url.pathname);
 };

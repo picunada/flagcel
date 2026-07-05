@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import threading
+import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -219,7 +220,9 @@ class FlagcelProvider(AbstractProvider):
             message = str(last_error) if last_error is not None else "flagcel: definitions not loaded"
             return _error_details(default_value, ErrorCode.PROVIDER_NOT_READY, message)
 
+        started = time.perf_counter()
         result = evaluator.evaluate(flag_key, context)
+        self._report_usage(result, (time.perf_counter() - started) * 1000.0)
         if result.error:
             return _result_error_details(default_value, result)
         if result.value_type != expected_type:
@@ -234,6 +237,26 @@ class FlagcelProvider(AbstractProvider):
                 "valueType": result.value_type,
             },
         )
+
+    def _report_usage(self, result: EvaluationResult, latency_ms: float) -> None:
+        if not result.key or not self._client.usage_reporting_enabled():
+            return
+        event = {
+            "flag_key": result.key,
+            "value_type": result.value_type,
+            "value": result.value,
+            "reason": result.reason,
+            "source": "python-sdk",
+            "latency_ms": latency_ms,
+            "observed_at": _utc_now(),
+        }
+        if result.variant:
+            event["matched_rule_id"] = result.variant
+
+        def report() -> None:
+            self._client.report_usage([event])
+
+        threading.Thread(target=report, name="flagcel-usage-report", daemon=True).start()
 
     def _poll(self, stop_event: threading.Event) -> None:
         while not stop_event.wait(self._poll_interval):
@@ -306,6 +329,10 @@ def _context_to_data(evaluation_context: EvaluationContext | None) -> dict[str, 
     if evaluation_context.targeting_key is not None:
         context["targetingKey"] = evaluation_context.targeting_key
     return json.loads(json.dumps(context, separators=(",", ":")))
+
+
+def _utc_now() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
 def _error_details(default_value: Any, error_code: ErrorCode, message: str) -> FlagResolutionDetails[Any]:

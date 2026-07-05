@@ -8,7 +8,7 @@ help:
 	@echo "  web-dev         run Vite dev server (port 5173, proxies /api -> :8080)"
 	@echo "  web             build the SvelteKit app to web/build/"
 	@echo "  build           web + go build (produces a single binary with embedded UI)"
-	@echo "  wasm            build evalcore WASI preview1 reactor for JS and Python SDKs"
+	@echo "  wasm            build evalcore WASI preview1 reactor for the JS SDK"
 	@echo "  run             go run the server against the local Postgres in docker-compose"
 	@echo "  docker-up       docker compose up (hot-reload Go, with Postgres)"
 	@echo "  db-reset        wipe the local Postgres volume; migrations re-apply on next boot"
@@ -40,10 +40,9 @@ build: web
 	go build -o bin/flagcel ./cmd/server
 
 wasm:
-	mkdir -p bin sdks/js sdks/python/flagcel_openfeature
+	mkdir -p bin sdks/js
 	cd evalcore && GOOS=wasip1 GOARCH=wasm go build -buildmode=c-shared -o ../bin/flagcel_eval.wasm ./cmd/wasm
 	cp bin/flagcel_eval.wasm sdks/js/flagcel_eval.wasm
-	cp bin/flagcel_eval.wasm sdks/python/flagcel_openfeature/flagcel_eval.wasm
 
 run:
 	go run ./cmd/server
@@ -69,7 +68,7 @@ migrate-version:
 	go run ./cmd/server migrate version
 
 clean:
-	rm -rf bin web/build web/.svelte-kit sdks/js/flagcel_eval.wasm sdks/python/flagcel_eval.wasm sdks/python/flagcel_openfeature/flagcel_eval.wasm
+	rm -rf bin web/build web/.svelte-kit sdks/js/flagcel_eval.wasm
 
 # --- Performance ---------------------------------------------------------
 

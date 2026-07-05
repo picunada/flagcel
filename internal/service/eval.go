@@ -18,6 +18,7 @@ import (
 type EvalService struct {
 	store              *postgres.Store
 	cache              *compiledFlagCache
+	usage              core.FlagUsageRecorder
 	definitionsVersion atomic.Uint64
 }
 
@@ -34,9 +35,20 @@ func NewEvalService(store *postgres.Store, eng *evalcore.Engine) *EvalService {
 	return s
 }
 
+func (s *EvalService) SetUsageRecorder(recorder core.FlagUsageRecorder) {
+	s.usage = recorder
+}
+
 func (s *EvalService) Evaluate(ctx context.Context, environmentID, key string, user evalcore.DataContext) (core.FlagValue, error) {
+	return s.EvaluateWithUsage(ctx, environmentID, key, user, core.FlagUsageSource{})
+}
+
+func (s *EvalService) EvaluateWithUsage(ctx context.Context, environmentID, key string, user evalcore.DataContext, source core.FlagUsageSource) (core.FlagValue, error) {
+	start := time.Now()
 	if compiled, ok := s.cache.Get(environmentID, key); ok {
-		return s.cache.Evaluate(compiled, user), nil
+		trace := s.cache.EvaluateTrace(compiled, user)
+		s.recordUsage(ctx, environmentID, trace, source, time.Since(start))
+		return traceValue(trace), nil
 	}
 
 	cfg, err := s.store.GetFlag(ctx, environmentID, key)
@@ -51,7 +63,9 @@ func (s *EvalService) Evaluate(ctx context.Context, environmentID, key string, u
 		return core.FlagValue{}, fmt.Errorf("eval service: compile flag %w", err)
 	}
 
-	return s.cache.Evaluate(compiled, user), nil
+	trace := s.cache.EvaluateTrace(compiled, user)
+	s.recordUsage(ctx, environmentID, trace, source, time.Since(start))
+	return traceValue(trace), nil
 }
 
 func (s *EvalService) EvaluateWithTrace(ctx context.Context, environmentID, key string, user evalcore.DataContext) (evalcore.EvaluationTrace, error) {
@@ -125,10 +139,17 @@ func (s *EvalService) bumpDefinitionsVersion() {
 }
 
 func (s *EvalService) EvaluateAll(ctx context.Context, environmentID string, user evalcore.DataContext) (map[string]core.FlagValue, error) {
+	return s.EvaluateAllWithUsage(ctx, environmentID, user, core.FlagUsageSource{})
+}
+
+func (s *EvalService) EvaluateAllWithUsage(ctx context.Context, environmentID string, user evalcore.DataContext, source core.FlagUsageSource) (map[string]core.FlagValue, error) {
 	if flags, ok := s.cache.All(environmentID); ok {
 		out := make(map[string]core.FlagValue, len(flags))
 		for _, flag := range flags {
-			out[flag.Key] = s.cache.Evaluate(flag, user)
+			start := time.Now()
+			trace := s.cache.EvaluateTrace(flag, user)
+			out[flag.Key] = traceValue(trace)
+			s.recordUsage(ctx, environmentID, trace, source, time.Since(start))
 		}
 		return out, nil
 	}
@@ -152,10 +173,46 @@ func (s *EvalService) EvaluateAll(ctx context.Context, environmentID string, use
 		}
 		compiledFlags[cacheKey(environmentID, cfg.Key)] = cached
 		compiled := cached.flag
-		out[cfg.Key] = s.cache.Evaluate(compiled, user)
+		start := time.Now()
+		trace := s.cache.EvaluateTrace(compiled, user)
+		out[cfg.Key] = traceValue(trace)
+		s.recordUsage(ctx, environmentID, trace, source, time.Since(start))
 	}
 	s.cache.SetAll(environmentID, compiledFlags)
 	return out, nil
+}
+
+func (s *EvalService) recordUsage(ctx context.Context, environmentID string, trace evalcore.EvaluationTrace, source core.FlagUsageSource, latency time.Duration) {
+	if s.usage == nil {
+		return
+	}
+	if latency <= 0 {
+		latency = time.Nanosecond
+	}
+	event := core.FlagUsageEvent{
+		EnvironmentID: environmentID,
+		FlagKey:       trace.Key,
+		ValueType:     core.ValueType(trace.Type),
+		Value:         trace.Value,
+		Reason:        trace.Reason,
+		Source:        source.Source,
+		Latency:       latency,
+		ObservedAt:    time.Now(),
+	}
+	if trace.MatchedRule != nil {
+		event.MatchedRuleID = &trace.MatchedRule.ID
+	}
+	if source.APIKeyID != "" {
+		event.APIKeyID = &source.APIKeyID
+	}
+	_ = s.usage.RecordFlagUsage(ctx, event)
+}
+
+func traceValue(trace evalcore.EvaluationTrace) core.FlagValue {
+	return core.FlagValue{
+		Type:  core.ValueType(trace.Type),
+		Value: trace.Value,
+	}
 }
 
 func (s *EvalService) contextForFlag(ctx context.Context, cfg *core.FlagConfig) (*core.ContextSchema, error) {
@@ -326,6 +383,10 @@ func (c *compiledFlagCache) InvalidateFlag(environmentID, key string) {
 
 func (c *compiledFlagCache) Evaluate(flag *evalcore.Flag, user evalcore.DataContext) core.FlagValue {
 	return c.engine.Evaluate(flag, user)
+}
+
+func (c *compiledFlagCache) EvaluateTrace(flag *evalcore.Flag, user evalcore.DataContext) evalcore.EvaluationTrace {
+	return c.engine.EvaluateTrace(flag, user)
 }
 
 func cacheKey(environmentID, flagKey string) string {

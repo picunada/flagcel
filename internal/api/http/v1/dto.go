@@ -176,6 +176,51 @@ type EvalFlagValueResponse struct {
 	Value     any    `json:"value"`
 }
 
+type ReportUsageRequest struct {
+	Events []ReportUsageEventRequest `json:"events"`
+}
+
+type ReportUsageEventRequest struct {
+	FlagKey       string         `json:"flag_key"`
+	ValueType     string         `json:"value_type"`
+	Value         any            `json:"value"`
+	Reason        string         `json:"reason"`
+	MatchedRuleID *string        `json:"matched_rule_id,omitempty"`
+	Source        string         `json:"source,omitempty"`
+	LatencyMs     float64        `json:"latency_ms,omitempty"`
+	ObservedAt    string         `json:"observed_at,omitempty"`
+	Context       map[string]any `json:"context,omitempty"`
+}
+
+type FlagUsageResponse struct {
+	Buckets []FlagUsageBucketResponse `json:"buckets"`
+	Events  []FlagUsageEventResponse  `json:"events"`
+}
+
+type FlagUsageBucketResponse struct {
+	BucketStart   string  `json:"bucket_start"`
+	ValueType     string  `json:"value_type"`
+	Value         any     `json:"value"`
+	Reason        string  `json:"reason"`
+	MatchedRuleID *string `json:"matched_rule_id,omitempty"`
+	APIKeyID      *string `json:"api_key_id,omitempty"`
+	Source        string  `json:"source,omitempty"`
+	Count         int64   `json:"count"`
+}
+
+type FlagUsageEventResponse struct {
+	ID            string         `json:"id"`
+	ObservedAt    string         `json:"observed_at"`
+	ValueType     string         `json:"value_type"`
+	Value         any            `json:"value"`
+	Reason        string         `json:"reason"`
+	MatchedRuleID *string        `json:"matched_rule_id,omitempty"`
+	APIKeyID      *string        `json:"api_key_id,omitempty"`
+	Source        string         `json:"source,omitempty"`
+	LatencyMs     float64        `json:"latency_ms"`
+	Context       map[string]any `json:"context,omitempty"`
+}
+
 type UserResponse struct {
 	ID          string  `json:"id"`
 	Email       string  `json:"email"`

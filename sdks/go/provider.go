@@ -128,7 +128,9 @@ func (p *Provider) evaluate(flag string, defaultValue any, flatCtx openfeature.F
 		return defaultValue, defaultDetail(lastErr, ready)
 	}
 
+	start := time.Now()
 	result := evaluator.Evaluate(flag, evalcore.DataContext(flatCtx))
+	p.reportUsage(result, time.Since(start))
 	if result.Error != "" {
 		return defaultValue, errorDetail(result)
 	}
@@ -137,6 +139,27 @@ func (p *Provider) evaluate(flag string, defaultValue any, flatCtx openfeature.F
 	}
 
 	return result.Value, resolutionDetail(result)
+}
+
+func (p *Provider) reportUsage(result evalcore.EvaluationResult, latency time.Duration) {
+	if result.Key == "" || p.client == nil || p.client.apiKey == "" {
+		return
+	}
+	event := usageReportEvent{
+		FlagKey:       result.Key,
+		ValueType:     string(result.ValueType),
+		Value:         result.Value,
+		Reason:        result.Reason,
+		MatchedRuleID: result.Variant,
+		Source:        "go-sdk",
+		LatencyMs:     float64(latency) / float64(time.Millisecond),
+		ObservedAt:    time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		_ = p.client.reportUsage(ctx, []usageReportEvent{event})
+	}()
 }
 
 func (p *Provider) poll(ctx context.Context, done chan<- struct{}) {
