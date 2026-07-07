@@ -1014,6 +1014,68 @@ func (s *Store) ListFlagUsageBuckets(ctx context.Context, query core.FlagUsageQu
 	return out, nil
 }
 
+func (s *Store) ListEnvironmentUsageBuckets(ctx context.Context, query core.FlagUsageQuery) ([]*core.FlagUsageBucket, error) {
+	envID, err := stringToUUID(query.EnvironmentID)
+	if err != nil {
+		return nil, core.ErrEnvironmentNotFound
+	}
+	rows, err := s.q.ListEnvironmentUsageBuckets(ctx, sqlcgen.ListEnvironmentUsageBucketsParams{
+		EnvironmentID: envID,
+		BucketStart:   timeToTimestamptz(query.Since),
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*core.FlagUsageBucket, 0, len(rows))
+	for _, row := range rows {
+		bucket, err := usageEnvironmentBucketRowToCore(row)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, bucket)
+	}
+	return out, nil
+}
+
+func (s *Store) ListFlagUsageLatencyBuckets(ctx context.Context, query core.FlagUsageQuery) ([]*core.FlagUsageLatencyBucket, error) {
+	envID, err := stringToUUID(query.EnvironmentID)
+	if err != nil {
+		return nil, core.ErrEnvironmentNotFound
+	}
+	rows, err := s.q.ListFlagUsageLatencyBuckets(ctx, sqlcgen.ListFlagUsageLatencyBucketsParams{
+		EnvironmentID: envID,
+		FlagKey:       query.FlagKey,
+		ObservedAt:    timeToTimestamptz(query.Since),
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*core.FlagUsageLatencyBucket, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, usageFlagLatencyBucketRowToCore(row))
+	}
+	return out, nil
+}
+
+func (s *Store) ListEnvironmentUsageLatencyBuckets(ctx context.Context, query core.FlagUsageQuery) ([]*core.FlagUsageLatencyBucket, error) {
+	envID, err := stringToUUID(query.EnvironmentID)
+	if err != nil {
+		return nil, core.ErrEnvironmentNotFound
+	}
+	rows, err := s.q.ListEnvironmentUsageLatencyBuckets(ctx, sqlcgen.ListEnvironmentUsageLatencyBucketsParams{
+		EnvironmentID: envID,
+		ObservedAt:    timeToTimestamptz(query.Since),
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*core.FlagUsageLatencyBucket, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, usageEnvironmentLatencyBucketRowToCore(row))
+	}
+	return out, nil
+}
+
 func (s *Store) ListFlagEvaluationEvents(ctx context.Context, query core.FlagUsageQuery) ([]*core.FlagUsageEvent, error) {
 	envID, err := stringToUUID(query.EnvironmentID)
 	if err != nil {
@@ -1043,22 +1105,75 @@ func (s *Store) ListFlagEvaluationEvents(ctx context.Context, query core.FlagUsa
 }
 
 func usageBucketRowToCore(r sqlcgen.ListFlagUsageBucketsRow) (*core.FlagUsageBucket, error) {
-	value, err := unmarshalJSONValue(r.Value)
+	return usageBucketToCore(
+		r.EnvironmentID,
+		r.FlagKey,
+		r.BucketStart,
+		r.ValueType,
+		r.Value,
+		r.Reason,
+		r.MatchedRuleID,
+		r.ApiKeyID,
+		r.ApiKeyName,
+		r.Source,
+		r.Count,
+	)
+}
+
+func usageEnvironmentBucketRowToCore(r sqlcgen.ListEnvironmentUsageBucketsRow) (*core.FlagUsageBucket, error) {
+	return usageBucketToCore(
+		r.EnvironmentID,
+		r.FlagKey,
+		r.BucketStart,
+		r.ValueType,
+		r.Value,
+		r.Reason,
+		r.MatchedRuleID,
+		r.ApiKeyID,
+		r.ApiKeyName,
+		r.Source,
+		r.Count,
+	)
+}
+
+func usageBucketToCore(environmentID pgtype.UUID, flagKey string, bucketStart pgtype.Timestamptz, valueType string, rawValue []byte, reason string, matchedRuleID string, apiKeyID string, apiKeyName string, source string, count int64) (*core.FlagUsageBucket, error) {
+	value, err := unmarshalJSONValue(rawValue)
 	if err != nil {
 		return nil, fmt.Errorf("decode usage bucket value: %w", err)
 	}
 	return &core.FlagUsageBucket{
-		EnvironmentID: uuidToString(r.EnvironmentID),
-		FlagKey:       r.FlagKey,
-		BucketStart:   timestamptzToTime(r.BucketStart),
-		ValueType:     core.ValueType(r.ValueType),
+		EnvironmentID: uuidToString(environmentID),
+		FlagKey:       flagKey,
+		BucketStart:   timestamptzToTime(bucketStart),
+		ValueType:     core.ValueType(valueType),
 		Value:         value,
-		Reason:        r.Reason,
-		MatchedRuleID: stringToPtr(r.MatchedRuleID),
-		APIKeyID:      stringToPtr(r.ApiKeyID),
-		Source:        r.Source,
-		Count:         r.Count,
+		Reason:        reason,
+		MatchedRuleID: stringToPtr(matchedRuleID),
+		APIKeyID:      stringToPtr(apiKeyID),
+		APIKeyName:    apiKeyName,
+		Source:        source,
+		Count:         count,
 	}, nil
+}
+
+func usageFlagLatencyBucketRowToCore(r sqlcgen.ListFlagUsageLatencyBucketsRow) *core.FlagUsageLatencyBucket {
+	return usageLatencyBucketToCore(r.EnvironmentID, r.FlagKey, r.Source, r.BucketStart, r.Count, r.AvgLatencyMs, r.P95LatencyMs)
+}
+
+func usageEnvironmentLatencyBucketRowToCore(r sqlcgen.ListEnvironmentUsageLatencyBucketsRow) *core.FlagUsageLatencyBucket {
+	return usageLatencyBucketToCore(r.EnvironmentID, r.FlagKey, r.Source, r.BucketStart, r.Count, r.AvgLatencyMs, r.P95LatencyMs)
+}
+
+func usageLatencyBucketToCore(environmentID pgtype.UUID, flagKey string, source string, bucketStart pgtype.Timestamptz, count int64, avgLatencyMs float64, p95LatencyMs float64) *core.FlagUsageLatencyBucket {
+	return &core.FlagUsageLatencyBucket{
+		EnvironmentID: uuidToString(environmentID),
+		FlagKey:       flagKey,
+		Source:        source,
+		BucketStart:   timestamptzToTime(bucketStart),
+		Count:         count,
+		AvgLatency:    time.Duration(avgLatencyMs * float64(time.Millisecond)),
+		P95Latency:    time.Duration(p95LatencyMs * float64(time.Millisecond)),
+	}
 }
 
 func usageEventRowToCore(r sqlcgen.FlagEvaluationEvent) (*core.FlagUsageEvent, error) {

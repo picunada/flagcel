@@ -13,6 +13,9 @@ import (
 type UsageStore interface {
 	RecordFlagUsage(ctx context.Context, event core.FlagUsageEvent) error
 	ListFlagUsageBuckets(ctx context.Context, query core.FlagUsageQuery) ([]*core.FlagUsageBucket, error)
+	ListEnvironmentUsageBuckets(ctx context.Context, query core.FlagUsageQuery) ([]*core.FlagUsageBucket, error)
+	ListFlagUsageLatencyBuckets(ctx context.Context, query core.FlagUsageQuery) ([]*core.FlagUsageLatencyBucket, error)
+	ListEnvironmentUsageLatencyBuckets(ctx context.Context, query core.FlagUsageQuery) ([]*core.FlagUsageLatencyBucket, error)
 	ListFlagEvaluationEvents(ctx context.Context, query core.FlagUsageQuery) ([]*core.FlagUsageEvent, error)
 }
 
@@ -25,6 +28,7 @@ func NewUsageHandler(store UsageStore) *UsageHandler {
 }
 
 func (h *UsageHandler) Register(mux *http.ServeMux) {
+	mux.HandleFunc("GET /environments/{environment_id}/usage", h.GetEnvironmentUsage)
 	mux.HandleFunc("GET /environments/{environment_id}/flags/{key}/usage", h.GetFlagUsage)
 }
 
@@ -44,7 +48,29 @@ func (h *UsageHandler) GetFlagUsage(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, err)
 		return
 	}
-	if err := utils.Encode(w, r, http.StatusOK, "success", toFlagUsageResponse(buckets, events)); err != nil {
+	latencyBuckets, err := h.store.ListFlagUsageLatencyBuckets(r.Context(), query)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
+	if err := utils.Encode(w, r, http.StatusOK, "success", toFlagUsageResponse(buckets, latencyBuckets, events)); err != nil {
+		WriteError(w, err)
+	}
+}
+
+func (h *UsageHandler) GetEnvironmentUsage(w http.ResponseWriter, r *http.Request) {
+	query := usageQueryFromRequest(r, r.PathValue("environment_id"), "", time.Now())
+	buckets, err := h.store.ListEnvironmentUsageBuckets(r.Context(), query)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
+	latencyBuckets, err := h.store.ListEnvironmentUsageLatencyBuckets(r.Context(), query)
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
+	if err := utils.Encode(w, r, http.StatusOK, "success", toFlagUsageResponse(buckets, latencyBuckets, nil)); err != nil {
 		WriteError(w, err)
 	}
 }

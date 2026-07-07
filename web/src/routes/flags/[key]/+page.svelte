@@ -19,10 +19,12 @@
 	import FlagRulesPanel from '$lib/components/flags/flag-rules-panel.svelte';
 	import FlagSettingsCard from '$lib/components/flags/flag-settings-card.svelte';
 	import FlagUsagePanel from '$lib/components/flags/flag-usage-panel.svelte';
+	import UsageRangeControl from '$lib/components/flags/usage-range-control.svelte';
 	import Button from '$lib/components/ui/button.svelte';
 	import DestructiveDialog from '$lib/components/ui/destructive-dialog.svelte';
 	import PageHeader from '$lib/components/ui/page-header.svelte';
 	import Tabs from '$lib/components/ui/tabs.svelte';
+	import { normalizeUsage, type UsageRangeHours } from '$lib/usage-analytics';
 	import { Trash2, Plus, FlaskConical, History, Activity } from 'lucide-svelte';
 	import type { PageProps } from './$types';
 
@@ -34,7 +36,8 @@
 	let selectedEnvironment = $state(untrack(() => data.selectedEnvironment));
 	let context = $state<ContextSchema | null>(untrack(() => data.context));
 	let history = $state<AuditEntry[]>(untrack(() => data.history ?? []));
-	let usage = $state<FlagUsage>(untrack(() => data.usage ?? { buckets: [], events: [] }));
+	let usage = $state<FlagUsage>(untrack(() => normalizeUsage(data.usage)));
+	let usageRange = $state<UsageRangeHours>(untrack(() => data.usageRange));
 	let selectedTab = $state<'rules' | 'usage' | 'history'>('rules');
 	let error = $state<string | null>(null);
 	let saving = $state(false);
@@ -65,7 +68,8 @@
 		selectedEnvironment = data.selectedEnvironment;
 		context = data.context;
 		history = data.history ?? [];
-		usage = data.usage ?? { buckets: [], events: [] };
+		usage = normalizeUsage(data.usage);
+		usageRange = data.usageRange;
 		if (!playgroundDirty) {
 			playgroundContext = sampleContext(data.context);
 		}
@@ -83,6 +87,15 @@
 		const date = new Date(iso);
 		if (Number.isNaN(date.getTime())) return iso;
 		return timeFormatter.format(date);
+	}
+
+	function setUsageRange(next: UsageRangeHours) {
+		const nextUrl = new URL(window.location.href);
+		nextUrl.searchParams.set('usageRange', String(next));
+		goto(`${nextUrl.pathname}${nextUrl.search}`, {
+			keepFocus: true,
+			noScroll: true
+		});
 	}
 
 	// History is ordered newest-first; diff each version against the next-older one.
@@ -484,7 +497,12 @@
 		{:else if selectedTab === 'history'}
 			<FlagHistoryList {historyView} {formatTimestamp} />
 		{:else}
-			<FlagUsagePanel {usage} {formatTimestamp} />
+			<div class="space-y-3">
+				<div class="flex justify-end">
+					<UsageRangeControl value={usageRange} onchange={setUsageRange} />
+				</div>
+				<FlagUsagePanel {usage} range={usageRange} {formatTimestamp} />
+			</div>
 		{/if}
 	</section>
 </div>

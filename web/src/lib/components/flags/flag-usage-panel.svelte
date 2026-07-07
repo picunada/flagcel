@@ -3,33 +3,18 @@
     import { formatFlagValue } from "$lib/values";
     import Card from "$lib/components/ui/card.svelte";
     import Badge from "$lib/components/ui/badge.svelte";
-    import UsageBreakdownCard from "$lib/components/flags/usage-breakdown-card.svelte";
+    import UsageAnalyticsCharts from "$lib/components/flags/usage-analytics-charts.svelte";
+    import { usageTotal, type UsageRangeHours } from "$lib/usage-analytics";
 
     type Props = {
         usage: FlagUsage;
+        range?: UsageRangeHours;
         formatTimestamp: (iso: string) => string;
     };
 
-    let { usage, formatTimestamp }: Props = $props();
+    let { usage, range = 24, formatTimestamp }: Props = $props();
 
-    const total = $derived(usage.buckets.reduce((sum, bucket) => sum + bucket.count, 0));
-    const byValue = $derived(groupCounts(usage.buckets, (bucket) => formatFlagValue(bucket.value)));
-    const byReason = $derived(groupCounts(usage.buckets, (bucket) => bucket.reason));
-    const byRule = $derived(
-        groupCounts(usage.buckets, (bucket) => bucket.matched_rule_id ?? "default")
-    );
-
-    function groupCounts<T>(items: T[], label: (item: T) => string) {
-        const counts = new Map<string, number>();
-        for (const item of items) {
-            const key = label(item) || "unknown";
-            counts.set(key, (counts.get(key) ?? 0) + (item as { count: number }).count);
-        }
-        return [...counts.entries()]
-            .map(([name, count]) => ({ name, count }))
-            .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-    }
-
+    const total = $derived(usageTotal(usage));
 </script>
 
 {#if total === 0 && usage.events.length === 0}
@@ -43,17 +28,7 @@
     </Card>
 {:else}
     <div class="space-y-4">
-        <div class="grid gap-3 lg:grid-cols-4">
-            <Card class="p-4">
-                <p class="text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground">
-                    evaluations
-                </p>
-                <p class="mt-2 font-mono text-2xl">{total}</p>
-            </Card>
-            <UsageBreakdownCard title="values" items={byValue} {total} />
-            <UsageBreakdownCard title="reasons" items={byReason} {total} />
-            <UsageBreakdownCard title="rules" items={byRule} {total} />
-        </div>
+        <UsageAnalyticsCharts {usage} {range} variant="flag" />
 
         <Card class="overflow-hidden">
             <div class="border-b border-border px-5 py-4">

@@ -15,6 +15,7 @@ tags:
   - name: Rules
   - name: Contexts
   - name: Evaluation
+  - name: Usage
   - name: API Keys
 
 paths:
@@ -329,6 +330,47 @@ paths:
               schema:
                 $ref: "#/components/schemas/AuditEntryListEnvelope"
         "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /environments/{environment_id}/usage:
+    parameters:
+      - $ref: "#/components/parameters/EnvironmentID"
+      - $ref: "#/components/parameters/UsageHours"
+    get:
+      tags: [Usage]
+      summary: Get usage analytics for all flags in an environment
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Environment usage analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlagUsageEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/EnvironmentNotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /environments/{environment_id}/flags/{key}/usage:
+    parameters:
+      - $ref: "#/components/parameters/EnvironmentID"
+      - $ref: "#/components/parameters/FlagKey"
+      - $ref: "#/components/parameters/UsageHours"
+    get:
+      tags: [Usage]
+      summary: Get usage analytics for one flag
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Flag usage analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlagUsageEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/FlagNotFound" }
         "500": { $ref: "#/components/responses/InternalError" }
 
   /environments/{environment_id}/flags/{key}/evaluate:
@@ -844,6 +886,15 @@ components:
       schema:
         type: string
         format: uuid
+    UsageHours:
+      name: hours
+      in: query
+      required: false
+      schema:
+        type: integer
+        enum: [24, 168, 720]
+        default: 24
+      description: Usage lookback window in hours.
 
   schemas:
     SuccessEnvelope:
@@ -1098,6 +1149,72 @@ components:
           type: object
           additionalProperties: true
 
+    FlagUsage:
+      type: object
+      required: [buckets, latency_buckets, events]
+      properties:
+        buckets:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlagUsageBucket"
+        latency_buckets:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlagUsageLatencyBucket"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlagUsageEvent"
+
+    FlagUsageBucket:
+      type: object
+      required: [bucket_start, value_type, value, reason, count]
+      properties:
+        bucket_start: { type: string, format: date-time }
+        flag_key: { type: string }
+        value_type:
+          type: string
+          enum: [boolean, string, number, json]
+        value:
+          $ref: "#/components/schemas/FlagValue"
+        reason: { type: string }
+        matched_rule_id: { type: string, format: uuid, nullable: true }
+        api_key_id: { type: string, format: uuid, nullable: true }
+        api_key_name: { type: string }
+        source: { type: string }
+        count: { type: integer, format: int64, minimum: 0 }
+
+    FlagUsageLatencyBucket:
+      type: object
+      required: [bucket_start, count, avg_latency_ms, p95_latency_ms]
+      properties:
+        bucket_start: { type: string, format: date-time }
+        flag_key: { type: string }
+        source: { type: string }
+        count: { type: integer, format: int64, minimum: 0 }
+        avg_latency_ms: { type: number, format: double }
+        p95_latency_ms: { type: number, format: double }
+
+    FlagUsageEvent:
+      type: object
+      required: [id, observed_at, value_type, value, reason, latency_ms]
+      properties:
+        id: { type: string, format: uuid }
+        observed_at: { type: string, format: date-time }
+        value_type:
+          type: string
+          enum: [boolean, string, number, json]
+        value:
+          $ref: "#/components/schemas/FlagValue"
+        reason: { type: string }
+        matched_rule_id: { type: string, format: uuid, nullable: true }
+        api_key_id: { type: string, format: uuid, nullable: true }
+        source: { type: string }
+        latency_ms: { type: number, format: double }
+        context:
+          type: object
+          additionalProperties: true
+
     EvalResponse:
       type: object
       required: [key, value_type, value]
@@ -1278,6 +1395,13 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/AuditEntry"
+    FlagUsageEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/FlagUsage"
     EnvironmentEnvelope:
       allOf:
         - $ref: "#/components/schemas/SuccessEnvelope"

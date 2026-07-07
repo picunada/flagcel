@@ -126,7 +126,9 @@
 
     .motion-tooltip {
         transform-origin: var(--bits-tooltip-content-transform-origin, center);
-        will-change: opacity, transform;
+        /* will-change: opacity would make this element its own backdrop root,
+           disabling backdrop-filter on glass tooltips */
+        will-change: transform;
     }
 
     .motion-tooltip[data-state="delayed-open"],

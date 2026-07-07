@@ -34,8 +34,19 @@ type FlagUsageBucket struct {
 	Reason        string
 	MatchedRuleID *string
 	APIKeyID      *string
+	APIKeyName    string
 	Source        string
 	Count         int64
+}
+
+type FlagUsageLatencyBucket struct {
+	EnvironmentID string
+	FlagKey       string
+	Source        string
+	BucketStart   time.Time
+	Count         int64
+	AvgLatency    time.Duration
+	P95Latency    time.Duration
 }
 
 type FlagUsageQuery struct {

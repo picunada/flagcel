@@ -193,19 +193,31 @@ type ReportUsageEventRequest struct {
 }
 
 type FlagUsageResponse struct {
-	Buckets []FlagUsageBucketResponse `json:"buckets"`
-	Events  []FlagUsageEventResponse  `json:"events"`
+	Buckets        []FlagUsageBucketResponse        `json:"buckets"`
+	LatencyBuckets []FlagUsageLatencyBucketResponse `json:"latency_buckets"`
+	Events         []FlagUsageEventResponse         `json:"events"`
 }
 
 type FlagUsageBucketResponse struct {
 	BucketStart   string  `json:"bucket_start"`
+	FlagKey       string  `json:"flag_key,omitempty"`
 	ValueType     string  `json:"value_type"`
 	Value         any     `json:"value"`
 	Reason        string  `json:"reason"`
 	MatchedRuleID *string `json:"matched_rule_id,omitempty"`
 	APIKeyID      *string `json:"api_key_id,omitempty"`
+	APIKeyName    string  `json:"api_key_name,omitempty"`
 	Source        string  `json:"source,omitempty"`
 	Count         int64   `json:"count"`
+}
+
+type FlagUsageLatencyBucketResponse struct {
+	BucketStart  string  `json:"bucket_start"`
+	FlagKey      string  `json:"flag_key,omitempty"`
+	Source       string  `json:"source,omitempty"`
+	Count        int64   `json:"count"`
+	AvgLatencyMs float64 `json:"avg_latency_ms"`
+	P95LatencyMs float64 `json:"p95_latency_ms"`
 }
 
 type FlagUsageEventResponse struct {

@@ -214,18 +214,31 @@ func toEvalFlagValueResponse(v core.FlagValue) EvalFlagValueResponse {
 	}
 }
 
-func toFlagUsageResponse(buckets []*core.FlagUsageBucket, events []*core.FlagUsageEvent) FlagUsageResponse {
+func toFlagUsageResponse(buckets []*core.FlagUsageBucket, latencyBuckets []*core.FlagUsageLatencyBucket, events []*core.FlagUsageEvent) FlagUsageResponse {
 	bucketResponses := make([]FlagUsageBucketResponse, len(buckets))
 	for i, bucket := range buckets {
 		bucketResponses[i] = FlagUsageBucketResponse{
 			BucketStart:   formatTime(bucket.BucketStart),
+			FlagKey:       bucket.FlagKey,
 			ValueType:     string(bucket.ValueType),
 			Value:         bucket.Value,
 			Reason:        bucket.Reason,
 			MatchedRuleID: bucket.MatchedRuleID,
 			APIKeyID:      bucket.APIKeyID,
+			APIKeyName:    bucket.APIKeyName,
 			Source:        bucket.Source,
 			Count:         bucket.Count,
+		}
+	}
+	latencyResponses := make([]FlagUsageLatencyBucketResponse, len(latencyBuckets))
+	for i, bucket := range latencyBuckets {
+		latencyResponses[i] = FlagUsageLatencyBucketResponse{
+			BucketStart:  formatTime(bucket.BucketStart),
+			FlagKey:      bucket.FlagKey,
+			Source:       bucket.Source,
+			Count:        bucket.Count,
+			AvgLatencyMs: float64(bucket.AvgLatency) / float64(time.Millisecond),
+			P95LatencyMs: float64(bucket.P95Latency) / float64(time.Millisecond),
 		}
 	}
 	eventResponses := make([]FlagUsageEventResponse, len(events))
@@ -243,7 +256,7 @@ func toFlagUsageResponse(buckets []*core.FlagUsageBucket, events []*core.FlagUsa
 			Context:       event.Context,
 		}
 	}
-	return FlagUsageResponse{Buckets: bucketResponses, Events: eventResponses}
+	return FlagUsageResponse{Buckets: bucketResponses, LatencyBuckets: latencyResponses, Events: eventResponses}
 }
 
 func toCoreContext(id string, name, description string, fields []ContextFieldDTO) core.ContextSchema {

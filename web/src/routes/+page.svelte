@@ -1,11 +1,13 @@
 <script lang="ts">
-    import { invalidateAll } from "$app/navigation";
+    import { goto, invalidateAll } from "$app/navigation";
+    import { untrack } from "svelte";
     import {
         api,
         APIError,
         type ContextSchema,
         type Environment,
         type Flag,
+        type FlagUsage,
     } from "$lib/api";
     import Button from "$lib/components/ui/button.svelte";
     import Card from "$lib/components/ui/card.svelte";
@@ -13,6 +15,9 @@
     import FlagDashboardToolbar from "$lib/components/flags/flag-dashboard-toolbar.svelte";
     import FlagListEmptyState from "$lib/components/flags/flag-list-empty-state.svelte";
     import FlagTable from "$lib/components/flags/flag-table.svelte";
+    import UsageAnalyticsCharts from "$lib/components/flags/usage-analytics-charts.svelte";
+    import UsageRangeControl from "$lib/components/flags/usage-range-control.svelte";
+    import { normalizeUsage, type UsageRangeHours } from "$lib/usage-analytics";
     import { formatFlagValue } from "$lib/values";
     import PageHeader from "$lib/components/ui/page-header.svelte";
     import type { PageProps } from "./$types";
@@ -50,6 +55,10 @@
     ]);
 
     let error = $state<string | null>(null);
+    let environmentUsage = $state<FlagUsage>(
+        untrack(() => normalizeUsage(data.environmentUsage)),
+    );
+    let usageRange = $state<UsageRangeHours>(untrack(() => data.usageRange));
     let query = $state("");
     let statusFilter = $state<StatusFilter>("all");
     let contextFilter = $state("all");
@@ -58,6 +67,8 @@
 
     $effect(() => {
         flags = data.flags.map(copyFlag);
+        environmentUsage = normalizeUsage(data.environmentUsage);
+        usageRange = data.usageRange;
     });
 
     const filtered = $derived.by(() => {
@@ -170,6 +181,15 @@
         return `/flags/new${query}`;
     }
 
+    function setUsageRange(next: UsageRangeHours) {
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.set("usageRange", String(next));
+        goto(`${nextUrl.pathname}${nextUrl.search}`, {
+            keepFocus: true,
+            noScroll: true,
+        });
+    }
+
     async function refresh() {
         error = null;
         try {
@@ -228,6 +248,26 @@
 </script>
 
 <section class="space-y-8">
+    {#if flags.length > 0}
+        <div class="space-y-3">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <p
+                        class="text-xs uppercase tracking-[0.14em] text-muted-foreground"
+                    >
+                        usage analytics
+                    </p>
+                </div>
+                <UsageRangeControl value={usageRange} onchange={setUsageRange} />
+            </div>
+            <UsageAnalyticsCharts
+                usage={environmentUsage}
+                range={usageRange}
+                variant="dashboard"
+            />
+        </div>
+    {/if}
+
     <Card class="motion-panel overflow-hidden">
         <FlagDashboardToolbar
             bind:query
