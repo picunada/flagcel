@@ -7,7 +7,8 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "test": "node src/lib/components/flags/flag-table-tooltip.test.mjs && node src/lib/components/flags/usage-analytics-charts.test.mjs && node src/lib/usage-analytics.test.mjs"
   },
   "devDependencies": {
     "@internationalized/date": "^3.12.1",
@@ -15,7 +16,9 @@
     "@sveltejs/kit": "^2.69.1",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "@tailwindcss/vite": "^4.0.9",
+    "@types/d3-shape": "^3.1.8",
     "bits-ui": "^2.18.1",
+    "layerchart": "2.0.0-next.48",
     "svelte": "^5.20.0",
     "svelte-check": "^4.1.4",
     "tailwindcss": "^4.0.9",
@@ -24,6 +27,7 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "d3-shape": "^3.2.0",
     "lucide-svelte": "^0.475.0",
     "tailwind-merge": "^3.0.2",
     "tailwind-variants": "^0.3.1"

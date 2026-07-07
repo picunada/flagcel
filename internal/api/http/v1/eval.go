@@ -6,6 +6,7 @@ import (
 
 	"github.com/picunada/flagcel/evalcore"
 	"github.com/picunada/flagcel/internal/api/http/utils"
+	"github.com/picunada/flagcel/internal/core"
 	"github.com/picunada/flagcel/internal/service"
 )
 
@@ -91,7 +92,7 @@ func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	value, err := h.service.Evaluate(r.Context(), environmentID, key, evalcore.DataContext(req.Context))
+	value, err := h.service.EvaluateWithUsage(r.Context(), environmentID, key, evalcore.DataContext(req.Context), usageSourceFromRequest(r))
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -151,7 +152,7 @@ func (h *EvalHandler) EvaluateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	flags, err := h.service.EvaluateAll(r.Context(), environmentID, evalcore.DataContext(req.Context))
+	flags, err := h.service.EvaluateAllWithUsage(r.Context(), environmentID, evalcore.DataContext(req.Context), usageSourceFromRequest(r))
 	if err != nil {
 		WriteError(w, err)
 		return
@@ -165,6 +166,14 @@ func (h *EvalHandler) EvaluateAll(w http.ResponseWriter, r *http.Request) {
 	if err := utils.Encode(w, r, http.StatusOK, "success", EvalAllResponse{Flags: out}); err != nil {
 		WriteError(w, err)
 	}
+}
+
+func usageSourceFromRequest(r *http.Request) core.FlagUsageSource {
+	source := core.FlagUsageSource{Source: r.UserAgent()}
+	if key, ok := apiKeyFromRequest(r); ok && key != nil {
+		source.APIKeyID = key.ID
+	}
+	return source
 }
 
 func environmentIDFromAPIKey(r *http.Request) (string, error) {

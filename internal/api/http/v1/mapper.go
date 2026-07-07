@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/picunada/flagcel/evalcore"
 	"github.com/picunada/flagcel/internal/core"
@@ -211,6 +212,51 @@ func toEvalFlagValueResponse(v core.FlagValue) EvalFlagValueResponse {
 		ValueType: string(v.Type),
 		Value:     v.Value,
 	}
+}
+
+func toFlagUsageResponse(buckets []*core.FlagUsageBucket, latencyBuckets []*core.FlagUsageLatencyBucket, events []*core.FlagUsageEvent) FlagUsageResponse {
+	bucketResponses := make([]FlagUsageBucketResponse, len(buckets))
+	for i, bucket := range buckets {
+		bucketResponses[i] = FlagUsageBucketResponse{
+			BucketStart:   formatTime(bucket.BucketStart),
+			FlagKey:       bucket.FlagKey,
+			ValueType:     string(bucket.ValueType),
+			Value:         bucket.Value,
+			Reason:        bucket.Reason,
+			MatchedRuleID: bucket.MatchedRuleID,
+			APIKeyID:      bucket.APIKeyID,
+			APIKeyName:    bucket.APIKeyName,
+			Source:        bucket.Source,
+			Count:         bucket.Count,
+		}
+	}
+	latencyResponses := make([]FlagUsageLatencyBucketResponse, len(latencyBuckets))
+	for i, bucket := range latencyBuckets {
+		latencyResponses[i] = FlagUsageLatencyBucketResponse{
+			BucketStart:  formatTime(bucket.BucketStart),
+			FlagKey:      bucket.FlagKey,
+			Source:       bucket.Source,
+			Count:        bucket.Count,
+			AvgLatencyMs: float64(bucket.AvgLatency) / float64(time.Millisecond),
+			P95LatencyMs: float64(bucket.P95Latency) / float64(time.Millisecond),
+		}
+	}
+	eventResponses := make([]FlagUsageEventResponse, len(events))
+	for i, event := range events {
+		eventResponses[i] = FlagUsageEventResponse{
+			ID:            event.ID,
+			ObservedAt:    formatTime(event.ObservedAt),
+			ValueType:     string(event.ValueType),
+			Value:         event.Value,
+			Reason:        event.Reason,
+			MatchedRuleID: event.MatchedRuleID,
+			APIKeyID:      event.APIKeyID,
+			Source:        event.Source,
+			LatencyMs:     float64(event.Latency) / float64(time.Millisecond),
+			Context:       event.Context,
+		}
+	}
+	return FlagUsageResponse{Buckets: bucketResponses, LatencyBuckets: latencyResponses, Events: eventResponses}
 }
 
 func toCoreContext(id string, name, description string, fields []ContextFieldDTO) core.ContextSchema {

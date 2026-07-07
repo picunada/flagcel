@@ -223,3 +223,105 @@ UPDATE api_keys
 SET last_used_at = NOW(),
     updated_at = NOW()
 WHERE id = $1;
+
+-- name: UpsertFlagUsageBucket :exec
+INSERT INTO flag_usage_buckets (
+    environment_id,
+    flag_key,
+    bucket_start,
+    value_type,
+    value_key,
+    value,
+    reason,
+    matched_rule_id,
+    api_key_id,
+    source,
+    count,
+    updated_at
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+ON CONFLICT (
+    environment_id,
+    flag_key,
+    bucket_start,
+    value_key,
+    reason,
+    matched_rule_id,
+    api_key_id,
+    source
+) DO UPDATE SET
+    count = flag_usage_buckets.count + EXCLUDED.count,
+    value = EXCLUDED.value,
+    value_type = EXCLUDED.value_type,
+    updated_at = NOW();
+
+-- name: InsertFlagEvaluationEvent :exec
+INSERT INTO flag_evaluation_events (
+    id,
+    environment_id,
+    flag_key,
+    observed_at,
+    value_type,
+    value,
+    reason,
+    matched_rule_id,
+    api_key_id,
+    source,
+    latency_ms,
+    context
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
+
+-- name: ListFlagUsageBuckets :many
+SELECT b.environment_id, b.flag_key, b.bucket_start, b.value_type, b.value, b.reason, b.matched_rule_id, b.api_key_id, COALESCE(ak.name, '')::text AS api_key_name, b.source, b.count
+FROM flag_usage_buckets b
+LEFT JOIN api_keys ak ON ak.id::text = b.api_key_id
+WHERE b.environment_id = $1
+  AND b.flag_key = $2
+  AND b.bucket_start >= $3
+ORDER BY b.bucket_start DESC, b.reason, b.matched_rule_id, b.value_key;
+
+-- name: ListEnvironmentUsageBuckets :many
+SELECT b.environment_id, b.flag_key, b.bucket_start, b.value_type, b.value, b.reason, b.matched_rule_id, b.api_key_id, COALESCE(ak.name, '')::text AS api_key_name, b.source, b.count
+FROM flag_usage_buckets b
+LEFT JOIN api_keys ak ON ak.id::text = b.api_key_id
+WHERE b.environment_id = $1
+  AND b.bucket_start >= $2
+ORDER BY b.bucket_start DESC, b.flag_key, b.reason, b.matched_rule_id, b.value_key;
+
+-- name: ListFlagUsageLatencyBuckets :many
+SELECT environment_id,
+       flag_key,
+       source,
+       date_trunc('hour', observed_at)::timestamptz AS bucket_start,
+       count(*)::bigint AS count,
+       avg(latency_ms)::double precision AS avg_latency_ms,
+       percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms)::double precision AS p95_latency_ms
+FROM flag_evaluation_events
+WHERE environment_id = $1
+  AND flag_key = $2
+  AND observed_at >= $3
+GROUP BY environment_id, flag_key, source, bucket_start
+ORDER BY bucket_start DESC, flag_key, source;
+
+-- name: ListEnvironmentUsageLatencyBuckets :many
+SELECT environment_id,
+       flag_key,
+       source,
+       date_trunc('hour', observed_at)::timestamptz AS bucket_start,
+       count(*)::bigint AS count,
+       avg(latency_ms)::double precision AS avg_latency_ms,
+       percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms)::double precision AS p95_latency_ms
+FROM flag_evaluation_events
+WHERE environment_id = $1
+  AND observed_at >= $2
+GROUP BY environment_id, flag_key, source, bucket_start
+ORDER BY bucket_start DESC, flag_key, source;
+
+-- name: ListFlagEvaluationEvents :many
+SELECT id, environment_id, flag_key, observed_at, value_type, value, reason, matched_rule_id, api_key_id, source, latency_ms, context
+FROM flag_evaluation_events
+WHERE environment_id = $1
+  AND flag_key = $2
+ORDER BY observed_at DESC
+LIMIT $3;

@@ -74,7 +74,9 @@
             match: "/environments",
             label: "Environments",
             icon: Layers3,
-            badge: visibleEnvironments ? String(visibleEnvironments) : undefined,
+            badge: visibleEnvironments
+                ? String(visibleEnvironments)
+                : undefined,
         },
         {
             href: `/api-keys${environmentQuery}`,
@@ -134,7 +136,9 @@
                     ></span>
                 </a>
                 <div class="min-w-0 flex-1">
-                    <div class="truncate text-lg font-semibold leading-5 text-foreground">
+                    <div
+                        class="truncate text-lg font-semibold leading-5 text-foreground"
+                    >
                         Flagcel
                     </div>
                     <div class="mt-1 truncate text-xs text-muted-foreground">
@@ -202,7 +206,8 @@
                         )}
                     >
                         <Icon class="h-4 w-4 shrink-0" />
-                        <span class="min-w-0 flex-1 truncate">{item.label}</span>
+                        <span class="min-w-0 flex-1 truncate">{item.label}</span
+                        >
                         {#if item.badge}
                             <span
                                 class="rounded-sm bg-app-accent-surface px-1.5 py-0.5 text-[0.65rem] leading-none text-app-accent"
@@ -223,15 +228,6 @@
             >
                 <Settings class="h-4 w-4 shrink-0" />
                 <span class="min-w-0 flex-1 truncate">Settings</span>
-            </a>
-            <a
-                href="/docs"
-                target="_blank"
-                rel="noopener"
-                class="flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
-            >
-                <CircleHelp class="h-4 w-4 shrink-0" />
-                <span class="min-w-0 flex-1 truncate">Help center</span>
             </a>
             {#if auth?.authenticated}
                 <button
@@ -272,11 +268,16 @@
             </span>
             <span class="truncate text-base font-semibold">Flagcel</span>
         </a>
-        <span class="truncate text-xs text-muted-foreground">{accountName}</span>
+        <span class="truncate text-xs text-muted-foreground">{accountName}</span
+        >
     </div>
 
     {#if mobileOpen}
-        <div class="fixed inset-0 z-50 bg-black/60" role="presentation" onclick={closeMobile}></div>
+        <div
+            class="fixed inset-0 z-50 bg-black/60"
+            role="presentation"
+            onclick={closeMobile}
+        ></div>
         <aside
             class="fixed bottom-0 left-0 top-0 z-50 w-[min(20rem,calc(100vw-2rem))] border-r border-border-divider shadow-drawer"
             aria-label="Mobile navigation"

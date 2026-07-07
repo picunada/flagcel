@@ -7,6 +7,7 @@
     import * as Tooltip from "$lib/components/ui/tooltip/index.js";
     import { cn } from "$lib/utils";
     import { formatFlagValue, valueBadgeVariant } from "$lib/values";
+    import { flagEnabledTooltipLabel } from "./flag-table-tooltip";
     import { Info } from "lucide-svelte";
 
     type Props = {
@@ -93,14 +94,34 @@
                         </a>
                     </td>
                     <td class="px-3 py-2 align-middle">
-                        <Switch
-                            id={`flag-enabled-${flag.key}`}
-                            checked={flag.enabled}
-                            disabled={savingFlag(flag.key)}
-                            aria-label={`Toggle ${flag.key}`}
-                            onCheckedChange={(checked: boolean) =>
-                                setFlagEnabled(flag, checked)}
-                        />
+                        <Tooltip.Provider>
+                            <Tooltip.Root delayDuration={200}>
+                                <Tooltip.Trigger>
+                                    {#snippet child({ props })}
+                                        <Switch
+                                            {...props}
+                                            id={`flag-enabled-${flag.key}`}
+                                            checked={flag.enabled}
+                                            disabled={savingFlag(flag.key)}
+                                            aria-label={`Toggle ${flag.key}`}
+                                            onCheckedChange={(
+                                                checked: boolean,
+                                            ) => setFlagEnabled(flag, checked)}
+                                        />
+                                    {/snippet}
+                                </Tooltip.Trigger>
+                                <Tooltip.Content
+                                    side="top"
+                                    align="center"
+                                    sideOffset={8}
+                                >
+                                    {flagEnabledTooltipLabel(
+                                        flag,
+                                        savingFlag(flag.key),
+                                    )}
+                                </Tooltip.Content>
+                            </Tooltip.Root>
+                        </Tooltip.Provider>
                     </td>
                     <td class="px-3 py-2 align-middle">
                         {#if !flag.enabled}

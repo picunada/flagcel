@@ -15,10 +15,14 @@ import (
 func TestProviderFetchesDefinitionsAndEvaluates(t *testing.T) {
 	requests := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests++
 		if got := r.Header.Get("Authorization"); got != "Bearer secret" {
 			t.Fatalf("Authorization = %q, want Bearer secret", got)
 		}
+		if r.URL.Path == "/eval/usage" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		requests++
 		w.Header().Set("ETag", `"v1"`)
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"message": "success",

@@ -44,6 +44,47 @@ export type AuditEntry = {
     created_at: string;
 };
 
+export type FlagUsage = {
+    buckets: FlagUsageBucket[];
+    latency_buckets: FlagUsageLatencyBucket[];
+    events: FlagUsageEvent[];
+};
+
+export type FlagUsageBucket = {
+    bucket_start: string;
+    flag_key?: string;
+    value_type: ValueType;
+    value: FlagValue;
+    reason: string;
+    matched_rule_id?: string | null;
+    api_key_id?: string | null;
+    api_key_name?: string;
+    source?: string;
+    count: number;
+};
+
+export type FlagUsageLatencyBucket = {
+    bucket_start: string;
+    flag_key?: string;
+    source?: string;
+    count: number;
+    avg_latency_ms: number;
+    p95_latency_ms: number;
+};
+
+export type FlagUsageEvent = {
+    id: string;
+    observed_at: string;
+    value_type: ValueType;
+    value: FlagValue;
+    reason: string;
+    matched_rule_id?: string | null;
+    api_key_id?: string | null;
+    source?: string;
+    latency_ms: number;
+    context?: Record<string, unknown>;
+};
+
 export type Environment = {
     id: string;
     key: string;
@@ -309,6 +350,8 @@ export function createApi(fetchFn: Fetch = fetch) {
 
     const environmentPath = (environmentId: string, path: string) =>
         `/environments/${encodeURIComponent(environmentId)}${path}`;
+    const usageQuery = (hours?: number) =>
+        hours ? `?hours=${encodeURIComponent(String(hours))}` : "";
 
     return {
         me: () => request<AuthMe>("/auth/me"),
@@ -361,6 +404,14 @@ export function createApi(fetchFn: Fetch = fetch) {
             request<Flag>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}`)),
         getFlagAudit: (environmentId: string, key: string) =>
             request<AuditEntry[]>(environmentPath(environmentId, `/flags/${encodeURIComponent(key)}/audit`)),
+        getEnvironmentUsage: (environmentId: string, hours?: number) =>
+            request<FlagUsage>(
+                `${environmentPath(environmentId, "/usage")}${usageQuery(hours)}`,
+            ),
+        getFlagUsage: (environmentId: string, key: string, hours?: number) =>
+            request<FlagUsage>(
+                `${environmentPath(environmentId, `/flags/${encodeURIComponent(key)}/usage`)}${usageQuery(hours)}`,
+            ),
         createFlag: (environmentId: string, body: CreateFlagRequest) =>
             request<Flag>(environmentPath(environmentId, "/flags"), {
                 method: "POST",

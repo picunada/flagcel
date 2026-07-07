@@ -46,6 +46,9 @@ class DefinitionsClient:
         self._opener = opener or urlopen
         self._timeout = timeout
 
+    def usage_reporting_enabled(self) -> bool:
+        return bool(self._api_key)
+
     def fetch_definitions(self, etag: str = "") -> FetchResult:
         request = Request(
             f"{self._endpoint}/eval/definitions",
@@ -73,6 +76,30 @@ class DefinitionsClient:
             raise DefinitionsClientError(_error_message(body_text, exc.code), exc.code) from exc
         except URLError as exc:
             raise DefinitionsClientError(f"flagcel: fetch definitions: {exc.reason}") from exc
+
+    def report_usage(self, events: list[dict[str, Any]]) -> None:
+        if not events:
+            return
+        request = Request(
+            f"{self._endpoint}/eval/usage",
+            data=json.dumps({"events": events}).encode("utf-8"),
+            method="POST",
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "User-Agent": "flagcel-python",
+            },
+        )
+        if self._api_key:
+            request.add_header("Authorization", f"Bearer {self._api_key}")
+
+        try:
+            response = self._opener(request, timeout=self._timeout)
+            close = getattr(response, "close", None)
+            if callable(close):
+                close()
+        except Exception:
+            return
 
     def _decode_response(self, response: Any, status: int, previous_etag: str) -> FetchResult:
         if status == 304:

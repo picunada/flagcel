@@ -1,13 +1,14 @@
 @theme {
     --font-sans:
-        ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
-        Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+        "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+        Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji",
+        sans-serif;
     --font-mono:
         ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Monaco, Consolas,
         monospace;
     --font-display:
-        ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
-        Arial, sans-serif;
+        "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+        Roboto, Helvetica, Arial, sans-serif;
 
     --radius: 0.25rem;
     --radius-ios-xs: 0.375rem;
@@ -23,7 +24,7 @@
     --color-card: rgba(15, 15, 15, 0.9);
     --color-card-foreground: #ffffff;
 
-    --color-popover: rgba(15, 15, 15, 0.95);
+    --color-popover: rgba(18, 18, 18, 0.8);
     --color-popover-foreground: #ffffff;
 
     --color-primary: #ffffff;
@@ -72,7 +73,7 @@
     --color-surface-active: rgba(255, 255, 255, 0.06);
     --color-surface-selected: rgba(255, 255, 255, 0.1);
     --color-surface-code: rgba(0, 0, 0, 0.3);
-    --color-popover-solid: rgba(15, 15, 15, 0.98);
+    --color-popover-solid: rgba(30, 30, 30, 0.98);
 
     --color-rollout-stack-track-front: #1d1d1d;
     --color-rollout-stack-layer-1: #1a1a1a;
