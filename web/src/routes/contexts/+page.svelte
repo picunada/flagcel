@@ -5,6 +5,7 @@
 	import Button from '$lib/components/ui/button.svelte';
 	import Card from '$lib/components/ui/card.svelte';
 	import EmptyState from '$lib/components/ui/empty-state.svelte';
+	import AppBreadcrumbs from '$lib/components/ui/app-breadcrumbs.svelte';
 	import PageHeader from '$lib/components/ui/page-header.svelte';
 	import SectionHeader from '$lib/components/ui/section-header.svelte';
 	import { Plus } from 'lucide-svelte';
@@ -25,11 +26,10 @@
 </script>
 
 <section class="space-y-12">
-	<PageHeader
-		eyebrow="evaluation contexts · field shapes"
-		title="Describe what your rules can reach."
-		description="Name the fields each flag's expressions can use. Selected at flag level — drives autocomplete in the rule editor."
-	/>
+	<div class="space-y-3">
+		<AppBreadcrumbs items={[{ label: 'contexts' }]} />
+		<PageHeader eyebrow="evaluation contexts · field shapes" />
+	</div>
 
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 		<SectionHeader>contexts · {contexts.length}</SectionHeader>

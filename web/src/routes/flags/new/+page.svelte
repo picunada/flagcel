@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { api, APIError, type Environment, type FlagValue, type ValueType } from '$lib/api';
-	import BackLink from '$lib/components/ui/back-link.svelte';
+	import AppBreadcrumbs from '$lib/components/ui/app-breadcrumbs.svelte';
 	import Button from '$lib/components/ui/button.svelte';
 	import Card from '$lib/components/ui/card.svelte';
 	import FieldLabel from '$lib/components/ui/field-label.svelte';
@@ -62,16 +62,22 @@
 </script>
 
 <div class="space-y-10">
-	<BackLink
-		href="/?environment={encodeURIComponent(selectedEnvironment.id)}"
-		label="all flags"
-	/>
-
-	<PageHeader
-		eyebrow="[ new flag ]"
-		title="Define a flag"
-		description="Pick a unique key. Add targeting rules after creation."
-	/>
+	<div class="space-y-3">
+		<AppBreadcrumbs
+			items={[
+				{
+					label: 'flags',
+					href: `/?environment=${encodeURIComponent(selectedEnvironment.id)}`
+				},
+				{ label: 'new' }
+			]}
+		/>
+		<PageHeader
+			eyebrow="[ new flag ]"
+			title="Define a flag"
+			description="Pick a unique key. Add targeting rules after creation."
+		/>
+	</div>
 
 	<Card class="p-8">
 		<form onsubmit={submit} class="space-y-6">

@@ -2,7 +2,7 @@
 	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { api, APIError, type ContextSchema, type CreateContextRequest } from '$lib/api';
-	import BackLink from '$lib/components/ui/back-link.svelte';
+	import AppBreadcrumbs from '$lib/components/ui/app-breadcrumbs.svelte';
 	import Button from '$lib/components/ui/button.svelte';
 	import Card from '$lib/components/ui/card.svelte';
 	import DestructiveDialog from '$lib/components/ui/destructive-dialog.svelte';
@@ -51,21 +51,24 @@
 </script>
 
 <div class="space-y-10">
-	<BackLink href="/contexts" label="all contexts" />
-
-	<PageHeader eyebrow="[ context ]" title={schema.name}>
-		{#snippet actions()}
-		<Button
-			variant="destructive"
-			onclick={() => {
-				deleteError = null;
-				deleteOpen = true;
-			}}
-		>
-			<Trash2 class="h-3.5 w-3.5" /> delete
-		</Button>
-		{/snippet}
-	</PageHeader>
+	<div class="space-y-3">
+		<AppBreadcrumbs
+			items={[{ label: 'contexts', href: '/contexts' }, { label: schema.name }]}
+		/>
+		<PageHeader eyebrow="[ context ]" title={schema.name}>
+			{#snippet actions()}
+				<Button
+					variant="destructive"
+					onclick={() => {
+						deleteError = null;
+						deleteOpen = true;
+					}}
+				>
+					<Trash2 class="h-3.5 w-3.5" /> delete
+				</Button>
+			{/snippet}
+		</PageHeader>
+	</div>
 
 	<Card class="motion-panel p-8">
 		<ContextEditor

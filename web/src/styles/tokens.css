@@ -17,14 +17,14 @@
     --radius-ios-lg: 1.5rem;
     --radius-ios-xl: 2rem;
 
-    --color-background: #0f0f0f;
+    --color-background: rgb(7, 7, 7);
     --color-foreground: #ffffff;
-    --color-sidebar: #161616;
+    --color-sidebar: rgb(15, 16, 16);
 
-    --color-card: rgba(15, 15, 15, 0.9);
+    --color-card: rgba(15, 16, 16, 1);
     --color-card-foreground: #ffffff;
 
-    --color-popover: rgba(18, 18, 18, 0.8);
+    --color-popover: rgba(18, 19, 19, 1);
     --color-popover-foreground: #ffffff;
 
     --color-primary: #ffffff;
@@ -61,6 +61,25 @@
     --color-app-accent-surface-selected: rgb(var(--app-accent-rgb) / 0.18);
     --color-success: var(--color-app-accent);
     --color-success-foreground: var(--color-app-accent-foreground);
+
+    /* CEL / validation greens — keep editor + playground in sync */
+    --color-valid: #8fbf7f;
+    --color-valid-muted: color-mix(
+        in oklab,
+        var(--color-valid) 80%,
+        transparent
+    );
+    --color-valid-border: color-mix(
+        in oklab,
+        var(--color-valid) 35%,
+        transparent
+    );
+    --color-valid-surface: color-mix(
+        in oklab,
+        var(--color-valid) 6%,
+        transparent
+    );
+    --color-cel-warning: #d0a56f;
 
     --color-foreground-soft: rgba(255, 255, 255, 0.78);
     --color-foreground-softer: rgba(255, 255, 255, 0.7);

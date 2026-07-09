@@ -4,6 +4,7 @@
 	import Input from '$lib/components/ui/input.svelte';
 	import Textarea from '$lib/components/ui/textarea.svelte';
 	import type { FlagValue, ValueType } from '$lib/api';
+	import { cn } from '$lib/utils';
 	import { formatFlagValue } from '$lib/values';
 
 	type Props = {
@@ -12,11 +13,25 @@
 		disabled?: boolean;
 		id?: string;
 		align?: 'start' | 'end';
+		compact?: boolean;
+		fill?: boolean;
+		class?: string;
 		onchange: (value: FlagValue) => void;
 		onvalid?: (valid: boolean) => void;
 	};
 
-	let { type, value, disabled = false, id = 'value', align = 'start', onchange, onvalid }: Props = $props();
+	let {
+		type,
+		value,
+		disabled = false,
+		id = 'value',
+		align = 'start',
+		compact = false,
+		fill = false,
+		class: className,
+		onchange,
+		onvalid
+	}: Props = $props();
 
 	let text = $state(untrack(() => textForValue(type, value)));
 	let error = $state<string | null>(null);
@@ -88,15 +103,22 @@
 		<BoolToggle value={Boolean(value)} {disabled} onchange={setBoolean} />
 	</div>
 {:else if type === 'json'}
-	<div class="min-w-0 space-y-1.5">
+	<div class={cn('min-w-0 space-y-1.5', fill && 'flex h-full flex-col')}>
 		<Textarea
 			{id}
 			bind:value={text}
 			oninput={handleTextInput}
-			rows={5}
+			rows={compact ? 3 : 5}
 			spellcheck="false"
 			{disabled}
-			class="min-h-28 resize-y font-mono leading-5"
+			class={cn(
+				compact
+					? 'h-16 min-h-16 w-56 resize-none font-mono text-xs leading-5'
+					: fill
+						? 'min-h-16 w-full flex-1 resize-y font-mono text-xs leading-5'
+						: 'min-h-28 resize-y font-mono leading-5',
+				className
+			)}
 		></Textarea>
 		{#if error}
 			<p class="text-[0.65rem] text-destructive">{error}</p>
@@ -111,7 +133,11 @@
 			bind:value={text}
 			oninput={handleTextInput}
 			{disabled}
-			class={type === 'string' ? 'font-mono' : ''}
+			class={compact
+				? 'h-8 w-36 font-mono text-xs'
+				: type === 'string'
+					? 'font-mono'
+					: ''}
 		/>
 		{#if error}
 			<p class="text-[0.65rem] text-destructive">{error}</p>

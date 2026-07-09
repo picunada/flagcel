@@ -4,6 +4,7 @@
     import EnvironmentCreateCard from "$lib/components/environments/environment-create-card.svelte";
     import EnvironmentList from "$lib/components/environments/environment-list.svelte";
     import DestructiveDialog from "$lib/components/ui/destructive-dialog.svelte";
+    import AppBreadcrumbs from "$lib/components/ui/app-breadcrumbs.svelte";
     import PageHeader from "$lib/components/ui/page-header.svelte";
     import type { PageProps } from "./$types";
 
@@ -117,11 +118,10 @@
 </script>
 
 <section class="space-y-10">
-    <PageHeader
-        eyebrow="workspaces · isolated flag sets"
-        title="Environments"
-        description="Each environment holds its own flags, rules, and API keys. Switch the active environment from the selector in the header."
-    />
+    <div class="space-y-3">
+        <AppBreadcrumbs items={[{ label: "environments" }]} />
+        <PageHeader eyebrow="workspaces · isolated flag sets" />
+    </div>
 
     <EnvironmentCreateCard
         bind:environmentKey={key}

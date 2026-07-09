@@ -4,7 +4,7 @@
 
     type Props = {
         eyebrow?: string;
-        title: string;
+        title?: string;
         description?: string;
         class?: string;
         titleClass?: string;
@@ -33,14 +33,16 @@
                 {eyebrow}
             </p>
         {/if}
-        <h1
-            class={cn(
-                "text-balance text-3xl font-normal leading-tight sm:text-4xl",
-                titleClass,
-            )}
-        >
-            {title}
-        </h1>
+        {#if title}
+            <h1
+                class={cn(
+                    "text-balance text-3xl font-normal leading-tight sm:text-4xl",
+                    titleClass,
+                )}
+            >
+                {title}
+            </h1>
+        {/if}
         {#if description}
             <p class="max-w-xl text-sm text-foreground-soft sm:text-base">
                 {description}

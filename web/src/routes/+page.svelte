@@ -19,6 +19,7 @@
     import UsageRangeControl from "$lib/components/flags/usage-range-control.svelte";
     import { normalizeUsage, type UsageRangeHours } from "$lib/usage-analytics";
     import { formatFlagValue } from "$lib/values";
+    import AppBreadcrumbs from "$lib/components/ui/app-breadcrumbs.svelte";
     import PageHeader from "$lib/components/ui/page-header.svelte";
     import type { PageProps } from "./$types";
 
@@ -248,6 +249,11 @@
 </script>
 
 <section class="space-y-8">
+    <div class="space-y-3">
+        <AppBreadcrumbs items={[{ label: "flags" }]} />
+        <PageHeader eyebrow="feature flags · targeting rules" />
+    </div>
+
     {#if flags.length > 0}
         <div class="space-y-3">
             <div class="flex items-center justify-between gap-3">

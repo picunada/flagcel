@@ -4,6 +4,7 @@
     import APIKeyCreateCard from "$lib/components/api-keys/api-key-create-card.svelte";
     import APIKeyList from "$lib/components/api-keys/api-key-list.svelte";
     import DestructiveDialog from "$lib/components/ui/destructive-dialog.svelte";
+    import AppBreadcrumbs from "$lib/components/ui/app-breadcrumbs.svelte";
     import PageHeader from "$lib/components/ui/page-header.svelte";
     import type { PageProps } from "./$types";
 
@@ -77,7 +78,10 @@
 </script>
 
 <section class="space-y-10">
-    <PageHeader eyebrow="eval access" title="API keys" />
+    <div class="space-y-3">
+        <AppBreadcrumbs items={[{ label: "api keys" }]} />
+        <PageHeader eyebrow="eval access" title="API keys" />
+    </div>
 
     <APIKeyCreateCard
         bind:name

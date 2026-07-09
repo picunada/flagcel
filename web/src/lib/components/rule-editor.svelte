@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { untrack, tick } from 'svelte';
+	import { untrack } from 'svelte';
 	import Button from '$lib/components/ui/button.svelte';
-	import FieldLabel from '$lib/components/ui/field-label.svelte';
-	import Input from '$lib/components/ui/input.svelte';
+	import RuleControlsRow from '$lib/components/rule-controls-row.svelte';
+	import RuleExpressionInput from '$lib/components/rule-expression-input.svelte';
 	import ValueEditor from '$lib/components/value-editor.svelte';
 	import { cn } from '$lib/utils';
-	import type { ContextField, ContextSchema, CreateRuleRequest, FlagValue, Rule, ValueType } from '$lib/api';
+	import type { ContextSchema, CreateRuleRequest, FlagValue, Rule, ValueType } from '$lib/api';
 	import { defaultValueForType } from '$lib/values';
 
 	type Props = {
@@ -38,6 +38,7 @@
 	let value = $state<FlagValue>(untrack(() => rule?.value ?? defaultValueForType(valueType, true)));
 	let valueValid = $state(true);
 
+	const isJsonValue = $derived(valueType === 'json');
 	const parsedPercentage = $derived(Number(percentage));
 	const canSubmit = $derived(
 		expression.trim().length > 0 &&
@@ -48,162 +49,7 @@
 			!submitting
 	);
 
-	// --- autocomplete ---
-	let textarea: HTMLTextAreaElement | null = $state(null);
-	let cursor = $state(0);
-	let acOpen = $state(false);
-	let acIndex = $state(0);
-	let bucketInput: HTMLInputElement | null = $state(null);
-	let bucketAcOpen = $state(false);
-	let bucketAcIndex = $state(0);
-
-	const candidates = $derived<ContextField[]>(context?.fields ?? []);
-
-	function tokenAt(text: string, pos: number): { start: number; value: string } {
-		let start = pos;
-		while (start > 0 && /[A-Za-z0-9_.]/.test(text[start - 1])) start--;
-		return { start, value: text.slice(start, pos) };
-	}
-
-	const currentToken = $derived(tokenAt(expression, cursor));
-
-	const suggestions = $derived.by(() => {
-		if (!candidates.length) return [];
-		const t = currentToken.value;
-		if (!t) return [];
-		const lower = t.toLowerCase();
-		return candidates
-			.filter((f) => f.path.toLowerCase().startsWith(lower) && f.path !== t)
-			.slice(0, 8);
-	});
-
-	const bucketSuggestions = $derived.by(() => {
-		if (!candidates.length) return [];
-		const t = bucketBy.trim().toLowerCase();
-		if (!t) return [];
-		return candidates
-			.filter((f) => f.path.toLowerCase().startsWith(t) && f.path !== bucketBy.trim())
-			.slice(0, 8);
-	});
-
-	$effect(() => {
-		if (suggestions.length === 0) {
-			acOpen = false;
-			acIndex = 0;
-		} else if (acIndex >= suggestions.length) {
-			acIndex = 0;
-		}
-	});
-
-	$effect(() => {
-		if (bucketSuggestions.length === 0) {
-			bucketAcOpen = false;
-			bucketAcIndex = 0;
-		} else if (bucketAcIndex >= bucketSuggestions.length) {
-			bucketAcIndex = 0;
-		}
-	});
-
-	function handleCursor() {
-		if (!textarea) return;
-		cursor = textarea.selectionStart;
-		if (suggestions.length > 0) acOpen = true;
-	}
-
-	function handleInput() {
-		handleCursor();
-	}
-
-	function handleBucketInput() {
-		if (bucketSuggestions.length > 0) bucketAcOpen = true;
-	}
-
-	async function insert(s: ContextField) {
-		if (!textarea) return;
-		const { start } = currentToken;
-		const end = cursor;
-		const before = expression.slice(0, start);
-		const after = expression.slice(end);
-		const next = before + s.path + after;
-		expression = next;
-		acOpen = false;
-		await tick();
-		const newPos = (before + s.path).length;
-		textarea.focus();
-		textarea.setSelectionRange(newPos, newPos);
-		cursor = newPos;
-	}
-
-	async function insertBucket(s: ContextField) {
-		bucketBy = s.path;
-		bucketAcOpen = false;
-		await tick();
-		bucketInput?.focus();
-		bucketInput?.setSelectionRange(bucketBy.length, bucketBy.length);
-	}
-
-	function handleKeydown(e: KeyboardEvent) {
-		if (acOpen && suggestions.length > 0) {
-			if (e.key === 'ArrowDown') {
-				e.preventDefault();
-				acIndex = (acIndex + 1) % suggestions.length;
-				return;
-			}
-			if (e.key === 'ArrowUp') {
-				e.preventDefault();
-				acIndex = (acIndex - 1 + suggestions.length) % suggestions.length;
-				return;
-			}
-			if (e.key === 'Enter' || e.key === 'Tab') {
-				e.preventDefault();
-				insert(suggestions[acIndex]);
-				return;
-			}
-			if (e.key === 'Escape') {
-				e.preventDefault();
-				acOpen = false;
-				return;
-			}
-		}
-		// open on Ctrl+Space even if closed
-		if ((e.ctrlKey || e.metaKey) && e.key === ' ') {
-			e.preventDefault();
-			handleCursor();
-			if (suggestions.length > 0) acOpen = true;
-		}
-	}
-
-	function handleBucketKeydown(e: KeyboardEvent) {
-		if (bucketAcOpen && bucketSuggestions.length > 0) {
-			if (e.key === 'ArrowDown') {
-				e.preventDefault();
-				bucketAcIndex = (bucketAcIndex + 1) % bucketSuggestions.length;
-				return;
-			}
-			if (e.key === 'ArrowUp') {
-				e.preventDefault();
-				bucketAcIndex = (bucketAcIndex - 1 + bucketSuggestions.length) % bucketSuggestions.length;
-				return;
-			}
-			if (e.key === 'Enter' || e.key === 'Tab') {
-				e.preventDefault();
-				insertBucket(bucketSuggestions[bucketAcIndex]);
-				return;
-			}
-			if (e.key === 'Escape') {
-				e.preventDefault();
-				bucketAcOpen = false;
-				return;
-			}
-		}
-		if ((e.ctrlKey || e.metaKey) && e.key === ' ') {
-			e.preventDefault();
-			if (bucketSuggestions.length > 0) bucketAcOpen = true;
-		}
-	}
-
-	async function submit(e: SubmitEvent) {
-		e.preventDefault();
+	async function save() {
 		if (!canSubmit) return;
 		await onsave({
 			expression: expression.trim(),
@@ -214,168 +60,93 @@
 			value
 		});
 	}
+
+	function submit(e: SubmitEvent) {
+		e.preventDefault();
+		void save();
+	}
 </script>
 
-<form onsubmit={submit} class={cn('space-y-5', className)}>
-	<div class="space-y-2">
-		<FieldLabel for="expression">
-			expression · cel
+<form onsubmit={submit} class={cn('space-y-4', className)}>
+	<div class="flex items-center justify-between gap-3">
+		<p class="font-mono text-[0.65rem] uppercase tracking-[0.16em] text-muted-foreground">
+			{rule ? '[ edit rule ]' : '[ new rule ]'} · cel
 			{#if context}
-				<span class="text-muted-foreground/70">· {context.name}</span>
+				<span class="text-muted-foreground/70"> · {context.name}</span>
 			{/if}
-		</FieldLabel>
-		<div class="relative">
-			<textarea
-				id="expression"
-				bind:this={textarea}
-				bind:value={expression}
-				oninput={handleInput}
-				onkeyup={handleCursor}
-				onclick={handleCursor}
-				onkeydown={handleKeydown}
-				onblur={() => setTimeout(() => (acOpen = false), 120)}
-				rows="3"
-				required
-				placeholder={'user.country == "US" && user.plan == "pro"'}
-				class="ios-corners-sm flex w-full border border-input bg-transparent px-3 py-2 font-mono text-sm transition-colors placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:border-border-hover disabled:cursor-not-allowed disabled:opacity-50"
-			></textarea>
-			{#if acOpen && suggestions.length > 0}
-				<div
-					role="listbox"
-					class="glass-panel motion-pop absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-sm py-1 shadow-lg"
-				>
-					{#each suggestions as s, i (s.path)}
-						<button
-							type="button"
-							role="option"
-							aria-selected={i === acIndex}
-							tabindex="-1"
-							onmousedown={(e) => {
-								e.preventDefault();
-								insert(s);
-							}}
-							onmouseenter={() => (acIndex = i)}
-							class={cn(
-								'flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left font-mono text-xs transition-colors',
-								i === acIndex
-									? 'bg-surface-active text-foreground'
-									: 'text-muted-foreground hover:text-foreground'
-							)}
-						>
-							<span class="truncate">{s.path}</span>
-							<span class="text-muted-foreground/70 text-[0.65rem] uppercase tracking-[0.12em]">
-								{s.type}
-							</span>
-						</button>
-					{/each}
-				</div>
-			{/if}
-		</div>
-		{#if context && candidates.length === 0}
-			<p class="text-[0.65rem] text-muted-foreground">
-				context "{context.name}" has no fields yet
-			</p>
-		{:else if context}
-			<p class="text-[0.65rem] text-muted-foreground">
-				start typing for suggestions · ↑/↓ navigate · enter to insert
-			</p>
-		{/if}
+		</p>
+		<p class="hidden font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground/70 sm:block">
+			⌘↵ save · esc cancel
+		</p>
 	</div>
 
-	<div class="space-y-2">
-		<FieldLabel for="rule-value">value · {valueType}</FieldLabel>
-		<ValueEditor
-			id="rule-value"
-			type={valueType}
-			{value}
-			disabled={submitting}
-			onchange={(v) => (value = v)}
-			onvalid={(v) => (valueValid = v)}
-		/>
-	</div>
-
-	<div class="grid gap-4 sm:grid-cols-2">
-		<div class="space-y-2">
-			<FieldLabel for="percentage">rollout %</FieldLabel>
-			<Input
-				id="percentage"
-				type="number"
-				min="0"
-				max="100"
-				step="1"
-				required
-				bind:value={percentage}
-			/>
-		</div>
-
-		<div class="space-y-2">
-			<FieldLabel for="bucket-by">bucket by · optional</FieldLabel>
-			<div class="relative">
-				<input
-					id="bucket-by"
-					bind:this={bucketInput}
-					bind:value={bucketBy}
-					oninput={handleBucketInput}
-					onfocus={handleBucketInput}
-					onkeydown={handleBucketKeydown}
-					onblur={() => setTimeout(() => (bucketAcOpen = false), 120)}
-					placeholder="user.id"
-					autocomplete="off"
-					autocapitalize="off"
-					autocorrect="off"
-					spellcheck="false"
-					data-1p-ignore
-					data-lpignore="true"
-					data-form-type="other"
-					class="ios-corners-sm flex h-9 w-full border border-input bg-transparent px-3 py-1 text-sm transition-all duration-200 ease-out placeholder:text-muted-foreground placeholder:lowercase focus-visible:border-border-hover focus-visible:bg-surface-subtle focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-				/>
-				{#if bucketAcOpen && bucketSuggestions.length > 0}
-					<div
-						role="listbox"
-						class="glass-panel motion-pop absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-sm py-1 shadow-lg"
-					>
-						{#each bucketSuggestions as s, i (s.path)}
-							<button
-								type="button"
-								role="option"
-								aria-selected={i === bucketAcIndex}
-								tabindex="-1"
-								onmousedown={(e) => {
-									e.preventDefault();
-									insertBucket(s);
-								}}
-								onmouseenter={() => (bucketAcIndex = i)}
-								class={cn(
-									'flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left font-mono text-xs transition-colors',
-									i === bucketAcIndex
-										? 'bg-surface-active text-foreground'
-										: 'text-muted-foreground hover:text-foreground'
-								)}
-							>
-								<span class="truncate">{s.path}</span>
-								<span class="text-muted-foreground/70 text-[0.65rem] uppercase tracking-[0.12em]">
-									{s.type}
-								</span>
-							</button>
-						{/each}
+	{#if isJsonValue}
+		<RuleExpressionInput
+			value={expression}
+			fields={context?.fields ?? []}
+			contextName={context?.name ?? null}
+			{submitting}
+			oninput={(next) => (expression = next)}
+			onsave={save}
+			oncancel={oncancel}
+		>
+			{#snippet aside()}
+				<div class="flex min-h-0 min-w-0 flex-col gap-2">
+					<div class="h-4 shrink-0 text-[0.65rem] uppercase leading-4 tracking-[0.14em] text-muted-foreground">
+						value
 					</div>
-				{/if}
-			</div>
-		</div>
-	</div>
+					<div class="min-h-0 flex-1">
+						<ValueEditor
+							id="rule-value"
+							type="json"
+							{value}
+							fill
+							disabled={submitting}
+							onchange={(next) => (value = next)}
+							onvalid={(valid) => (valueValid = valid)}
+						/>
+					</div>
+				</div>
+			{/snippet}
+		</RuleExpressionInput>
+	{:else}
+		<RuleExpressionInput
+			value={expression}
+			fields={context?.fields ?? []}
+			contextName={context?.name ?? null}
+			{submitting}
+			oninput={(next) => (expression = next)}
+			onsave={save}
+			oncancel={oncancel}
+		/>
+	{/if}
+
+	<RuleControlsRow
+		{valueType}
+		{value}
+		{percentage}
+		{bucketBy}
+		fields={context?.fields ?? []}
+		{submitting}
+		hideValue={isJsonValue}
+		onvalue={(next) => (value = next)}
+		onvalid={(valid) => (valueValid = valid)}
+		onpercentage={(next) => (percentage = next)}
+		onbucket={(next) => (bucketBy = next)}
+	/>
 
 	{#if error}
 		<p class="whitespace-pre-line text-xs text-destructive">{error}</p>
 	{/if}
 
-	<div class="flex justify-end gap-2 border-t border-border/60 pt-4">
+	<div class="flex justify-end gap-2">
 		{#if oncancel}
-			<Button variant="ghost" type="button" onclick={oncancel} disabled={submitting}>
+			<Button variant="ghost" size="sm" type="button" onclick={oncancel} disabled={submitting}>
 				cancel
 			</Button>
 		{/if}
-		<Button variant="solid" type="submit" disabled={!canSubmit}>
-			{submitting ? 'saving…' : submitLabel}
+		<Button variant="solid" size="sm" type="submit" disabled={!canSubmit}>
+			{submitting ? 'saving...' : submitLabel}
 		</Button>
 	</div>
 </form>

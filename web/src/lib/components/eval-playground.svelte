@@ -1,10 +1,9 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/button.svelte';
-	import Badge from '$lib/components/ui/badge.svelte';
 	import FieldLabel from '$lib/components/ui/field-label.svelte';
 	import Textarea from '$lib/components/ui/textarea.svelte';
 	import { Play, RotateCcw } from 'lucide-svelte';
-	import { formatFlagValue, valueBadgeVariant } from '$lib/values';
+	import { formatFlagValue } from '$lib/values';
 	import type { EvalTrace } from '$lib/api';
 
 	type Props = {
@@ -87,30 +86,28 @@
 				<p class="mt-2 break-words font-mono text-xs text-destructive">{error}</p>
 			</div>
 		{:else if result}
-			<div class="grid grid-cols-2 gap-2">
-				<div class="rounded-sm border border-border/70 bg-surface-faint p-3">
+			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+				<div class="min-w-0 rounded-sm border border-border/70 bg-surface-faint p-3">
 					<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
 						value
 					</p>
-					<div class="mt-2">
-						<Badge
-							dot
-							variant={result.error || hasRuleErrors(result)
-								? 'destructive'
-								: valueBadgeVariant(result.value)}
+					<div class="mt-2 min-w-0 space-y-2">
+						<p
+							class="break-all font-mono text-xs leading-5 text-foreground"
+							class:text-destructive={Boolean(result.error) || hasRuleErrors(result)}
 						>
 							{formatFlagValue(result.value)}
-						</Badge>
-						<p class="mt-2 font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
+						</p>
+						<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
 							{result.value_type}
 						</p>
 					</div>
 				</div>
-				<div class="rounded-sm border border-border/70 bg-surface-faint p-3">
+				<div class="min-w-0 rounded-sm border border-border/70 bg-surface-faint p-3">
 					<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
 						path
 					</p>
-					<p class="mt-2 font-mono text-xs text-foreground">
+					<p class="mt-2 break-words font-mono text-xs text-foreground">
 						{reasonLabel(result.reason)}
 					</p>
 				</div>
@@ -127,19 +124,27 @@
 				</div>
 			{/if}
 
-			<div class="rounded-sm border border-border/70 bg-surface-faint p-3">
-				<p class="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
+			<div
+				class={result.matched_rule
+					? 'rounded-sm border border-valid-border bg-valid-surface p-3'
+					: 'rounded-sm border border-border/70 bg-surface-faint p-3'}
+			>
+				<p
+					class={result.matched_rule
+						? 'font-mono text-[0.65rem] uppercase tracking-[0.12em] text-valid-muted'
+						: 'font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground'}
+				>
 					matched rule
 				</p>
 				{#if result.matched_rule}
 					<p class="mt-2 font-mono text-xs text-foreground">
 						#{String(result.matched_rule.index + 1).padStart(2, '0')}
 					</p>
-					<p class="mt-2 font-mono text-xs text-muted-foreground">
+					<p class="mt-2 break-all font-mono text-xs text-muted-foreground">
 						value <span class="text-foreground">{formatFlagValue(result.matched_rule.value)}</span>
 					</p>
 					<pre
-						class="mt-2 max-h-32 overflow-auto whitespace-pre-wrap break-words border-l-2 border-success/40 pl-3 font-mono text-xs text-muted-foreground">{result.matched_rule.expression}</pre>
+						class="mt-2 max-h-32 overflow-auto whitespace-pre-wrap break-words border-l-2 border-valid-border pl-3 font-mono text-xs text-muted-foreground">{result.matched_rule.expression}</pre>
 				{:else}
 					<p class="mt-2 font-mono text-xs text-muted-foreground">none</p>
 				{/if}
@@ -151,10 +156,10 @@
 						bucket
 					</p>
 					<div class="mt-2 grid gap-2 font-mono text-xs sm:grid-cols-2">
-						<p class="text-muted-foreground">
+						<p class="min-w-0 break-all text-muted-foreground">
 							by <span class="text-foreground">{result.bucket.bucket_by}</span>
 						</p>
-						<p class="text-muted-foreground">
+						<p class="min-w-0 break-all text-muted-foreground">
 							value
 							<span class="text-foreground">
 								{result.bucket.missing ? 'missing' : result.bucket.bucket_value}
@@ -181,7 +186,11 @@
 					</p>
 					<div class="mt-2 space-y-1.5">
 						{#each result.rule_results as ruleResult (ruleResult.id || ruleResult.index)}
-							<div class="border-t border-border/60 pt-2 first:border-t-0 first:pt-0">
+							<div
+								class={ruleResult.matched && !ruleResult.error
+									? 'rounded-sm border border-valid-border bg-valid-surface px-2.5 py-2'
+									: 'border-t border-border/60 pt-2 first:border-t-0 first:pt-0'}
+							>
 								<div class="flex items-center justify-between gap-3 font-mono text-xs">
 									<span class="text-muted-foreground">
 										#{String(ruleResult.index + 1).padStart(2, '0')}
@@ -190,7 +199,7 @@
 										class={ruleResult.error
 											? 'text-destructive'
 											: ruleResult.matched
-												? 'text-success'
+												? 'text-valid'
 												: 'text-muted-foreground'}
 									>
 										{ruleResult.error ? 'error' : ruleResult.matched ? 'match' : 'no match'}
@@ -202,8 +211,11 @@
 									</p>
 								{/if}
 								<pre
-									class="mt-2 max-h-24 overflow-auto whitespace-pre-wrap break-words border-l-2 border-border pl-3 font-mono text-xs text-muted-foreground">{ruleResult.expression}</pre>
-								<p class="mt-2 font-mono text-xs text-muted-foreground">
+									class="mt-2 max-h-24 overflow-auto whitespace-pre-wrap break-words border-l-2 pl-3 font-mono text-xs text-muted-foreground {ruleResult.matched &&
+									!ruleResult.error
+										? 'border-valid-border'
+										: 'border-border'}">{ruleResult.expression}</pre>
+								<p class="mt-2 break-all font-mono text-xs text-muted-foreground">
 									value <span class="text-foreground">{formatFlagValue(ruleResult.value)}</span>
 								</p>
 							</div>

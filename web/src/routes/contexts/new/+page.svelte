@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { api, APIError, type CreateContextRequest } from '$lib/api';
-	import BackLink from '$lib/components/ui/back-link.svelte';
+	import AppBreadcrumbs from '$lib/components/ui/app-breadcrumbs.svelte';
 	import Card from '$lib/components/ui/card.svelte';
 	import ContextEditor from '$lib/components/context-editor.svelte';
 	import PageHeader from '$lib/components/ui/page-header.svelte';
@@ -24,13 +24,14 @@
 </script>
 
 <div class="space-y-10">
-	<BackLink href="/contexts" label="all contexts" />
-
-	<PageHeader
-		eyebrow="[ new context ]"
-		title="Define a context"
-		description="Each field is a dotted path your CEL rules can reference."
-	/>
+	<div class="space-y-3">
+		<AppBreadcrumbs items={[{ label: 'contexts', href: '/contexts' }, { label: 'new' }]} />
+		<PageHeader
+			eyebrow="[ new context ]"
+			title="Define a context"
+			description="Each field is a dotted path your CEL rules can reference."
+		/>
+	</div>
 
 	<Card class="p-8">
 		<ContextEditor

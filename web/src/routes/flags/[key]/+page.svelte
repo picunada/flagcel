@@ -13,19 +13,16 @@
 		type FlagUsage
 	} from '$lib/api';
 	import { describeChanges } from '$lib/history';
-	import BackLink from '$lib/components/ui/back-link.svelte';
-	import FlagHistoryList from '$lib/components/flags/flag-history-list.svelte';
-	import FlagPlaygroundPanels from '$lib/components/flags/flag-playground-panels.svelte';
+	import AppBreadcrumbs from '$lib/components/ui/app-breadcrumbs.svelte';
+	import FlagDetailHeader from '$lib/components/flags/flag-detail-header.svelte';
+	import FlagDetailSidebar from '$lib/components/flags/flag-detail-sidebar.svelte';
 	import FlagRulesPanel from '$lib/components/flags/flag-rules-panel.svelte';
-	import FlagSettingsCard from '$lib/components/flags/flag-settings-card.svelte';
 	import FlagUsagePanel from '$lib/components/flags/flag-usage-panel.svelte';
 	import UsageRangeControl from '$lib/components/flags/usage-range-control.svelte';
 	import Button from '$lib/components/ui/button.svelte';
 	import DestructiveDialog from '$lib/components/ui/destructive-dialog.svelte';
-	import PageHeader from '$lib/components/ui/page-header.svelte';
-	import Tabs from '$lib/components/ui/tabs.svelte';
 	import { normalizeUsage, type UsageRangeHours } from '$lib/usage-analytics';
-	import { Trash2, Plus, FlaskConical, History, Activity } from 'lucide-svelte';
+	import { Trash2, Plus } from 'lucide-svelte';
 	import type { PageProps } from './$types';
 
 	type Rule = Flag['rules'][number];
@@ -38,7 +35,7 @@
 	let history = $state<AuditEntry[]>(untrack(() => data.history ?? []));
 	let usage = $state<FlagUsage>(untrack(() => normalizeUsage(data.usage)));
 	let usageRange = $state<UsageRangeHours>(untrack(() => data.usageRange));
-	let selectedTab = $state<'rules' | 'usage' | 'history'>('rules');
+	let showUsageDetails = $state(false);
 	let error = $state<string | null>(null);
 	let saving = $state(false);
 
@@ -53,8 +50,6 @@
 	let playgroundResult = $state<EvalTrace | null>(null);
 	let playgroundError = $state<string | null>(null);
 	let playgroundRunning = $state(false);
-	let drawerOpen = $state(false);
-	let mobileOpen = $state(false);
 	let deleteFlagOpen = $state(false);
 	let deleteFlagSubmitting = $state(false);
 	let deleteFlagError = $state<string | null>(null);
@@ -395,27 +390,19 @@
 
 </script>
 
-<div class="space-y-10">
-	<BackLink
-		href={`/?environment=${encodeURIComponent(selectedEnvironment.id)}`}
-		label="all flags"
+<div class="space-y-8">
+	<AppBreadcrumbs
+		items={[
+			{
+				label: 'flags',
+				href: `/?environment=${encodeURIComponent(selectedEnvironment.id)}`
+			},
+			{ label: flag.key }
+		]}
 	/>
 
-	<PageHeader eyebrow="[ flag ]" title={flag.key} titleClass="font-mono tracking-tight">
-		{#snippet actions()}
-		<Button
-			variant="destructive"
-			onclick={() => {
-				deleteFlagError = null;
-				deleteFlagOpen = true;
-			}}
-		>
-			<Trash2 class="h-3.5 w-3.5" /> delete
-		</Button>
-		{/snippet}
-	</PageHeader>
-
-		<FlagSettingsCard
+	<div class="flex items-start justify-between gap-4">
+		<FlagDetailHeader
 			{flag}
 			{saving}
 			{createdBy}
@@ -424,47 +411,35 @@
 			{patch}
 			{updateDefaultValue}
 		/>
+		<Button
+			variant="destructive"
+			class="shrink-0"
+			onclick={() => {
+				deleteFlagError = null;
+				deleteFlagOpen = true;
+			}}
+		>
+			<Trash2 class="h-3.5 w-3.5" /> delete
+		</Button>
+	</div>
 
-		{#if error}
-			<p class="text-xs text-destructive">{error}</p>
-		{/if}
+	{#if error}
+		<p class="text-xs text-destructive">{error}</p>
+	{/if}
 
-		<section class="space-y-4">
-			<div class="flex flex-wrap items-center justify-between gap-3 border-b border-border/60">
-				<Tabs
-					bind:value={selectedTab}
-					items={[
-						{ value: 'rules', label: 'rules' },
-						{
-							value: 'history',
-							label: 'history',
-							icon: History,
-							count: history.length
-						},
-						{ value: 'usage', label: 'usage', icon: Activity }
-					]}
-				/>
-				{#if selectedTab === 'rules'}
-					<div class="flex items-center gap-2 pb-2">
-						<Button
-							size="sm"
-							variant="ghost"
-							class="hidden lg:inline-flex"
-							aria-expanded={drawerOpen}
-							onclick={() => (drawerOpen = !drawerOpen)}
-						>
-							<FlaskConical class="h-3 w-3" /> test
-						</Button>
-						{#if !creating}
-							<Button size="sm" onclick={startCreate}>
-								<Plus class="h-3 w-3" /> add rule
-							</Button>
-						{/if}
-					</div>
+	<section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+		<div class="min-w-0 space-y-4">
+			<div class="flex flex-wrap items-center justify-between gap-3">
+				<p class="text-[0.7rem] uppercase tracking-[0.16em] text-muted-foreground">
+					targeting · evaluated top-to-bottom
+				</p>
+				{#if !creating}
+					<Button size="sm" onclick={startCreate}>
+						<Plus class="h-3 w-3" /> add rule
+					</Button>
 				{/if}
 			</div>
 
-		{#if selectedTab === 'rules'}
 			<FlagRulesPanel
 				{flag}
 				{context}
@@ -482,29 +457,41 @@
 				{cancelCreate}
 				{cancelEdit}
 			/>
+		</div>
 
-			<FlagPlaygroundPanels
-				bind:drawerOpen
-				bind:mobileOpen
-				bind:playgroundContext
-				{playgroundResult}
-				{playgroundError}
-				{playgroundRunning}
-				{evaluatePlayground}
-				{resetPlayground}
-				markDirty={markPlaygroundDirty}
-			/>
-		{:else if selectedTab === 'history'}
-			<FlagHistoryList {historyView} {formatTimestamp} />
-		{:else}
-			<div class="space-y-3">
-				<div class="flex justify-end">
-					<UsageRangeControl value={usageRange} onchange={setUsageRange} />
-				</div>
-				<FlagUsagePanel {usage} range={usageRange} {formatTimestamp} />
-			</div>
-		{/if}
+		<FlagDetailSidebar
+			{historyView}
+			{usage}
+			range={usageRange}
+			{formatTimestamp}
+			showFullUsage={() => (showUsageDetails = true)}
+			onRangeChange={setUsageRange}
+			bind:playgroundContext
+			{playgroundResult}
+			{playgroundError}
+			{playgroundRunning}
+			{evaluatePlayground}
+			{resetPlayground}
+			markDirty={markPlaygroundDirty}
+		/>
 	</section>
+
+	{#if showUsageDetails}
+		<section class="space-y-3">
+			<div class="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
+				<p class="text-[0.7rem] uppercase tracking-[0.16em] text-muted-foreground">
+					full usage
+				</p>
+				<div class="flex items-center gap-2">
+					<UsageRangeControl value={usageRange} onchange={setUsageRange} />
+					<Button size="sm" variant="ghost" onclick={() => (showUsageDetails = false)}>
+						hide
+					</Button>
+				</div>
+			</div>
+			<FlagUsagePanel {usage} range={usageRange} {formatTimestamp} />
+		</section>
+	{/if}
 </div>
 
 <DestructiveDialog

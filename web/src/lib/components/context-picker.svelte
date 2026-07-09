@@ -8,10 +8,19 @@
 		value: string | null | undefined;
 		onchange?: (id: string | null) => void;
 		disabled?: boolean;
+		compact?: boolean;
 		class?: string;
+		buttonClass?: string;
 	};
 
-	let { value, onchange, disabled = false, class: className }: Props = $props();
+	let {
+		value,
+		onchange,
+		disabled = false,
+		compact = false,
+		class: className,
+		buttonClass
+	}: Props = $props();
 
 	let contexts = $state<ContextSchema[]>([]);
 	let loading = $state(true);
@@ -31,24 +40,39 @@
 		{ value: '', label: 'no context' },
 		...contexts.map((ctx) => ({ value: ctx.id, label: ctx.name }))
 	]);
+
+	const statusMessage = $derived(
+		loading
+			? 'loading contexts…'
+			: error
+				? error
+				: contexts.length === 0
+					? 'no contexts defined'
+					: null
+	);
 </script>
 
-<div class={cn('space-y-1', className)}>
+<div class={cn(compact ? 'min-w-0' : 'space-y-1', className)}>
 	<ThemedSelect
 		{disabled}
 		value={value ?? ''}
 		{options}
 		onchange={(v) => onchange?.(v === '' ? null : v)}
-		buttonClass="text-sm px-3"
+		buttonClass={cn(compact ? 'text-xs' : 'text-sm px-3', buttonClass)}
+		class={compact ? 'min-w-0' : undefined}
 	/>
-	{#if loading}
-		<p class="text-[0.65rem] text-muted-foreground">loading contexts…</p>
-	{:else if error}
-		<p class="text-[0.65rem] text-destructive">{error}</p>
-	{:else if contexts.length === 0}
-		<p class="text-[0.65rem] text-muted-foreground">
-			no contexts defined ·
-			<a href="/contexts/new" class="underline">create one</a>
-		</p>
+	{#if !compact}
+		{#if loading}
+			<p class="text-[0.65rem] text-muted-foreground">loading contexts…</p>
+		{:else if error}
+			<p class="text-[0.65rem] text-destructive">{error}</p>
+		{:else if contexts.length === 0}
+			<p class="text-[0.65rem] text-muted-foreground">
+				no contexts defined ·
+				<a href="/contexts/new" class="underline">create one</a>
+			</p>
+		{/if}
+	{:else if statusMessage}
+		<span class="sr-only">{statusMessage}</span>
 	{/if}
 </div>
