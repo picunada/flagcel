@@ -88,6 +88,20 @@ type ContextResponse struct {
 	DeletedBy   *string           `json:"deleted_by,omitempty"`
 }
 
+type ContextFieldReferenceResponse struct {
+	Path      string `json:"path"`
+	RuleCount int    `json:"rule_count"`
+}
+
+type ContextReferenceResponse struct {
+	ContextID        string                          `json:"context_id"`
+	EnvironmentID    string                          `json:"environment_id"`
+	EnvironmentKey   string                          `json:"environment_key"`
+	FlagKey          string                          `json:"flag_key"`
+	RuleCount        int                             `json:"rule_count"`
+	ReferencedFields []ContextFieldReferenceResponse `json:"referenced_fields"`
+}
+
 type EnvironmentResponse struct {
 	ID          string  `json:"id"`
 	Key         string  `json:"key"`

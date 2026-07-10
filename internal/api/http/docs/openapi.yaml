@@ -662,6 +662,21 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "422": { $ref: "#/components/responses/InvalidRequest" }
 
+  /contexts/references:
+    get:
+      tags: [Contexts]
+      summary: List flag references for all context schemas
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Context references across all environments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextReferenceListEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /contexts/{id}:
     parameters:
       - $ref: "#/components/parameters/ContextID"
@@ -699,6 +714,12 @@ paths:
                 $ref: "#/components/schemas/ContextEnvelope"
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/ContextNotFound" }
+        "409":
+          description: Schema changes would invalidate referencing flags
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
     delete:
       tags: [Contexts]
       summary: Delete a context schema
@@ -709,6 +730,12 @@ paths:
           description: Context deleted
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/ContextNotFound" }
+        "409":
+          description: Context is still referenced by flags
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
 
   /eval:
     post:
@@ -1141,6 +1168,27 @@ components:
           items:
             $ref: "#/components/schemas/ContextField"
 
+    ContextFieldReference:
+      type: object
+      required: [path, rule_count]
+      properties:
+        path: { type: string, example: user.country }
+        rule_count: { type: integer, minimum: 0 }
+
+    ContextReference:
+      type: object
+      required: [context_id, environment_id, environment_key, flag_key, rule_count, referenced_fields]
+      properties:
+        context_id: { type: string, format: uuid }
+        environment_id: { type: string, format: uuid }
+        environment_key: { type: string }
+        flag_key: { type: string }
+        rule_count: { type: integer, minimum: 0 }
+        referenced_fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContextFieldReference"
+
     EvalRequest:
       type: object
       required: [context]
@@ -1450,6 +1498,15 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Context"
+    ContextReferenceListEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/ContextReference"
     EvalEnvelope:
       allOf:
         - $ref: "#/components/schemas/SuccessEnvelope"
@@ -1510,6 +1567,8 @@ components:
             - DEFAULT_ENVIRONMENT
             - CONTEXT_NOT_FOUND
             - CONTEXT_NAME_TAKEN
+            - CONTEXT_IN_USE
+            - CONTEXT_SCHEMA_CONFLICT
             - API_KEY_NOT_FOUND
             - INVALID_REQUEST
             - BAD_REQUEST
@@ -1521,6 +1580,19 @@ components:
             - INTERNAL_ERROR
         message:
           type: string
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationIssue"
+
+    ValidationIssue:
+      type: object
+      required: [code, field, message]
+      properties:
+        code: { type: string }
+        field: { type: string }
+        path: { type: string }
+        message: { type: string }
 
     ErrorEnvelope:
       type: object

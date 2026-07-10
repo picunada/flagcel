@@ -49,9 +49,15 @@
 
                     <main class="app-frame min-h-0 min-w-0 flex-1 bg-background">
                         <div
-                            class="h-full overflow-y-auto px-5 py-8 sm:px-7 lg:px-8 lg:py-10"
+                            class={pathname.startsWith("/contexts")
+                                ? "h-full overflow-hidden"
+                                : "h-full overflow-y-auto px-5 py-8 sm:px-7 lg:px-8 lg:py-10"}
                         >
-                            <div class="min-w-0">
+                            <div
+                                class={pathname.startsWith("/contexts")
+                                    ? "h-full min-w-0"
+                                    : "min-w-0"}
+                            >
                                 {@render children()}
                             </div>
                         </div>

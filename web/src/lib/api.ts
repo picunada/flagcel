@@ -185,6 +185,20 @@ export type ContextSchema = {
     deleted_by?: string | null;
 };
 
+export type ContextFieldReference = {
+    path: string;
+    rule_count: number;
+};
+
+export type ContextReference = {
+    context_id: string;
+    environment_id: string;
+    environment_key: string;
+    flag_key: string;
+    rule_count: number;
+    referenced_fields: ContextFieldReference[];
+};
+
 export type CreateContextRequest = {
     name: string;
     description?: string;
@@ -202,6 +216,8 @@ export type APIErrorCode =
     | "DEFAULT_ENVIRONMENT"
     | "CONTEXT_NOT_FOUND"
     | "CONTEXT_NAME_TAKEN"
+    | "CONTEXT_IN_USE"
+    | "CONTEXT_SCHEMA_CONFLICT"
     | "API_KEY_NOT_FOUND"
     | "RULE_VALIDATION_FAILED"
     | "INVALID_REQUEST"
@@ -450,6 +466,8 @@ export function createApi(fetchFn: Fetch = fetch) {
             }),
 
         listContexts: () => request<ContextSchema[]>("/contexts"),
+        listContextReferences: () =>
+            request<ContextReference[]>("/contexts/references"),
         getContext: (id: string) =>
             request<ContextSchema>(`/contexts/${encodeURIComponent(id)}`),
         createContext: (body: CreateContextRequest) =>

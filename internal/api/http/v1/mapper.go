@@ -303,6 +303,25 @@ func toContextResponses(cs []*core.ContextSchema) []ContextResponse {
 	return out
 }
 
+func toContextReferenceResponses(references []core.ContextReference) []ContextReferenceResponse {
+	out := make([]ContextReferenceResponse, len(references))
+	for i, reference := range references {
+		fields := make([]ContextFieldReferenceResponse, len(reference.ReferencedFields))
+		for j, field := range reference.ReferencedFields {
+			fields[j] = ContextFieldReferenceResponse{Path: field.Path, RuleCount: field.RuleCount}
+		}
+		out[i] = ContextReferenceResponse{
+			ContextID:        reference.ContextID,
+			EnvironmentID:    reference.EnvironmentID,
+			EnvironmentKey:   reference.EnvironmentKey,
+			FlagKey:          reference.FlagKey,
+			RuleCount:        reference.RuleCount,
+			ReferencedFields: fields,
+		}
+	}
+	return out
+}
+
 func toCoreEnvironment(id string, req CreateEnvironmentRequest) core.Environment {
 	return core.Environment{
 		ID:          id,

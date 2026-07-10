@@ -59,6 +59,11 @@ var (
 		Code:    "CONTEXT_NAME_TAKEN",
 		Message: "Context name already in use",
 	}
+	ErrContextInUse = &APIError{
+		Status:  http.StatusConflict,
+		Code:    "CONTEXT_IN_USE",
+		Message: "Context is referenced by flags",
+	}
 	ErrUnauthorized = &APIError{
 		Status:  http.StatusUnauthorized,
 		Code:    "UNAUTHORIZED",
@@ -142,6 +147,15 @@ func toAPIError(err error) *APIError {
 			Details: validationErr.Issues,
 		}
 	}
+	var contextConflict *core.ContextSchemaConflictError
+	if errors.As(err, &contextConflict) {
+		return &APIError{
+			Status:  http.StatusConflict,
+			Code:    "CONTEXT_SCHEMA_CONFLICT",
+			Message: contextConflict.Error(),
+			Details: contextConflict.Issues,
+		}
+	}
 	switch {
 	case errors.Is(err, core.ErrFlagNotFound):
 		return ErrFlagNotFound
@@ -159,6 +173,8 @@ func toAPIError(err error) *APIError {
 		return ErrContextNotFound
 	case errors.Is(err, core.ErrContextNameTaken):
 		return ErrContextNameTaken
+	case errors.Is(err, core.ErrContextHasReferers):
+		return ErrContextInUse
 	case errors.Is(err, core.ErrUserNotAllowed):
 		return ErrForbidden
 	case errors.Is(err, core.ErrInvalidCredentials):

@@ -18,10 +18,22 @@ func NewContextsHandler(s *service.ContextService) *ContextsHandler {
 
 func (h *ContextsHandler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /contexts", h.ListContexts)
+	mux.HandleFunc("GET /contexts/references", h.ListContextReferences)
 	mux.HandleFunc("POST /contexts", h.CreateContext)
 	mux.HandleFunc("GET /contexts/{id}", h.GetContext)
 	mux.HandleFunc("PUT /contexts/{id}", h.UpdateContext)
 	mux.HandleFunc("DELETE /contexts/{id}", h.DeleteContext)
+}
+
+func (h *ContextsHandler) ListContextReferences(w http.ResponseWriter, r *http.Request) {
+	references, err := h.service.ListReferences(r.Context())
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
+	if err := utils.Encode(w, r, http.StatusOK, "success", toContextReferenceResponses(references)); err != nil {
+		WriteError(w, err)
+	}
 }
 
 func (h *ContextsHandler) ListContexts(w http.ResponseWriter, r *http.Request) {

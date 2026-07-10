@@ -132,6 +132,22 @@ SELECT id, name, description, fields, created_at, updated_at, created_by, delete
 FROM contexts
 ORDER BY name;
 
+-- name: ListContextFlags :many
+SELECT f.environment_id, e.key AS environment_key, f.key, f.value_type, f.enabled,
+       f.default_value, f.context_id, f.description, f.created_at, f.updated_at,
+       f.created_by, f.updated_by, f.deleted_by
+FROM flags f
+JOIN environments e ON e.id = f.environment_id
+WHERE f.context_id IS NOT NULL
+ORDER BY f.context_id, e.key, f.key;
+
+-- name: ListContextRules :many
+SELECT r.*
+FROM rules r
+JOIN flags f ON f.environment_id = r.environment_id AND f.key = r.flag_key
+WHERE f.context_id IS NOT NULL
+ORDER BY r.environment_id, r.flag_key, r.position;
+
 -- name: GetContext :one
 SELECT id, name, description, fields, created_at, updated_at, created_by, deleted_by
 FROM contexts

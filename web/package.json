@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "test": "node src/lib/components/flags/flag-table-tooltip.test.mjs && node src/lib/components/flags/usage-analytics-charts.test.mjs && node src/lib/usage-analytics.test.mjs"
+    "test": "node src/lib/context-schema.test.mjs && node src/lib/code-highlighting.test.mjs && node src/lib/components/flags/flag-table-tooltip.test.mjs && node src/lib/components/flags/usage-analytics-charts.test.mjs && node src/lib/usage-analytics.test.mjs"
   },
   "devDependencies": {
     "@internationalized/date": "^3.12.1",

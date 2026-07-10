@@ -686,6 +686,59 @@ func (s *Store) ListContexts(ctx context.Context) ([]*core.ContextSchema, error)
 	return out, nil
 }
 
+func (s *Store) ListContextReferences(ctx context.Context) ([]core.ContextReference, error) {
+	flagRows, err := s.q.ListContextFlags(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ruleRows, err := s.q.ListContextRules(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rulesByFlag := make(map[string][]core.Rule, len(flagRows))
+	for _, row := range ruleRows {
+		rule, err := ruleRowToCore(row)
+		if err != nil {
+			return nil, err
+		}
+		key := uuidToString(row.EnvironmentID) + "\x00" + row.FlagKey
+		rulesByFlag[key] = append(rulesByFlag[key], rule)
+	}
+
+	out := make([]core.ContextReference, 0, len(flagRows))
+	for _, row := range flagRows {
+		defaultValue, err := unmarshalJSONValue(row.DefaultValue)
+		if err != nil {
+			return nil, fmt.Errorf("decode flag default_value: %w", err)
+		}
+		environmentID := uuidToString(row.EnvironmentID)
+		flag := core.FlagConfig{
+			Key:          row.Key,
+			Description:  row.Description,
+			Type:         core.ValueType(row.ValueType),
+			Enabled:      row.Enabled,
+			DefaultValue: defaultValue,
+			Rules:        rulesByFlag[environmentID+"\x00"+row.Key],
+			ContextID:    uuidToStringPtr(row.ContextID),
+			CreatedAt:    timestamptzToTime(row.CreatedAt),
+			UpdatedAt:    timestamptzToTime(row.UpdatedAt),
+			CreatedBy:    uuidToStringPtr(row.CreatedBy),
+			UpdatedBy:    uuidToStringPtr(row.UpdatedBy),
+			DeletedBy:    uuidToStringPtr(row.DeletedBy),
+		}
+		out = append(out, core.ContextReference{
+			ContextID:      uuidToString(row.ContextID),
+			EnvironmentID:  environmentID,
+			EnvironmentKey: row.EnvironmentKey,
+			FlagKey:        row.Key,
+			RuleCount:      len(flag.Rules),
+			Flag:           flag,
+		})
+	}
+	return out, nil
+}
+
 func (s *Store) GetContext(ctx context.Context, id string) (*core.ContextSchema, error) {
 	uid, err := stringToUUID(id)
 	if err != nil {
@@ -758,6 +811,9 @@ func (s *Store) DeleteContext(ctx context.Context, id string) error {
 	}
 	n, err := s.q.DeleteContext(ctx, uid)
 	if err != nil {
+		if isFKViolation(err) {
+			return core.ErrContextHasReferers
+		}
 		return err
 	}
 	if n == 0 {

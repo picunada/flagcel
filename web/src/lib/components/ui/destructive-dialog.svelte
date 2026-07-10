@@ -79,7 +79,7 @@
 		></button>
 
 		<div
-			class="glass-panel motion-pop relative z-10 w-full max-w-lg rounded-sm p-5"
+			class="glass-panel ios-corners motion-pop relative z-10 w-full max-w-lg p-5"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="destructive-dialog-title"
@@ -91,7 +91,7 @@
 			<form onsubmit={handleSubmit}>
 				<div class="flex items-start gap-4">
 					<div
-						class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-destructive-border bg-destructive-surface text-destructive"
+						class="ios-corners-sm mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center border border-destructive-border bg-destructive-surface text-destructive"
 					>
 						<AlertTriangle class="h-4 w-4" />
 					</div>
@@ -105,7 +105,7 @@
 					</div>
 					<button
 						type="button"
-						class="motion-press rounded-sm p-1 text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
+						class="ios-corners-xs motion-press p-1 text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
 						aria-label="cancel"
 						disabled={submitting}
 						onclick={close}
