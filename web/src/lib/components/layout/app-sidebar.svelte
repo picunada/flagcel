@@ -130,10 +130,6 @@
                     aria-label="Flagcel home"
                 >
                     <Flag class="h-5 w-5" strokeWidth={2.5} />
-                    <span
-                        class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-sidebar bg-app-accent"
-                        aria-hidden="true"
-                    ></span>
                 </a>
                 <div class="min-w-0 flex-1">
                     <div
@@ -145,14 +141,6 @@
                         {accountEmail}
                     </div>
                 </div>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    class="hidden h-8 w-8 shrink-0 text-muted-foreground lg:inline-flex"
-                    title="Workspace menu"
-                >
-                    <ChevronDown class="h-4 w-4" />
-                </Button>
                 <Button
                     variant="ghost"
                     size="icon"
@@ -222,13 +210,13 @@
 
         <div class="mt-auto space-y-1 px-4 pb-5">
             <div class="h-px bg-border-divider"></div>
-            <a
+            <!-- <a
                 href="/environments"
                 class="mt-4 flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
             >
                 <Settings class="h-4 w-4 shrink-0" />
                 <span class="min-w-0 flex-1 truncate">Settings</span>
-            </a>
+            </a> -->
             {#if auth?.authenticated}
                 <button
                     type="button"
