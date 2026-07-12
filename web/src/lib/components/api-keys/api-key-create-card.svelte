@@ -39,7 +39,7 @@
         </Button>
     </div>
     {#if created}
-        <div class="space-y-3 rounded-sm border border-border-soft bg-surface-muted p-4">
+        <div class="ios-corners-sm space-y-3 border border-border-soft bg-surface-muted p-4">
             <div class="flex items-center justify-between gap-3">
                 <p class="text-xs uppercase tracking-[0.14em] text-muted-foreground">
                     copy this token now

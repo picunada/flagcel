@@ -9,7 +9,7 @@
 
 <code
     class={cn(
-        "block overflow-x-auto whitespace-nowrap rounded-sm bg-surface-code p-3 font-mono text-xs text-foreground-strong",
+        "ios-corners-sm block overflow-x-auto whitespace-nowrap bg-surface-code p-3 font-mono text-xs text-foreground-strong",
         className,
     )}
 >
