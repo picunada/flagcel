@@ -1,3 +1,5 @@
+<div class="fc-breadcrumb"><span>Operate</span><span>/</span><strong>Authentication</strong></div>
+
 # Authentication
 
 Flagcel always protects the dashboard and management API.

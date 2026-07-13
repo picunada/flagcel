@@ -1,3 +1,5 @@
+<div class="fc-breadcrumb"><span>Operate</span><span>/</span><strong>Deployment</strong></div>
+
 # Deployment
 
 Flagcel ships as a single self-contained binary: the SvelteKit dashboard, SQL

@@ -18,7 +18,7 @@ interface SemVer {
 }
 
 function parseTag(name: string): SemVer | null {
-    // only the app's own version tags — ignore sdk-scoped tags like
+    // only the app's own version tags - ignore sdk-scoped tags like
     // "sdks/js/v0.1.1" (they contain a slash)
     const m = /^v(\d+)\.(\d+)\.(\d+)(?:-(.+))?$/.exec(name);
     if (!m) return null;
@@ -69,7 +69,7 @@ export default defineLoader({
 
             return { stars, version };
         } catch {
-            // offline / API failure — render without the pills rather than fail the build
+            // offline / API failure - render without the pills rather than fail the build
             return { stars: null, version: null };
         }
     },

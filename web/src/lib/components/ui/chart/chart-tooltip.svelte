@@ -14,7 +14,7 @@
 	const chartCtx = getChartContext();
 
 	// Firefox cannot render a backdrop-filter nested inside another backdrop-filter
-	// (the glass-panel card), so hoist the layerchart tooltip root to <body> — same
+	// (the glass-panel card), so hoist the layerchart tooltip root to <body> - same
 	// escape hatch bits-ui tooltips use via their portal. A fixed wrapper tracks the
 	// chart's viewport position so layerchart's container-relative top/left keep working.
 	function portalTooltip(node: HTMLElement) {

@@ -5,20 +5,20 @@ const flagcelDarkCodeTheme = {
     name: "flagcel-dark",
     type: "dark" as const,
     colors: {
-        "editor.background": "#0e0e11",
-        "editor.foreground": "#f4f3f1",
+        "editor.background": "#0a0a0a",
+        "editor.foreground": "#ffffff",
     },
     settings: [
         {
             settings: {
-                background: "#0e0e11",
-                foreground: "#f4f3f1",
+                background: "#0a0a0a",
+                foreground: "#ffffff",
             },
         },
         {
             scope: ["comment", "punctuation.definition.comment"],
             settings: {
-                foreground: "#76757d",
+                foreground: "#8e8e8e",
                 fontStyle: "",
             },
         },
@@ -33,13 +33,13 @@ const flagcelDarkCodeTheme = {
                 "constant.regexp",
             ],
             settings: {
-                foreground: "#3dcd8c",
+                foreground: "#8fbf7f",
             },
         },
         {
             scope: ["constant.numeric", "constant.character"],
             settings: {
-                foreground: "#f0a868",
+                foreground: "#d0a56f",
             },
         },
         {
@@ -72,13 +72,13 @@ const flagcelDarkCodeTheme = {
         {
             scope: ["entity.name.type", "support.type", "support.class"],
             settings: {
-                foreground: "#f4f3f1",
+                foreground: "#ffffff",
             },
         },
         {
             scope: ["variable", "variable.other", "meta.definition.variable"],
             settings: {
-                foreground: "#f4f3f1",
+                foreground: "#ffffff",
             },
         },
         {
@@ -88,7 +88,7 @@ const flagcelDarkCodeTheme = {
                 "support.constant",
             ],
             settings: {
-                foreground: "#3dcd8c",
+                foreground: "#8fbf7f",
             },
         },
         {
@@ -98,25 +98,25 @@ const flagcelDarkCodeTheme = {
                 "source.json meta.structure.dictionary.json support.type.property-name.json",
             ],
             settings: {
-                foreground: "#f4f3f1",
+                foreground: "#ffffff",
             },
         },
         {
             scope: ["entity.name.tag", "entity.other.attribute-name"],
             settings: {
-                foreground: "#f0a868",
+                foreground: "#d0a56f",
             },
         },
         {
             scope: ["support.variable.property", "support.type.property-name"],
             settings: {
-                foreground: "#3dcd8c",
+                foreground: "#8fbf7f",
             },
         },
         {
             scope: ["punctuation", "meta.brace", "meta.delimiter"],
             settings: {
-                foreground: "#f4f3f1",
+                foreground: "#ffffff",
             },
         },
         {
@@ -126,7 +126,7 @@ const flagcelDarkCodeTheme = {
                 "source.shell string.unquoted",
             ],
             settings: {
-                foreground: "#f4f3f1",
+                foreground: "#ffffff",
             },
         },
         {
@@ -138,7 +138,7 @@ const flagcelDarkCodeTheme = {
                 "punctuation.definition.variable.shell",
             ],
             settings: {
-                foreground: "#f97316",
+                foreground: "#ffffff",
             },
         },
         {
@@ -149,154 +149,30 @@ const flagcelDarkCodeTheme = {
                 "constant.numeric.shell",
             ],
             settings: {
-                foreground: "#f97316",
+                foreground: "#ffffff",
             },
         },
         {
             scope: ["invalid", "invalid.illegal", "support.class.error"],
             settings: {
-                foreground: "#f07178",
+                foreground: "#ff6b6b",
             },
         },
         {
             scope: ["markup.heading", "token.warn-token"],
             settings: {
-                foreground: "#f0a868",
+                foreground: "#d0a56f",
             },
         },
     ],
 };
-const flagcelLightCodeTheme = {
-    name: "flagcel-light",
-    type: "light" as const,
-    colors: {
-        "editor.background": "#f6f6f7",
-        "editor.foreground": "#171717",
-    },
-    settings: [
-        {
-            settings: {
-                background: "#f6f6f7",
-                foreground: "#171717",
-            },
-        },
-        {
-            scope: ["comment", "punctuation.definition.comment"],
-            settings: {
-                foreground: "#6f748f",
-                fontStyle: "italic",
-            },
-        },
-        {
-            scope: ["string", "constant.other.symbol", "constant.other.key"],
-            settings: {
-                foreground: "#c2410c",
-            },
-        },
-        {
-            scope: [
-                "constant.numeric",
-                "constant.language",
-                "constant.character",
-            ],
-            settings: {
-                foreground: "#f97316",
-            },
-        },
-        {
-            scope: ["keyword", "storage", "storage.type"],
-            settings: {
-                foreground: "#5f6680",
-            },
-        },
-        {
-            scope: [
-                "entity.name.function",
-                "support.function",
-                "meta.function-call",
-            ],
-            settings: {
-                foreground: "#2563eb",
-            },
-        },
-        {
-            scope: ["entity.name.type", "support.type", "support.class"],
-            settings: {
-                foreground: "#3b668a",
-            },
-        },
-        {
-            scope: ["variable", "variable.other", "meta.definition.variable"],
-            settings: {
-                foreground: "#171717",
-            },
-        },
-        {
-            scope: [
-                "variable.parameter",
-                "meta.object-literal.key",
-                "source.json meta.structure.dictionary.json support.type.property-name.json",
-            ],
-            settings: {
-                foreground: "#111827",
-            },
-        },
-        {
-            scope: [
-                "entity.name.tag",
-                "keyword.control.module",
-                "keyword.control.import",
-                "keyword.control.export",
-                "keyword.control.default",
-                "keyword.operator.new",
-                "keyword.control.new",
-            ],
-            settings: {
-                foreground: "#f97316",
-            },
-        },
-        {
-            scope: ["entity.other.attribute-name", "support.variable.property"],
-            settings: {
-                foreground: "#3b668a",
-            },
-        },
-        {
-            scope: ["punctuation", "meta.brace", "meta.delimiter"],
-            settings: {
-                foreground: "#6f748f",
-            },
-        },
-        {
-            scope: [
-                "invalid",
-                "invalid.illegal",
-                "support.class.error",
-                "keyword.control.trycatch",
-                "constant.language.null",
-                "constant.language.boolean.false",
-                "constant.language.undefined",
-            ],
-            settings: {
-                foreground: "#be185d",
-            },
-        },
-        {
-            scope: ["markup.heading", "token.warn-token"],
-            settings: {
-                foreground: "#a16207",
-            },
-        },
-    ],
-};
-
 export default defineConfig({
     title: "Flagcel",
     description: "Self-hosted feature flags with CEL-based targeting rules.",
     base: "/flagcel/",
     srcDir: "src",
     cleanUrls: true,
-    appearance: "dark",
+    appearance: "force-dark",
     lastUpdated: true,
     markdown: {
         headers: {
@@ -304,7 +180,8 @@ export default defineConfig({
         },
         lineNumbers: false,
         theme: {
-            light: flagcelLightCodeTheme,
+            // Dark-only site; VitePress still requires a light key.
+            light: flagcelDarkCodeTheme,
             dark: flagcelDarkCodeTheme,
         },
     },
@@ -317,7 +194,7 @@ export default defineConfig({
                 href: "/flagcel/favicon.svg",
             },
         ],
-        ["meta", { name: "theme-color", content: "#0f0f0f" }],
+        ["meta", { name: "theme-color", content: "#070707" }],
         [
             "meta",
             {
@@ -334,7 +211,7 @@ export default defineConfig({
             { text: "Guide", link: "/quickstart" },
             { text: "Concepts", link: "/concepts" },
             { text: "API", link: "/api" },
-            { text: "SDKs", link: "/sdks" },
+            { text: "SDKs", link: "/sdks/" },
         ],
         sidebar: [
             {
@@ -347,6 +224,7 @@ export default defineConfig({
             {
                 text: "Operate",
                 items: [
+                    { text: "Dashboard", link: "/dashboard" },
                     { text: "Deployment", link: "/deployment" },
                     { text: "Configuration", link: "/configuration" },
                     { text: "Authentication", link: "/auth" },
@@ -354,10 +232,18 @@ export default defineConfig({
                 ],
             },
             {
+                text: "SDKs",
+                items: [
+                    { text: "Overview", link: "/sdks/" },
+                    { text: "Go", link: "/sdks/go" },
+                    { text: "JS/TS", link: "/sdks/js" },
+                    { text: "Python", link: "/sdks/python" },
+                ],
+            },
+            {
                 text: "Reference",
                 items: [
                     { text: "API", link: "/api" },
-                    { text: "SDKs", link: "/sdks" },
                     { text: "Web UI", link: "/web-ui" },
                     { text: "Development", link: "/development" },
                 ],

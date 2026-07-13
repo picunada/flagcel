@@ -38,7 +38,7 @@ const cards = [
         h: "SDKs",
         d: "Go · TypeScript · Python",
         n: "03",
-        link: "/sdks",
+        link: "/sdks/",
     },
     {
         icon: "m8 4-4 8 4 8M16 4l4 8-4 8",
@@ -100,7 +100,7 @@ const cards = [
                             class="hh-cta hh-cta--primary"
                             :href="withBase('/quickstart')"
                         >
-                            Start the Quickstart
+                            Quickstart
                             <svg
                                 width="15"
                                 height="15"
@@ -186,7 +186,7 @@ const cards = [
                             <pre
                                 v-if="tab === 0"
                                 class="hh-pre"
-                            ><code><span class="cm"># run the control plane — migrations included</span>
+                            ><code><span class="cm"># run the control plane - migrations included</span>
 <span class="pr">$</span> docker run <span class="nm">-p</span> 8080:8080 \
     <span class="nm">-e</span> FLAGCEL_DB_URL=<span class="st">$DATABASE_URL</span> \
     ghcr.io/flagcel/flagcel:<span class="st">latest</span>
@@ -289,19 +289,19 @@ const cards = [
 
 <style>
 .fc-home {
-    --acc: #f97316;
-    --acc-2: #fdba74;
-    --acc-dim: rgba(249, 115, 22, 0.14);
-    --green: #3ecf8e;
-    --bg: #0b0b0d;
-    --bg-2: #101013;
-    --surface: #16161a;
-    --surface-2: #1b1b20;
-    --line: rgba(255, 255, 255, 0.07);
-    --line-2: rgba(255, 255, 255, 0.11);
-    --tx: #f4f3f1;
-    --tx-2: #b6b5bd;
-    --tx-3: #76767f;
+    --acc: var(--flagcel-accent);
+    --acc-2: var(--flagcel-accent-2);
+    --acc-dim: var(--flagcel-accent-soft);
+    --green: var(--flagcel-green);
+    --bg: var(--flagcel-bg);
+    --bg-2: var(--flagcel-bg-alt);
+    --surface: var(--flagcel-surface);
+    --surface-2: var(--flagcel-surface-2);
+    --line: var(--flagcel-border);
+    --line-2: var(--flagcel-border-strong);
+    --tx: var(--flagcel-foreground);
+    --tx-2: var(--flagcel-soft);
+    --tx-3: var(--flagcel-muted);
     --mono: var(--vp-font-family-mono);
     --sans: var(--vp-font-family-base);
 }
@@ -406,13 +406,14 @@ const cards = [
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    height: 46px;
-    padding: 0 22px;
-    border-radius: 11px;
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 6px;
     font-family: var(--mono);
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     text-decoration: none;
     cursor: pointer;
     background: var(--surface);
@@ -436,23 +437,23 @@ const cards = [
 
 .hh-cta--primary {
     background: var(--acc);
-    color: #1a0f06;
+    color: #0f0f0f;
     border-color: var(--acc);
 }
 
 .hh-cta--primary:hover {
-    background: var(--acc-2);
-    border-color: var(--acc-2);
-    color: #1a0f06;
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.9);
+    color: #0f0f0f;
 }
 
 /* ---- eyebrow ---- */
 .hh-eyebrow {
     font-family: var(--mono);
     font-size: 12px;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--acc);
+    color: var(--tx-3);
     font-weight: 500;
 }
 
@@ -470,7 +471,7 @@ const cards = [
     inset: -14% -10%;
     background: radial-gradient(
         58% 56% at 72% 26%,
-        rgba(249, 115, 22, 0.18),
+        rgba(255, 255, 255, 0.1),
         transparent 70%
     );
     filter: blur(22px);
@@ -482,7 +483,7 @@ const cards = [
     border: 1px solid var(--line);
     border-radius: 12px;
     overflow: hidden;
-    background: #0e0e11;
+    background: #0a0a0a;
     box-shadow:
         0 28px 64px -22px rgba(0, 0, 0, 0.75),
         0 0 0 1px var(--line);
@@ -584,7 +585,7 @@ const cards = [
     color: #7cc7ff;
 }
 .hh-pre .nm {
-    color: #f0a868;
+    color: #d0a56f;
 }
 .hh-pre .pr {
     color: var(--acc);
@@ -631,7 +632,7 @@ const cards = [
     font-size: 13px;
     color: var(--acc-2);
     text-decoration: none;
-    border-bottom: 1px solid rgba(253, 186, 116, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .fc-home__grid {
@@ -673,9 +674,9 @@ const cards = [
     border-radius: 10px;
     display: grid;
     place-items: center;
-    background: var(--acc-dim);
-    border: 1px solid rgba(249, 115, 22, 0.22);
-    color: var(--acc);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--tx);
 }
 
 .hh-card__n {
@@ -696,7 +697,7 @@ const cards = [
 }
 
 .hh-arr {
-    color: var(--acc);
+    color: var(--tx-3);
 }
 
 .hh-card__d {

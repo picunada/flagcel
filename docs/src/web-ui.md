@@ -1,3 +1,5 @@
+<div class="fc-breadcrumb"><span>Reference</span><span>/</span><strong>Web UI</strong></div>
+
 # Web UI
 
 A SvelteKit admin dashboard lives in
@@ -25,3 +27,11 @@ Use the SvelteKit dev server when changing dashboard code. It runs on
 `localhost:5173` and proxies API requests to the Go service on `localhost:8080`.
 For production builds, `make build` produces one Go binary with the compiled UI
 embedded.
+
+## Contexts
+
+The dashboard **Contexts** pages manage reusable evaluation schemas. Create a
+context from a pasted payload or by editing field paths and types, then attach
+it to flags so rule editing can validate CEL against that shape. See [Dashboard](dashboard.md) for the UI workflow and
+[Concepts](concepts.md#contexts) for how schemas relate to runtime evaluation
+payloads.

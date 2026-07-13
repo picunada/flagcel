@@ -1,3 +1,5 @@
+<div class="fc-breadcrumb"><span>Reference</span><span>/</span><strong>API</strong></div>
+
 # API
 
 The full OpenAPI spec lives in the repository at
@@ -84,5 +86,5 @@ local auth or OIDC. Evaluation requests should use bearer API keys:
 Authorization: Bearer fc_your_api_key
 ```
 
-Use [SDKs](sdks.md) for application integration instead of calling evaluation
+Use [SDKs](sdks/) for application integration instead of calling evaluation
 endpoints directly unless you are building a custom provider.

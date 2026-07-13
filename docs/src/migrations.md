@@ -1,3 +1,5 @@
+<div class="fc-breadcrumb"><span>Operate</span><span>/</span><strong>Migrations</strong></div>
+
 # Migrations
 
 Schema changes live in

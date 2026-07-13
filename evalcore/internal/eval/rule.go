@@ -1,4 +1,4 @@
-// In package eval — what evaluation operates on.
+// In package eval - what evaluation operates on.
 package eval
 
 import (
@@ -17,7 +17,7 @@ type Flag struct {
 type CompiledRule struct {
 	ID      string      // persisted rule id, used for diagnostics
 	Source  string      //  for diagnostics/logging
-	Program cel.Program // exported — accessed by Engine.Evaluate
+	Program cel.Program // exported - accessed by Engine.Evaluate
 	Rollout Rollout
 	Value   any
 }

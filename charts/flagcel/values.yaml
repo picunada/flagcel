@@ -101,7 +101,7 @@ auth:
 #     value: "10s"
 extraEnv: []
 
-# Bundled PostgreSQL (Bitnami). Off by default — bring your own DB in prod.
+# Bundled PostgreSQL (Bitnami). Off by default - bring your own DB in prod.
 # When enabled, DATABASE_URL is derived from the values below.
 postgresql:
   enabled: false

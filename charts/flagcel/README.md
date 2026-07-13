@@ -27,9 +27,9 @@ helm install flagcel oci://ghcr.io/picunada/charts/flagcel \
 
 Provide exactly one of:
 
-- `database.url` — DSN stored in a chart-managed Secret.
-- `database.existingSecret` (+ `database.existingSecretKey`, default `DATABASE_URL`) — reference your own Secret.
-- `postgresql.enabled=true` — deploy the bundled Bitnami Postgres subchart (demo use).
+- `database.url` - DSN stored in a chart-managed Secret.
+- `database.existingSecret` (+ `database.existingSecretKey`, default `DATABASE_URL`) - reference your own Secret.
+- `postgresql.enabled=true` - deploy the bundled Bitnami Postgres subchart (demo use).
 
 ## Migrations
 

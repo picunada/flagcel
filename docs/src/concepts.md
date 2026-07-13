@@ -1,7 +1,9 @@
+<div class="fc-breadcrumb"><span>Get Started</span><span>/</span><strong>Concepts</strong></div>
+
 # Concepts
 
 Flagcel evaluates feature flags from a small set of concepts: environments,
-flags, rules, CEL expressions, rollouts, and evaluation clients.
+flags, contexts, rules, CEL expressions, rollouts, and evaluation clients.
 
 ## Environments
 
@@ -19,10 +21,57 @@ A flag is identified by a stable key, such as `new-checkout`. Each flag has:
 - a type, currently used by the API and SDKs to select typed evaluation
 - an enabled state
 - a default value
+- an optional context schema
 - zero or more ordered rules
 
 When a flag is disabled or no rule matches, evaluation returns the default
 value.
+
+## Contexts
+
+A context is a reusable schema that describes the evaluation payload your
+clients send. It is not the runtime request itself - it declares the fields and
+types that rules may read.
+
+Each context has:
+
+- a unique name, such as `web-user`
+- an optional description
+- a list of fields with a dotted path and type
+
+Supported field types are `string`, `int`, `double`, `bool`, `timestamp`,
+`list`, and `map`. Nested JSON becomes dotted paths, so this payload:
+
+```json
+{
+  "user": { "id": "usr_991", "plan": "pro", "beta": true },
+  "device": { "os": "ios", "version": 17 }
+}
+```
+
+maps to fields like:
+
+```text
+user.id        string
+user.plan      string
+user.beta      bool
+device.os      string
+device.version int
+```
+
+Contexts are global across environments. Attach one to a flag with `context_id`
+when you create or edit the flag. Once attached, Flagcel uses the schema to:
+
+- validate CEL expressions and `bucket_by` paths against known fields
+- power autocomplete and payload checks in the dashboard
+- package the schema with evaluation definitions for typed local evaluation
+
+Flags can omit a context. Without one, rules are still evaluated, but Flagcel
+cannot check that referenced paths exist or match a declared type.
+
+Schema changes that would break attached flags are rejected. You also cannot
+delete a context while any flag still references it. Manage contexts in the
+dashboard under **Contexts**, or through the `/contexts` admin API.
 
 ## Rules
 
@@ -44,8 +93,8 @@ read fields from the evaluation context sent by the SDK or API client.
 user.country == "US" && request.path.startsWith("/checkout")
 ```
 
-The context shape is application-defined. If a rule reads `user.country`, the
-client must send a compatible `user` object:
+The runtime evaluation context is application-defined JSON. If a rule reads
+`user.country`, the client must send a compatible `user` object:
 
 ```json
 {
@@ -60,6 +109,10 @@ client must send a compatible `user` object:
   }
 }
 ```
+
+When the flag has an attached context schema, keep that payload aligned with
+the declared fields and types. The schema documents the contract; the SDK or
+`/eval` request still supplies the live values.
 
 ## Percentage Rollouts
 
@@ -87,5 +140,5 @@ server-side evaluation API.
   server runtimes.
 - Every evaluation request uses an environment-scoped API key.
 
-See [SDKs](sdks.md) for provider examples and [API](api.md) for endpoint
+See [SDKs](sdks/) for provider examples and [API](api.md) for endpoint
 details.

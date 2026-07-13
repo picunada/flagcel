@@ -1,3 +1,5 @@
+<div class="fc-breadcrumb"><span>Reference</span><span>/</span><strong>Development</strong></div>
+
 # Development
 
 Flagcel requires Go 1.26+ and Postgres 17. The Docker setup handles Postgres

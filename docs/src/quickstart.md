@@ -1,4 +1,4 @@
-<div class="fc-breadcrumb"><span>Guide</span><span>/</span><strong>Quickstart</strong></div>
+<div class="fc-breadcrumb"><span>Get Started</span><span>/</span><strong>Quickstart</strong></div>
 
 # Quickstart
 
@@ -12,7 +12,7 @@
 
 ## Install
 
-The production binary ships everything — dashboard, API, and embedded migrations — in a single image.
+The production binary ships everything - dashboard, API, and embedded migrations - in a single image.
 
 <div class="fc-process-block" aria-hidden="true"></div>
 
@@ -25,7 +25,7 @@ $ docker run --rm -p 8080:8080 \
     -e AUTH_BOOTSTRAP_ADMIN_PASSWORD="change-me" \
     ghcr.io/picunada/flagcel:latest
 
-# control plane up on :8080 — migrations run on boot
+# control plane up on :8080 - migrations run on boot
 → dashboard  http://localhost:8080
 → api        http://localhost:8080/api/v1
 → docs       http://localhost:8080/docs
@@ -36,7 +36,7 @@ $ docker run --rm -p 8080:8080 \
 Point `DATABASE_URL` at your database. On boot, Flagcel applies any pending migrations, then serves the dashboard and versioned API on the same port.
 
 ::: tip Local development
-Clone the repository and run `docker compose up` to start Flagcel with Postgres and a seeded local admin account — no external database required. Sign in at `http://localhost:8080` with `admin@localhost` / `secret`.
+Clone the repository and run `docker compose up` to start Flagcel with Postgres and a seeded local admin account - no external database required. Sign in at `http://localhost:8080` with `admin@localhost` / `secret`.
 :::
 
 ## Create your first flag
@@ -53,7 +53,7 @@ user.email.endsWith("@flagcel.io") ||
   (geo.region == "EU" && user.id % 10 == 0)
 ```
 
-Targeting uses the [Common Expression Language](concepts.md) — the same expression language used by Kubernetes and Envoy. This rule enables the flag for internal users and ten percent of EU traffic when `user.id` is numeric.
+Targeting uses the [Common Expression Language](concepts.md) - the same expression language used by Kubernetes and Envoy. This rule enables the flag for internal users and ten percent of EU traffic when `user.id` is numeric.
 
 ## Evaluate from your app
 
@@ -88,17 +88,22 @@ const enabled = await client.getBooleanValue("checkout-v2", false, {
 ## Next steps
 
 <div class="fc-nextgrid">
+  <a class="fc-ncard" href="dashboard">
+    <div class="nk">Operate</div>
+    <div class="nh">Dashboard workflow</div>
+    <div class="nd">Create contexts, attach flags, write rules, and mint API keys in the UI.</div>
+  </a>
   <a class="fc-ncard" href="concepts">
     <div class="nk">Concepts</div>
     <div class="nh">CEL targeting</div>
-    <div class="nd">Understand rules, evaluation context, and rollout bucketing.</div>
+    <div class="nd">Understand contexts, rules, evaluation payloads, and rollout bucketing.</div>
   </a>
   <a class="fc-ncard" href="auth">
     <div class="nk">Operate</div>
     <div class="nh">Authentication</div>
     <div class="nd">Prepare local auth or OIDC before exposing a deployment.</div>
   </a>
-  <a class="fc-ncard" href="sdks">
+  <a class="fc-ncard" href="sdks/">
     <div class="nk">SDKs</div>
     <div class="nh">Evaluate from your app</div>
     <div class="nd">Use OpenFeature providers from Go, TypeScript, and Python.</div>

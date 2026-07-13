@@ -1,3 +1,5 @@
+<div class="fc-breadcrumb"><span>Operate</span><span>/</span><strong>Configuration</strong></div>
+
 # Configuration
 
 All server config is provided through environment variables.

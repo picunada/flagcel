@@ -62,7 +62,7 @@
     --color-success: var(--color-app-accent);
     --color-success-foreground: var(--color-app-accent-foreground);
 
-    /* CEL / validation greens — keep editor + playground in sync */
+    /* CEL / validation greens - keep editor + playground in sync */
     --color-valid: #8fbf7f;
     --color-valid-muted: color-mix(
         in oklab,

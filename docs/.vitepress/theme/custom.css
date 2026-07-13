@@ -1,22 +1,24 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
 
 :root {
-    --flagcel-bg: #0b0b0d;
-    --flagcel-bg-alt: #101013;
-    --flagcel-surface: #16161a;
-    --flagcel-surface-2: #1b1b20;
-    --flagcel-foreground: #f4f3f1;
-    --flagcel-soft: #b6b5bd;
-    --flagcel-muted: #76767f;
-    --flagcel-border: rgba(255, 255, 255, 0.04);
-    --flagcel-border-strong: rgba(255, 255, 255, 0.11);
-    --flagcel-accent: #f97316;
-    --flagcel-accent-2: #fdba74;
-    --flagcel-accent-rgb: 249 115 22;
-    --flagcel-accent-soft: rgba(249, 115, 22, 0.14);
-    --flagcel-green: #3ecf8e;
-    --flagcel-nav-bg: rgba(11, 11, 13, 0.86);
-    --flagcel-panel-bg: rgba(22, 22, 26, 0.84);
+    --flagcel-bg: #070707;
+    --flagcel-bg-alt: #0f1010;
+    --flagcel-surface: #0f1010;
+    --flagcel-surface-2: #141414;
+    --flagcel-foreground: #ffffff;
+    --flagcel-soft: rgba(255, 255, 255, 0.78);
+    --flagcel-muted: #8e8e8e;
+    --flagcel-border: rgba(255, 255, 255, 0.05);
+    --flagcel-border-strong: rgba(255, 255, 255, 0.12);
+    --flagcel-accent: #ffffff;
+    --flagcel-accent-2: rgba(255, 255, 255, 0.86);
+    --flagcel-accent-rgb: 255 255 255;
+    --flagcel-accent-soft: rgba(255, 255, 255, 0.1);
+    --flagcel-green: #8fbf7f;
+    --flagcel-warning: #d0a56f;
+    --flagcel-destructive: #ff6b6b;
+    --flagcel-nav-bg: rgba(7, 7, 7, 0.86);
+    --flagcel-panel-bg: rgba(15, 16, 16, 0.84);
     --flagcel-shadow: 0 18px 48px rgba(0, 0, 0, 0.26);
 
     --vp-c-bg: var(--flagcel-bg);
@@ -31,7 +33,7 @@
     --vp-c-text-3: var(--flagcel-muted);
     --vp-c-brand-1: var(--flagcel-accent);
     --vp-c-brand-2: var(--flagcel-accent-2);
-    --vp-c-brand-3: #ea580c;
+    --vp-c-brand-3: rgba(255, 255, 255, 0.7);
     --vp-c-brand-soft: var(--flagcel-accent-soft);
     --vp-c-default-soft: rgba(255, 255, 255, 0.045);
     --vp-c-default-1: var(--flagcel-soft);
@@ -39,31 +41,43 @@
     --vp-c-default-3: rgba(255, 255, 255, 0.18);
     --vp-c-code-bg: rgba(255, 255, 255, 0.055);
     --vp-c-code-block-bg: var(--flagcel-surface);
-    --vp-c-code-line-highlight-color: rgba(249, 115, 22, 0.08);
+    --vp-c-code-line-highlight-color: rgba(255, 255, 255, 0.08);
     --vp-c-code-line-number-color: rgba(255, 255, 255, 0.28);
-    --vp-c-tip-1: var(--flagcel-accent);
-    --vp-c-tip-2: var(--flagcel-accent-2);
-    --vp-c-tip-3: #ea580c;
-    --vp-c-tip-soft: rgba(249, 115, 22, 0.12);
-    --vp-custom-block-tip-border: rgba(249, 115, 22, 0.34);
-    --vp-custom-block-tip-bg: rgba(249, 115, 22, 0.08);
+    --vp-c-tip-1: var(--flagcel-green);
+    --vp-c-tip-2: #a8d49a;
+    --vp-c-tip-3: #6f9f62;
+    --vp-c-tip-soft: rgba(143, 191, 127, 0.12);
+    --vp-c-warning-1: var(--flagcel-warning);
+    --vp-c-warning-2: #dfb882;
+    --vp-c-warning-3: #b8894f;
+    --vp-c-warning-soft: rgba(208, 165, 111, 0.12);
+    --vp-c-danger-1: var(--flagcel-destructive);
+    --vp-c-danger-2: #ff8585;
+    --vp-c-danger-3: #e25555;
+    --vp-c-danger-soft: rgba(255, 107, 107, 0.12);
+    --vp-custom-block-tip-border: rgba(143, 191, 127, 0.35);
+    --vp-custom-block-tip-bg: rgba(143, 191, 127, 0.06);
+    --vp-custom-block-warning-border: rgba(208, 165, 111, 0.35);
+    --vp-custom-block-warning-bg: rgba(208, 165, 111, 0.06);
+    --vp-custom-block-danger-border: rgba(255, 107, 107, 0.3);
+    --vp-custom-block-danger-bg: rgba(255, 107, 107, 0.06);
     --vp-custom-block-info-border: var(--flagcel-border);
     --vp-custom-block-info-bg: rgba(255, 255, 255, 0.035);
     --vp-font-family-base:
-        "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont,
-        "Segoe UI", sans-serif;
+        "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+        Roboto, Helvetica, Arial, sans-serif;
     --vp-font-family-mono:
-        "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Monaco, Consolas,
         monospace;
     --vp-nav-height: 52px;
     --vp-sidebar-width: 260px;
     --vp-layout-max-width: 1440px;
     --vp-button-brand-bg: var(--flagcel-accent);
     --vp-button-brand-border: var(--flagcel-accent);
-    --vp-button-brand-text: #0b0b0d;
-    --vp-button-brand-hover-bg: var(--flagcel-accent-2);
-    --vp-button-brand-hover-border: var(--flagcel-accent-2);
-    --vp-button-brand-hover-text: #0b0b0d;
+    --vp-button-brand-text: #0f0f0f;
+    --vp-button-brand-hover-bg: rgba(255, 255, 255, 0.9);
+    --vp-button-brand-hover-border: rgba(255, 255, 255, 0.9);
+    --vp-button-brand-hover-text: #0f0f0f;
     --vp-button-alt-bg: rgba(255, 255, 255, 0.045);
     --vp-button-alt-border: var(--flagcel-border);
     --vp-button-alt-text: var(--flagcel-foreground);
@@ -77,7 +91,7 @@
 }
 
 ::selection {
-    background: rgba(249, 115, 22, 0.28);
+    background: rgba(255, 255, 255, 0.25);
     color: var(--flagcel-foreground);
 }
 
@@ -103,12 +117,12 @@ body {
         linear-gradient(
             to bottom,
             var(--flagcel-bg) var(--vp-nav-height),
-            rgb(11 11 13 / 0) calc(var(--vp-nav-height) + 6px),
+            rgb(7 7 7 / 0) calc(var(--vp-nav-height) + 6px),
             var(--flagcel-bg) 760px
         ),
         linear-gradient(
             to right,
-            rgb(11 11 13 / 0) var(--flagcel-grid-fade-right-start),
+            rgb(7 7 7 / 0) var(--flagcel-grid-fade-right-start),
             var(--flagcel-bg) var(--flagcel-grid-fade-right-end)
         ),
         linear-gradient(
@@ -170,7 +184,7 @@ a {
 }
 
 /* navbar draws its own divider-line across the content area, doubling up
-   with the .VPNav border-bottom — hide it and keep only the header border */
+   with the .VPNav border-bottom - hide it and keep only the header border */
 .VPNavBar .divider-line {
     background-color: transparent;
 }
@@ -186,7 +200,7 @@ a {
 
 .VPNavBarTitle .title {
     /* default is width:100%, which sprawls the home link across the navbar
-       and under the fixed search bar — keep it to the brand's own width */
+       and under the fixed search bar - keep it to the brand's own width */
     width: auto;
     font-family: var(--vp-font-family-mono);
     font-size: 13px;
@@ -239,7 +253,7 @@ a {
 }
 
 .VPNavScreen {
-    background: rgba(11, 11, 13, 0.98);
+    background: rgba(7, 7, 7, 0.98);
 }
 
 .VPNavBarSearch {
@@ -298,7 +312,7 @@ a {
     border-right: 1px solid var(--flagcel-border);
     padding-right: 20px !important;
     padding-left: 20px !important;
-    background: rgba(11, 11, 13, 0.92) !important;
+    background: rgba(7, 7, 7, 0.92) !important;
 }
 
 .VPSidebar .curtain {
@@ -352,11 +366,11 @@ a {
 }
 
 .VPSidebarItem.level-1.is-active > .item .link {
-    background: rgba(249, 115, 22, 0.18);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .VPSidebarItem.level-1.is-active > .item .link > .text {
-    color: var(--flagcel-accent-2);
+    color: var(--flagcel-foreground);
 }
 
 .VPDoc {
@@ -415,7 +429,7 @@ a {
 
 .VPDocAsideOutline .outline-link:hover,
 .VPDocAsideOutline .outline-link.active {
-    color: var(--flagcel-accent-2);
+    color: var(--flagcel-foreground);
 }
 
 .VPDocAsideOutline .outline-link.active {
@@ -431,7 +445,7 @@ a {
 
 .VPLocalNavOutlineDropdown .items {
     border-color: var(--flagcel-border);
-    background: rgba(22, 22, 26, 0.98);
+    background: rgba(15, 16, 16, 0.98);
     box-shadow: var(--flagcel-shadow);
 }
 
@@ -550,7 +564,7 @@ a {
     border-radius: 999px;
     padding: 0 14px;
     background: var(--flagcel-bg-alt);
-    color: #c9c6cf;
+    color: var(--flagcel-soft);
     font-family: var(--vp-font-family-mono);
     font-size: 11px;
     font-weight: 500;
@@ -560,9 +574,9 @@ a {
 }
 
 .fc-tag.accent {
-    border-color: rgba(249, 115, 22, 0.28);
+    border-color: rgba(255, 255, 255, 0.2);
     background: var(--flagcel-accent-soft);
-    color: var(--flagcel-accent-2);
+    color: var(--flagcel-foreground);
 }
 
 .vp-doc table {
@@ -608,9 +622,9 @@ a {
 
 .custom-block.tip {
     position: relative;
-    border-color: rgba(62, 207, 142, 0.45);
+    border-color: rgba(143, 191, 127, 0.45);
     padding-left: 53px;
-    background: rgba(12, 40, 30, 0.42);
+    background: rgba(143, 191, 127, 0.06);
 }
 
 .custom-block.tip::before {
@@ -622,7 +636,7 @@ a {
     height: 10px;
     border: 1.5px solid var(--flagcel-green);
     border-radius: 999px;
-    box-shadow: inset 0 0 0 2.5px rgba(12, 40, 30, 0.9);
+    box-shadow: inset 0 0 0 2.5px rgba(7, 7, 7, 0.9);
 }
 
 .custom-block.tip .custom-block-title {
@@ -648,7 +662,7 @@ a {
 .vp-doc div[class*="language-"] {
     border: 1px solid var(--flagcel-border);
     border-radius: 8px;
-    background-color: #0e0e11;
+    background-color: #0a0a0a;
     box-shadow: none;
 }
 
@@ -743,8 +757,8 @@ a {
 }
 
 .fc-ncard:hover {
-    border-color: rgba(249, 115, 22, 0.32);
-    background: rgba(249, 115, 22, 0.055);
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .fc-ncard .nk {
@@ -799,8 +813,8 @@ a {
     --vp-home-hero-image-filter: blur(42px);
     --vp-home-hero-image-background-image: linear-gradient(
         45deg,
-        rgba(249, 115, 22, 0.5),
-        rgba(249, 115, 22, 0.12)
+        rgba(255, 255, 255, 0.28),
+        rgba(255, 255, 255, 0.06)
     );
 }
 
@@ -843,10 +857,12 @@ a {
 
 .VPButton {
     min-height: 38px;
-    border-radius: 7px !important;
+    border-radius: 6px !important;
     font-family: var(--vp-font-family-mono);
     font-size: 12px;
     font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     transition:
         border-color 180ms ease-out,
         background-color 180ms ease-out,
@@ -891,7 +907,7 @@ a {
 }
 
 .pager-link:hover {
-    border-color: rgba(249, 115, 22, 0.32) !important;
+    border-color: var(--flagcel-border-strong) !important;
 }
 
 @media (min-width: 1440px) {
@@ -1075,14 +1091,14 @@ a {
     background-image:
         linear-gradient(
             to bottom,
-            rgb(11 11 13 / 0) var(--vp-nav-height),
+            rgb(7 7 7 / 0) var(--vp-nav-height),
             var(--flagcel-bg) 760px
         ),
         linear-gradient(
             to right,
             var(--flagcel-bg) 0%,
-            rgb(11 11 13 / 0) 12%,
-            rgb(11 11 13 / 0) 88%,
+            rgb(7 7 7 / 0) 12%,
+            rgb(7 7 7 / 0) 88%,
             var(--flagcel-bg) 100%
         ),
         linear-gradient(
@@ -1108,14 +1124,14 @@ a {
     background-repeat: no-repeat, no-repeat, repeat, repeat;
 }
 
-/* divider under the nav reads as a doubled line over the grid — let the
+/* divider under the nav reads as a doubled line over the grid - let the
    faded grid line at nav height be the only separator */
 .fc-home-page .VPNav {
     border-bottom-color: transparent;
 }
 
 /* the layout is capped at 1440px, so the footer border stops short of the
-   page edges — stretch it to the full viewport width */
+   page edges - stretch it to the full viewport width */
 .fc-home-page .VPFooter {
     width: 100vw;
     margin-left: calc(50% - 50vw);

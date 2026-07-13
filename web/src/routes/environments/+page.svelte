@@ -270,8 +270,8 @@
                             {/if}
                         </div>
                         <div class="min-w-0">
-                            <p class="truncate text-sm text-foreground-soft">{environment.name || "—"}</p>
-                            <p class="mt-0.5 truncate text-xs text-muted-foreground">{environment.description || "—"}</p>
+                            <p class="truncate text-sm text-foreground-soft">{environment.name || "-"}</p>
+                            <p class="mt-0.5 truncate text-xs text-muted-foreground">{environment.description || "-"}</p>
                         </div>
                         <div class="ios-corners-sm grid grid-cols-3 gap-3 bg-surface-faint p-3 lg:contents lg:bg-transparent lg:p-0">
                             <div class="lg:text-right">
@@ -286,7 +286,7 @@
                             <div class="lg:text-right">
                                 <p class="font-mono text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground lg:hidden">overrides</p>
                                 <p class={cn("mt-1 font-mono text-xs lg:mt-0", metric?.override_count ? "text-cel-warning" : "text-muted-foreground")}>
-                                    {metric?.override_count ? metric.override_count : "—"}
+                                    {metric?.override_count ? metric.override_count : "-"}
                                 </p>
                             </div>
                             <div>
