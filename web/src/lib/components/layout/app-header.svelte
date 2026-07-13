@@ -54,8 +54,8 @@
 
     const nav = $derived([
         { href: `/${environmentQuery}`, match: "/", label: "flags" },
-        { href: "/contexts", match: "/contexts", label: "contexts" },
-        { href: "/environments", match: "/environments", label: "envs" },
+        { href: `/contexts${environmentQuery}`, match: "/contexts", label: "contexts" },
+        { href: `/environments${environmentQuery}`, match: "/environments", label: "envs" },
         {
             href: `/api-keys${environmentQuery}`,
             match: "/api-keys",

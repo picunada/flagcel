@@ -36,7 +36,7 @@
 
 <section class="mx-auto max-w-md space-y-6">
     <PageHeader
-        eyebrow="flagcel admin"
+        eyebrow="[ flagcel admin ]"
         title="Sign in"
         class="items-center text-center sm:items-center sm:justify-center"
     />

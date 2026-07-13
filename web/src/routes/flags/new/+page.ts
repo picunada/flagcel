@@ -1,4 +1,5 @@
 import { createApi } from "$lib/api";
+import { resolveSelectedEnvironment } from "$lib/environment";
 import { runLoad } from "$lib/load";
 import type { PageLoad } from "./$types";
 
@@ -6,10 +7,10 @@ export const load: PageLoad = ({ url, fetch }) => {
     const api = createApi(fetch);
     return runLoad(async () => {
         const environments = await api.listEnvironments();
-        const selectedEnvironment =
-            environments.find((env) => env.id === url.searchParams.get("environment")) ??
-            environments.find((env) => env.key === "production") ??
-            environments[0];
+        const selectedEnvironment = resolveSelectedEnvironment(
+                environments,
+                url.searchParams.get("environment"),
+            );
         if (!selectedEnvironment) {
             throw new Error("No environments are configured.");
         }

@@ -3,6 +3,7 @@
 	import type { ContextField, FlagValue, ValueType } from '$lib/api';
 	import ValueEditor from '$lib/components/value-editor.svelte';
 	import { cn } from '$lib/utils';
+	import BoolToggle from '$lib/components/ui/bool-toggle.svelte';
 
 	type Props = {
 		valueType: ValueType;
@@ -107,37 +108,12 @@
 				value
 			</div>
 			{#if valueType === 'boolean'}
-				<div
-					class={cn(
-						'inline-flex h-8 overflow-hidden rounded-sm border border-border-control bg-background font-mono text-xs font-semibold',
-						(disabled || submitting) && 'pointer-events-none opacity-50'
-					)}
-				>
-					<button
-						type="button"
-						class={cn(
-							'cursor-pointer px-3.5 transition-colors',
-							value === false
-								? 'bg-foreground text-primary-foreground'
-								: 'text-muted-foreground hover:text-foreground'
-						)}
-						onclick={() => setBoolean(false)}
-					>
-						false
-					</button>
-					<button
-						type="button"
-						class={cn(
-							'cursor-pointer px-3.5 transition-colors',
-							value === true
-								? 'bg-foreground text-primary-foreground'
-								: 'text-muted-foreground hover:text-foreground'
-						)}
-						onclick={() => setBoolean(true)}
-					>
-						true
-					</button>
-				</div>
+				<BoolToggle
+					value={Boolean(value)}
+					disabled={disabled || submitting}
+					onchange={setBoolean}
+					class="h-8"
+				/>
 			{:else}
 				<ValueEditor
 					id="rule-value"

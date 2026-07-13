@@ -14,6 +14,7 @@
     import Card from "$lib/components/ui/card.svelte";
     import DestructiveDialog from "$lib/components/ui/destructive-dialog.svelte";
     import Input from "$lib/components/ui/input.svelte";
+    import PageHeader from "$lib/components/ui/page-header.svelte";
     import { cn } from "$lib/utils";
     import type { PageProps } from "./$types";
 
@@ -171,17 +172,9 @@
 </script>
 
 <section class="motion-page space-y-7">
-    <header>
-        <p class="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
-            [ environments · {environments.length} ]
-        </p>
-        <div class="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-2">
-            <h1 class="text-3xl font-semibold tracking-tight">Environments</h1>
-            <p class="font-mono text-[0.65rem] uppercase tracking-[0.15em] text-muted-foreground">
-                workspaces · isolated flag sets
-            </p>
-        </div>
-    </header>
+    <PageHeader
+        eyebrow={`[ environments · ${environments.length} ]`}
+    />
 
     <Card class="motion-panel overflow-hidden border-border-strong bg-card">
         <div

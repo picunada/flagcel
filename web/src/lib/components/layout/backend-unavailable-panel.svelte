@@ -1,5 +1,6 @@
 <script lang="ts">
     import Button from "$lib/components/ui/button.svelte";
+    import PageHeader from "$lib/components/ui/page-header.svelte";
 
     let { message }: { message: string } = $props();
 
@@ -13,18 +14,13 @@
     aria-labelledby="backend-unavailable-title"
 >
     <div class="glass-panel motion-panel rounded-sm p-6 sm:p-8">
-        <p class="mb-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            backend unavailable
-        </p>
-        <h1
-            id="backend-unavailable-title"
-            class="text-balance text-3xl font-normal leading-tight sm:text-4xl"
-        >
-            Flagcel cannot reach the backend.
-        </h1>
-        <p class="mx-auto mt-4 max-w-md text-sm leading-6 text-foreground-soft">
-            {message}
-        </p>
+        <PageHeader
+            eyebrow="[ backend unavailable ]"
+            title="Flagcel cannot reach the backend."
+            description={message}
+            titleId="backend-unavailable-title"
+            class="items-center text-center sm:items-center sm:justify-center"
+        />
         <p
             class="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground"
         >

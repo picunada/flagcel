@@ -31,7 +31,9 @@
         if (!(
             path === "/" ||
             path.startsWith("/flags") ||
-            path.startsWith("/api-keys")
+            path.startsWith("/api-keys") ||
+            path.startsWith("/contexts") ||
+            path.startsWith("/environments")
         )) {
             next.pathname = "/";
         }

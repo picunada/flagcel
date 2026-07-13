@@ -64,13 +64,13 @@
             icon: Flag,
         },
         {
-            href: "/contexts",
+            href: `/contexts${environmentQuery}`,
             match: "/contexts",
             label: "Contexts",
             icon: Users,
         },
         {
-            href: "/environments",
+            href: `/environments${environmentQuery}`,
             match: "/environments",
             label: "Environments",
             icon: Layers3,

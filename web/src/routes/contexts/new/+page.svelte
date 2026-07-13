@@ -10,6 +10,7 @@
     import CodeTextarea from "$lib/components/ui/code-textarea.svelte";
     import FieldLabel from "$lib/components/ui/field-label.svelte";
     import Input from "$lib/components/ui/input.svelte";
+    import PageHeader from "$lib/components/ui/page-header.svelte";
     import { cn } from "$lib/utils";
 
     let name = $state("");
@@ -50,15 +51,11 @@
 </script>
 
 <section class="motion-page min-h-full p-5 sm:p-7 lg:p-8">
-    <header>
-        <p class="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
-            [ new context ]
-        </p>
-        <h1 class="mt-2 text-2xl font-semibold tracking-tight">Define a context</h1>
-        <p class="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Paste a representative payload to infer its field schema, or create an empty context and add fields manually.
-        </p>
-    </header>
+    <PageHeader
+        eyebrow="[ new context ]"
+        title="Define a context"
+        description="Paste a representative payload to infer its field schema, or create an empty context and add fields manually."
+    />
 
     <div class="mt-7 grid items-start gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr))]">
         <div class="space-y-4">

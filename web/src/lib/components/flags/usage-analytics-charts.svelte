@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { FlagUsage } from "$lib/api";
     import Card from "$lib/components/ui/card.svelte";
+    import SegmentedControlGroup from "$lib/components/ui/segmented-control.svelte";
     import * as Chart from "$lib/components/ui/chart";
     import {
         breakdownSeries,
@@ -226,26 +227,12 @@
     selected: string,
     onselect: (value: string) => void,
 )}
-    <div
-        class="ios-corners-sm inline-flex h-9 shrink-0 border border-border p-0.5"
-        aria-label={label}
-    >
-        {#each options as option (option.value)}
-            <button
-                type="button"
-                aria-pressed={selected === option.value}
-                class={[
-                    "ios-corners-xs h-full px-3 text-[0.65rem] uppercase tracking-[0.12em] transition-colors",
-                    selected === option.value
-                        ? "bg-surface-selected text-foreground"
-                        : "text-muted-foreground hover:text-foreground",
-                ]}
-                onclick={() => onselect(option.value)}
-            >
-                {option.label}
-            </button>
-        {/each}
-    </div>
+    <SegmentedControlGroup
+        {label}
+        {options}
+        value={selected}
+        onchange={onselect}
+    />
 {/snippet}
 
 {#snippet TrendBreakdownPicker()}

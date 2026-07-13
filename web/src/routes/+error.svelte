@@ -1,5 +1,6 @@
 <script lang="ts">
     import Button from "$lib/components/ui/button.svelte";
+    import PageHeader from "$lib/components/ui/page-header.svelte";
     import "../app.css";
 
     let { status, error }: { status: number; error: App.Error } = $props();
@@ -29,18 +30,12 @@
         class="glass-panel motion-panel w-full max-w-xl rounded-sm p-6 sm:p-8"
         aria-labelledby="error-title"
     >
-        <p class="mb-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            {isBackendError ? "backend unavailable" : `error ${status}`}
-        </p>
-        <h1
-            id="error-title"
-            class="text-balance text-3xl font-normal leading-tight sm:text-4xl"
-        >
-            {isBackendError ? "Flagcel cannot reach the backend." : "Flagcel hit an error."}
-        </h1>
-        <p class="mt-4 text-sm leading-6 text-foreground-soft">
-            {message}
-        </p>
+        <PageHeader
+            eyebrow={isBackendError ? "[ backend unavailable ]" : `[ error ${status} ]`}
+            title={isBackendError ? "Flagcel cannot reach the backend." : "Flagcel hit an error."}
+            description={message}
+            titleId="error-title"
+        />
         {#if isBackendError}
             <p class="mt-3 text-sm leading-6 text-muted-foreground">
                 Start or restart the backend server, then retry this page.

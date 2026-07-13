@@ -23,6 +23,7 @@
     } from "$lib/context-schema";
     import { formatJSON } from "$lib/code-highlighting";
     import ContextDetailsDialog from "$lib/components/contexts/context-details-dialog.svelte";
+    import PageHeader from "$lib/components/ui/page-header.svelte";
     import Button from "$lib/components/ui/button.svelte";
     import Card from "$lib/components/ui/card.svelte";
     import CodeTextarea from "$lib/components/ui/code-textarea.svelte";
@@ -170,61 +171,59 @@
     }
 </script>
 
-<section class="motion-page min-h-full p-5 sm:p-7 lg:p-8">
-    <header>
-        <div class="flex flex-wrap items-start gap-3">
-            <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-3">
-                    <h1 class="break-words font-mono text-2xl font-medium tracking-tight sm:text-[1.65rem]">
-                        {schema.name}
-                    </h1>
-                    <span
-                        class={cn(
-                            "rounded-sm border px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-[0.12em]",
-                            references.length
-                                ? "border-valid-border bg-valid-surface text-valid"
-                                : "border-border-strong text-muted-foreground",
-                        )}
-                    >
-                        {references.length
-                            ? `used by ${references.length} flags · ${references.reduce((total, reference) => total + reference.rule_count, 0)} rules`
-                            : "unused"}
-                    </span>
-                </div>
-                <p class="mt-2 text-sm text-muted-foreground">
-                    {schema.description || "No description"}
-                </p>
-            </div>
+{#snippet contextUsage()}
+    <span
+        class={cn(
+            "rounded-sm border px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-[0.12em]",
+            references.length
+                ? "border-valid-border bg-valid-surface text-valid"
+                : "border-border-strong text-muted-foreground",
+        )}
+    >
+        {references.length
+            ? `used by ${references.length} flags · ${references.reduce((total, reference) => total + reference.rule_count, 0)} rules`
+            : "unused"}
+    </span>
+{/snippet}
 
-            <div class="flex items-center gap-2">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={dirty}
-                    title={dirty ? "Save or revert schema changes before editing details" : "Edit context details"}
-                    onclick={() => {
-                        editError = null;
-                        editOpen = true;
-                    }}
-                >
-                    <Pencil class="h-3.5 w-3.5" /> edit details
-                </Button>
-                <Button
-                    variant={references.length ? "default" : "destructive"}
-                    size="sm"
-                    disabled={references.length > 0 || dirty}
-                    title={references.length
-                        ? "Remove flag references before deleting"
-                        : dirty
-                          ? "Save or revert schema changes before deleting"
-                          : "Delete context"}
-                    onclick={() => (deleteOpen = true)}
-                >
-                    {#if references.length}<LockKeyhole class="h-3.5 w-3.5" />{:else}<Trash2 class="h-3.5 w-3.5" />{/if}
-                    delete
-                </Button>
-            </div>
-        </div>
+{#snippet contextActions()}
+    <Button
+        variant="ghost"
+        size="sm"
+        disabled={dirty}
+        title={dirty ? "Save or revert schema changes before editing details" : "Edit context details"}
+        onclick={() => {
+            editError = null;
+            editOpen = true;
+        }}
+    >
+        <Pencil class="h-3.5 w-3.5" /> edit details
+    </Button>
+    <Button
+        variant={references.length ? "default" : "destructive"}
+        size="sm"
+        disabled={references.length > 0 || dirty}
+        title={references.length
+            ? "Remove flag references before deleting"
+            : dirty
+              ? "Save or revert schema changes before deleting"
+              : "Delete context"}
+        onclick={() => (deleteOpen = true)}
+    >
+        {#if references.length}<LockKeyhole class="h-3.5 w-3.5" />{:else}<Trash2 class="h-3.5 w-3.5" />{/if}
+        delete
+    </Button>
+{/snippet}
+
+<section class="motion-page min-h-full p-5 sm:p-7 lg:p-8">
+    <PageHeader
+        eyebrow="[ context ]"
+        title={schema.name}
+        description={schema.description || "No description"}
+        titleClass="break-words font-mono"
+        titleAfter={contextUsage}
+        actions={contextActions}
+    />
 
         {#if references.length}
             <div class="mt-5 flex flex-wrap items-center gap-2">
@@ -242,7 +241,6 @@
                 {/each}
             </div>
         {/if}
-    </header>
 
     <div class="mt-6 grid items-start gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr))]">
         <Card class="overflow-hidden border-border-strong bg-card">

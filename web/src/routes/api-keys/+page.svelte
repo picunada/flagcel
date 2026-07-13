@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { untrack } from "svelte";
     import { invalidateAll } from "$app/navigation";
     import {
         Check,
@@ -16,6 +15,8 @@
     import CodeBlock from "$lib/components/ui/code-block.svelte";
     import DestructiveDialog from "$lib/components/ui/destructive-dialog.svelte";
     import Input from "$lib/components/ui/input.svelte";
+    import PageHeader from "$lib/components/ui/page-header.svelte";
+    import SegmentedControl from "$lib/components/ui/segmented-control.svelte";
     import { cn } from "$lib/utils";
     import type { PageProps } from "./$types";
 
@@ -23,13 +24,17 @@
 
     let { data }: PageProps = $props();
 
-    const environments = $derived(data.environments);
-    const environmentByID = $derived(
-        new Map(environments.map((environment) => [environment.id, environment])),
+    const selectedEnvironment = $derived(data.selectedEnvironment);
+    const keys = $derived<APIKey[]>(
+        data.keys.filter((key) => key.environment_id === selectedEnvironment.id),
     );
-    const keys = $derived<APIKey[]>(data.keys);
     const activeCount = $derived(keys.filter((key) => !key.revoked_at).length);
     const revokedCount = $derived(keys.filter((key) => Boolean(key.revoked_at)).length);
+    const statusFilterOptions = $derived([
+        { value: "active" as const, label: `active · ${activeCount}` },
+        { value: "revoked" as const, label: `revoked · ${revokedCount}` },
+        { value: "all" as const, label: `all · ${keys.length}` },
+    ]);
     const filteredKeys = $derived(
         keys.filter((key) => {
             if (filter === "active") return !key.revoked_at;
@@ -41,12 +46,10 @@
     let filter = $state<StatusFilter>("active");
     let createOpen = $state(false);
     let createName = $state("");
-    let createEnvironmentID = $state(untrack(() => data.selectedEnvironment.id));
     let creating = $state(false);
     let createError = $state<string | null>(null);
     let created = $state<CreateAPIKeyResponse | null>(null);
     let revealCopied = $state(false);
-    let copiedPrefixID = $state<string | null>(null);
     let revokeOpen = $state(false);
     let revokeTarget = $state<APIKey | null>(null);
     let revoking = $state(false);
@@ -55,7 +58,6 @@
     function openCreate() {
         createOpen = true;
         createError = null;
-        createEnvironmentID = data.selectedEnvironment.id;
     }
 
     function closeCreate() {
@@ -65,12 +67,12 @@
     }
 
     async function createKey() {
-        if (!createName.trim() || !createEnvironmentID || creating) return;
+        if (!createName.trim() || creating) return;
         creating = true;
         createError = null;
         created = null;
         try {
-            created = await api.createAPIKey(createName.trim(), createEnvironmentID);
+            created = await api.createAPIKey(createName.trim(), selectedEnvironment.id);
             revealCopied = false;
             closeCreate();
             if (filter === "revoked") filter = "active";
@@ -119,15 +121,6 @@
         }
     }
 
-    async function copyPrefix(key: APIKey) {
-        if (await copyText(key.prefix)) {
-            copiedPrefixID = key.id;
-            setTimeout(() => {
-                if (copiedPrefixID === key.id) copiedPrefixID = null;
-            }, 1200);
-        }
-    }
-
     function formatDate(value?: string) {
         if (!value) return "never";
         const date = new Date(value);
@@ -140,51 +133,22 @@
         }).format(date);
     }
 
-    function environmentIndicator(key: string) {
-        if (key === "production") return "text-valid";
-        if (key === "staging") return "text-app-accent-muted";
-        return "text-cel-warning";
-    }
-
-    function filterCount(status: StatusFilter) {
-        if (status === "active") return activeCount;
-        if (status === "revoked") return revokedCount;
-        return keys.length;
-    }
 </script>
 
-<section class="motion-page space-y-6">
-    <header class="flex flex-wrap items-end justify-between gap-4">
-        <div>
-            <p class="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
-                [ api keys · {keys.length} ]
-            </p>
-            <div class="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-2">
-                <h1 class="text-3xl font-semibold tracking-tight">API keys</h1>
-                <p class="font-mono text-[0.65rem] uppercase tracking-[0.15em] text-muted-foreground">
-                    eval access · scoped per environment
-                </p>
-            </div>
-        </div>
+{#snippet headerActions()}
+    <SegmentedControl
+        label="API key status filter"
+        options={statusFilterOptions}
+        value={filter}
+        onchange={(value) => (filter = value)}
+    />
+{/snippet}
 
-        <div class="ios-corners-sm flex flex-wrap gap-1 border border-border-control bg-surface-faint p-1" aria-label="API key status filter">
-            {#each ["active", "revoked", "all"] as status (status)}
-                <button
-                    type="button"
-                    class={cn(
-                        "ios-corners-xs cursor-pointer px-3 py-2 font-mono text-[0.6rem] uppercase tracking-[0.12em] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                        filter === status
-                            ? "bg-foreground font-semibold text-primary-foreground"
-                            : "text-muted-foreground hover:bg-surface-hover hover:text-foreground",
-                    )}
-                    aria-pressed={filter === status}
-                    onclick={() => (filter = status as StatusFilter)}
-                >
-                    {status} · {filterCount(status as StatusFilter)}
-                </button>
-            {/each}
-        </div>
-    </header>
+<section class="motion-page space-y-6">
+    <PageHeader
+        eyebrow={`[ api keys · ${selectedEnvironment.key} · ${keys.length} ]`}
+        actions={headerActions}
+    />
 
     {#if created}
         <Card class="motion-panel border-valid-border bg-valid-surface p-4">
@@ -218,12 +182,10 @@
 
     <Card class="motion-panel overflow-hidden border-border-strong bg-card">
         <div
-            class="hidden min-h-10 grid-cols-[1.25rem_minmax(12rem,1fr)_10rem_7rem_9rem_8rem_7rem] items-center gap-3 border-b border-border-divider bg-surface-faint px-4 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-muted-foreground xl:grid"
+            class="hidden min-h-10 grid-cols-[1.25rem_minmax(12rem,1fr)_9rem_8rem_7rem] items-center gap-3 border-b border-border-divider bg-surface-faint px-4 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-muted-foreground xl:grid"
         >
             <span></span>
             <span>name</span>
-            <span>key</span>
-            <span>env</span>
             <span>last used</span>
             <span>created</span>
             <span></span>
@@ -231,11 +193,10 @@
 
         <div class="motion-list">
             {#each filteredKeys as key (key.id)}
-                {@const environment = environmentByID.get(key.environment_id)}
                 {@const revoked = Boolean(key.revoked_at)}
                 <div
                     class={cn(
-                        "grid gap-3 border-b border-border-divider px-4 py-4 transition-colors last:border-0 hover:bg-surface-hover xl:grid-cols-[1.25rem_minmax(12rem,1fr)_10rem_7rem_9rem_8rem_7rem] xl:items-center xl:py-3",
+                        "grid gap-3 border-b border-border-divider px-4 py-4 transition-colors last:border-0 hover:bg-surface-hover xl:grid-cols-[1.25rem_minmax(12rem,1fr)_9rem_8rem_7rem] xl:items-center xl:py-3",
                         revoked && "opacity-55",
                     )}
                 >
@@ -264,27 +225,6 @@
                                 never used
                             </span>
                         {/if}
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <code class="min-w-0 truncate font-mono text-xs text-muted-foreground">{key.prefix}</code>
-                        <Button
-                            size="icon"
-                            variant="ghost"
-                            class="h-7 w-7 shrink-0"
-                            aria-label="Copy prefix for {key.name}"
-                            onclick={() => copyPrefix(key)}
-                        >
-                            {#if copiedPrefixID === key.id}<Check class="h-3.5 w-3.5" />{:else}<Copy class="h-3.5 w-3.5" />{/if}
-                        </Button>
-                    </div>
-
-                    <div class="flex items-center gap-2 text-xs text-foreground-soft">
-                        <Circle
-                            class={cn("h-2 w-2 fill-current", environmentIndicator(environment?.key ?? ""))}
-                            aria-hidden="true"
-                        />
-                        <span class="truncate">{environment?.key ?? "missing"}</span>
                     </div>
 
                     <div class="ios-corners-sm grid grid-cols-2 gap-3 bg-surface-faint p-3 xl:contents xl:bg-transparent xl:p-0">
@@ -339,24 +279,9 @@
                 </div>
                 <div class="grid gap-3 lg:grid-cols-[minmax(12rem,1fr)_auto] lg:items-center">
                     <Input bind:value={createName} aria-label="API key name" placeholder="key name · e.g. ci-runner" />
-                    <div class="flex flex-wrap items-center gap-1">
-                        <span class="mr-1 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground">env</span>
-                        {#each environments as environment (environment.id)}
-                            <button
-                                type="button"
-                                class={cn(
-                                    "ios-corners-xs inline-flex cursor-pointer items-center gap-2 border px-3 py-2 text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                                    createEnvironmentID === environment.id
-                                        ? "border-border-strong bg-surface-active text-foreground"
-                                        : "border-border-control text-muted-foreground hover:bg-surface-hover hover:text-foreground",
-                                )}
-                                aria-pressed={createEnvironmentID === environment.id}
-                                onclick={() => (createEnvironmentID = environment.id)}
-                            >
-                                <Circle class={cn("h-2 w-2 fill-current", environmentIndicator(environment.key))} />
-                                {environment.key}
-                            </button>
-                        {/each}
+                    <div class="ios-corners-xs inline-flex items-center gap-2 border border-border-strong bg-surface-active px-3 py-2 text-xs text-foreground">
+                        <span class="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground">env</span>
+                        <span class="font-mono">{selectedEnvironment.key}</span>
                     </div>
                 </div>
                 {#if createError}<p class="text-sm text-destructive" aria-live="polite">{createError}</p>{/if}

@@ -1,5 +1,6 @@
 import { redirect } from "@sveltejs/kit";
 import { createApi, APIError, type AuthMe } from "$lib/api";
+import { resolveSelectedEnvironment } from "$lib/environment";
 import type { LayoutLoad } from "./$types";
 
 export const ssr = false;
@@ -48,10 +49,10 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
 	}
 
 	const environments = await api.listEnvironments();
-	const selectedEnvironment =
-		environments.find((env) => env.id === url.searchParams.get("environment")) ??
-		environments.find((env) => env.key === "production") ??
-		environments[0];
+	const selectedEnvironment = resolveSelectedEnvironment(
+		environments,
+		url.searchParams.get("environment"),
+	);
 
 	return { ...route, auth, environments, selectedEnvironment };
 };

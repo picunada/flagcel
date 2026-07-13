@@ -8,6 +8,8 @@
         description?: string;
         class?: string;
         titleClass?: string;
+        titleId?: string;
+        titleAfter?: Snippet;
         actions?: Snippet;
     };
 
@@ -17,6 +19,8 @@
         description,
         class: className,
         titleClass,
+        titleId,
+        titleAfter,
         actions,
     }: Props = $props();
 </script>
@@ -29,19 +33,25 @@
 >
     <div class="min-w-0 space-y-3">
         {#if eyebrow}
-            <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            <p class="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
                 {eyebrow}
             </p>
         {/if}
         {#if title}
-            <h1
-                class={cn(
-                    "text-balance text-3xl font-normal leading-tight sm:text-4xl",
-                    titleClass,
-                )}
-            >
-                {title}
-            </h1>
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <h1
+                    id={titleId}
+                    class={cn(
+                        "text-balance text-3xl font-normal leading-tight sm:text-4xl",
+                        titleClass,
+                    )}
+                >
+                    {title}
+                </h1>
+                {#if titleAfter}
+                    {@render titleAfter()}
+                {/if}
+            </div>
         {/if}
         {#if description}
             <p class="max-w-xl text-sm text-foreground-soft sm:text-base">

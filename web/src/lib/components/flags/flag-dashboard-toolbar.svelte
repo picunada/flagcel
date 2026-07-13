@@ -2,7 +2,7 @@
     import Button from "$lib/components/ui/button.svelte";
     import Input from "$lib/components/ui/input.svelte";
     import ThemedSelect from "$lib/components/ui/themed-select.svelte";
-    import { cn } from "$lib/utils";
+    import SegmentedControl from "$lib/components/ui/segmented-control.svelte";
     import {
         LayoutGrid,
         ListFilter,
@@ -21,6 +21,17 @@
         | "context";
     type ViewMode = "table" | "cards";
     type SelectOption = { value: string; label: string };
+
+    const statusOptions = [
+        { value: "all", label: "all" },
+        { value: "on", label: "on" },
+        { value: "off", label: "off" },
+    ] as const;
+
+    const viewModeOptions = [
+        { value: "table", label: "Table view", title: "Table view", icon: TableProperties, iconOnly: true },
+        { value: "cards", label: "Card view", title: "Card view", icon: LayoutGrid, iconOnly: true },
+    ] as const;
 
     type Props = {
         query: string;
@@ -64,50 +75,12 @@
                 />
             </label>
 
-            <div
-                class="ios-corners-sm flex h-9 shrink-0 border border-border p-0.5"
-                aria-label="Status filter"
-            >
-                <button
-                    type="button"
-                    aria-pressed={statusFilter === "all"}
-                    class={cn(
-                        "ios-corners-xs h-full px-3 text-[0.65rem] uppercase tracking-[0.12em] transition-colors",
-                        statusFilter === "all"
-                            ? "bg-surface-selected text-foreground"
-                            : "text-muted-foreground hover:text-foreground",
-                    )}
-                    onclick={() => (statusFilter = "all")}
-                >
-                    all
-                </button>
-                <button
-                    type="button"
-                    aria-pressed={statusFilter === "on"}
-                    class={cn(
-                        "ios-corners-xs h-full px-3 text-[0.65rem] uppercase tracking-[0.12em] transition-colors",
-                        statusFilter === "on"
-                            ? "bg-surface-selected text-foreground"
-                            : "text-muted-foreground hover:text-foreground",
-                    )}
-                    onclick={() => (statusFilter = "on")}
-                >
-                    on
-                </button>
-                <button
-                    type="button"
-                    aria-pressed={statusFilter === "off"}
-                    class={cn(
-                        "ios-corners-xs h-full px-3 text-[0.65rem] uppercase tracking-[0.12em] transition-colors",
-                        statusFilter === "off"
-                            ? "bg-surface-selected text-foreground"
-                            : "text-muted-foreground hover:text-foreground",
-                    )}
-                    onclick={() => (statusFilter = "off")}
-                >
-                    off
-                </button>
-            </div>
+            <SegmentedControl
+                label="Status filter"
+                options={statusOptions}
+                value={statusFilter}
+                onchange={(value) => (statusFilter = value)}
+            />
 
             <label class="block">
                 <span class="sr-only">Context filter</span>
@@ -140,41 +113,12 @@
                 {shownCount} shown
             </div>
             <div class="ml-auto flex items-center gap-2">
-                <div
-                    class="ios-corners-sm flex h-9 border border-border p-0.5"
-                    aria-label="View mode"
-                >
-                    <button
-                        type="button"
-                        title="Table view"
-                        aria-label="Table view"
-                        aria-pressed={viewMode === "table"}
-                        class={cn(
-                            "ios-corners-xs inline-flex h-full w-8 items-center justify-center transition-colors",
-                            viewMode === "table"
-                                ? "bg-surface-selected text-foreground"
-                                : "text-muted-foreground hover:text-foreground",
-                        )}
-                        onclick={() => (viewMode = "table")}
-                    >
-                        <TableProperties class="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                        type="button"
-                        title="Card view"
-                        aria-label="Card view"
-                        aria-pressed={viewMode === "cards"}
-                        class={cn(
-                            "ios-corners-xs inline-flex h-full w-8 items-center justify-center transition-colors",
-                            viewMode === "cards"
-                                ? "bg-surface-selected text-foreground"
-                                : "text-muted-foreground hover:text-foreground",
-                        )}
-                        onclick={() => (viewMode = "cards")}
-                    >
-                        <LayoutGrid class="h-3.5 w-3.5" />
-                    </button>
-                </div>
+                <SegmentedControl
+                    label="View mode"
+                    options={viewModeOptions}
+                    value={viewMode}
+                    onchange={(value) => (viewMode = value)}
+                />
                 <Button href={newFlagHref} size="default" class="h-9">
                     <Plus class="h-3.5 w-3.5" /> new flag
                 </Button>

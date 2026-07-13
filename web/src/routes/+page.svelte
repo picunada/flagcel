@@ -251,7 +251,9 @@
 <section class="space-y-4">
     <div class="space-y-3">
         <AppBreadcrumbs items={[{ label: "flags" }]} />
-        <!-- <PageHeader eyebrow="feature flags · targeting rules" /> -->
+        <PageHeader
+            eyebrow={`[ flags · ${flags.length} ]`}
+        />
     </div>
 
     {#if flags.length > 0}
