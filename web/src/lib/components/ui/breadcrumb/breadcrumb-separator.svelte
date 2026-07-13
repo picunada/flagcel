@@ -15,7 +15,7 @@
 	data-slot="breadcrumb-separator"
 	role="presentation"
 	aria-hidden="true"
-	class={cn('text-muted-foreground/50 select-none', className)}
+	class={cn('text-muted-foreground/50 text-xl select-none', className)}
 	{...restProps}
 >
 	{#if children}

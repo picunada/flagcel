@@ -248,10 +248,10 @@
     }
 </script>
 
-<section class="space-y-8">
+<section class="space-y-4">
     <div class="space-y-3">
         <AppBreadcrumbs items={[{ label: "flags" }]} />
-        <PageHeader eyebrow="feature flags · targeting rules" />
+        <!-- <PageHeader eyebrow="feature flags · targeting rules" /> -->
     </div>
 
     {#if flags.length > 0}
