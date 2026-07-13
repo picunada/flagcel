@@ -3,9 +3,9 @@ name: flagcel
 description: Self-hosted feature flags with CEL-based targeting rules.
 type: application
 # Chart version. Bump on chart changes; the release tag charts/vX.Y.Z must match.
-version: 0.1.0
+version: 0.2.0-rc.2
 # Default Flagcel server image tag the chart deploys.
-appVersion: "0.1.0"
+appVersion: "0.2.0-rc.2"
 home: https://github.com/picunada/flagcel
 sources:
   - https://github.com/picunada/flagcel

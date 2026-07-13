@@ -48,6 +48,6 @@ jobs:
             exit 1
           fi
 
-      # Uses npm trusted publishing (OIDC) — no NPM_TOKEN needed once the
+      # Uses npm trusted publishing (OIDC) - no NPM_TOKEN needed once the
       # trusted publisher is configured at npmjs.com for this repo+workflow.
       - run: npm publish --provenance --access public
