@@ -7,7 +7,6 @@
 *.dll
 *.so
 *.dylib
-bin/flagcel_eval.wasm
 
 # Test binary, built with `go test -c`
 *.test
